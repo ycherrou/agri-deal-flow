@@ -7,6 +7,9 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Navires from "./pages/Navires";
+import Deals from "./pages/Deals";
+import Clients from "./pages/Clients";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +24,9 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/navires" element={<Layout><Navires /></Layout>} />
+          <Route path="/deals" element={<Layout><Deals /></Layout>} />
+          <Route path="/clients" element={<Layout><Clients /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
