@@ -11,6 +11,7 @@ import Deals from "./pages/Deals";
 import CreateDeal from "./pages/CreateDeal";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
+import PrixMarche from "./pages/PrixMarche";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/deals/create" element={<Layout><CreateDeal /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="/prix-marche" element={<Layout><PrixMarche /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

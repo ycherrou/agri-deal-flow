@@ -136,6 +136,13 @@ export default function Layout({ children }: LayoutProps) {
       icon: Settings,
       path: '/settings',
       roles: ['admin']
+    },
+    { 
+      id: 'prix-marche', 
+      label: 'Prix marché', 
+      icon: TrendingUp,
+      path: '/prix-marche',
+      roles: ['admin']
     }
   ];
 
