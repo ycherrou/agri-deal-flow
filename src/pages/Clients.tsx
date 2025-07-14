@@ -39,6 +39,7 @@ export default function Clients() {
     password: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -180,6 +181,7 @@ export default function Clients() {
     }
 
     try {
+      setProcessingId(client.id);
       setLoading(true);
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -223,6 +225,7 @@ export default function Clients() {
       });
     } finally {
       setLoading(false);
+      setProcessingId(null);
     }
   };
 
@@ -494,7 +497,7 @@ export default function Clients() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(client)}
-                        disabled={loading}
+                        disabled={loading || processingId === client.id}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

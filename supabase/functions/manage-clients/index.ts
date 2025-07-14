@@ -69,13 +69,13 @@ serve(async (req) => {
         // Créer le client dans la table
         const { data: client, error: clientError } = await supabaseAdmin
           .from('clients')
-          .insert([{
+          .insert({
             user_id: authData.user.id,
             nom,
             email,
             telephone: telephone || null,
             role
-          }])
+          })
           .select()
           .single()
 
