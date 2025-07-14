@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Navires from "./pages/Navires";
 import Deals from "./pages/Deals";
+import CreateDeal from "./pages/CreateDeal";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/navires" element={<Layout><Navires /></Layout>} />
           <Route path="/deals" element={<Layout><Deals /></Layout>} />
+          <Route path="/deals/create" element={<Layout><CreateDeal /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="*" element={<NotFound />} />
