@@ -55,6 +55,7 @@ serve(async (req) => {
         const { nom, email, telephone, role, password } = clientData
 
         // Créer l'utilisateur avec la clé admin
+        // Le trigger handle_new_user créera automatiquement le client
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -66,23 +67,43 @@ serve(async (req) => {
 
         if (authError) throw authError
 
-        // Créer le client dans la table
+        // Attendre un peu pour que le trigger s'exécute
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        // Vérifier que le client a été créé par le trigger
         const { data: client, error: clientError } = await supabaseAdmin
           .from('clients')
-          .insert({
-            user_id: authData.user.id,
-            nom,
-            email,
-            telephone: telephone || null,
-            role
-          })
-          .select()
+          .select('*')
+          .eq('user_id', authData.user.id)
           .single()
 
-        if (clientError) {
-          // Rollback : supprimer l'utilisateur auth en cas d'erreur
-          await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-          throw clientError
+        if (clientError || !client) {
+          // Si le trigger n'a pas fonctionné, créer manuellement
+          const { data: manualClient, error: manualError } = await supabaseAdmin
+            .from('clients')
+            .insert({
+              user_id: authData.user.id,
+              nom,
+              email,
+              telephone: telephone || null,
+              role
+            })
+            .select()
+            .single()
+
+          if (manualError) {
+            // Rollback : supprimer l'utilisateur auth en cas d'erreur
+            await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+            throw manualError
+          }
+
+          return new Response(
+            JSON.stringify({ success: true, data: manualClient }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200 
+            }
+          )
         }
 
         return new Response(
