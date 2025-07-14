@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Shield, Plus } from 'lucide-react';
+import { AlertCircle, Shield, Plus, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,8 +36,15 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
   const [navire, setNavire] = useState<Navire | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCouverture, setEditingCouverture] = useState<CouvertureAchat | null>(null);
   const [newCouverture, setNewCouverture] = useState({
     date_couverture: new Date().toISOString().split('T')[0],
+    prix_futures: '',
+    volume_couvert: ''
+  });
+  const [editCouverture, setEditCouverture] = useState({
+    date_couverture: '',
     prix_futures: '',
     volume_couvert: ''
   });
@@ -125,6 +132,77 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
       toast({
         title: 'Erreur',
         description: 'Impossible de créer la couverture',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleEditClick = (couverture: CouvertureAchat) => {
+    setEditingCouverture(couverture);
+    setEditCouverture({
+      date_couverture: couverture.date_couverture,
+      prix_futures: couverture.prix_futures.toString(),
+      volume_couvert: couverture.volume_couvert.toString()
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCouverture) return;
+
+    try {
+      const { error } = await supabase
+        .from('couvertures_achat')
+        .update({
+          date_couverture: editCouverture.date_couverture,
+          prix_futures: parseFloat(editCouverture.prix_futures),
+          volume_couvert: parseFloat(editCouverture.volume_couvert)
+        })
+        .eq('id', editingCouverture.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture d\'achat modifiée avec succès'
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingCouverture(null);
+      fetchCouvertures();
+    } catch (error) {
+      console.error('Error updating couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier la couverture',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDelete = async (couvertureId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette couverture ?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('couvertures_achat')
+        .delete()
+        .eq('id', couvertureId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture d\'achat supprimée avec succès'
+      });
+
+      fetchCouvertures();
+    } catch (error) {
+      console.error('Error deleting couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer la couverture',
         variant: 'destructive'
       });
     }
@@ -288,7 +366,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
               <div className="space-y-2">
                 {couvertures.map((couverture) => (
                   <div key={couverture.id} className="border rounded-lg p-3 bg-card">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                       <div>
                         <div className="text-xs text-muted-foreground">Date</div>
                         <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
@@ -301,11 +379,27 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                         <div className="text-xs text-muted-foreground">Prix futures</div>
                         <div className="font-medium">{formatPrice(couverture.prix_futures)}</div>
                       </div>
-                      <div className="text-right">
+                      <div>
                         <div className="text-xs text-muted-foreground">Pourcentage</div>
                         <div className="font-medium">
                           {((couverture.volume_couvert / navire.quantite_totale) * 100).toFixed(1)}%
                         </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditClick(couverture)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(couverture.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -320,9 +414,63 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                 Position exposée de {navire.quantite_totale} MT
               </p>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+           )}
+         </div>
+       </CardContent>
+
+       {/* Dialog d'édition */}
+       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Modifier la couverture d'achat</DialogTitle>
+             <DialogDescription>
+               Modifier les détails de la couverture pour {navire.nom}
+             </DialogDescription>
+           </DialogHeader>
+           <form onSubmit={handleEditSubmit} className="space-y-4">
+             <div>
+               <Label htmlFor="edit_date_couverture">Date de couverture</Label>
+               <Input
+                 id="edit_date_couverture"
+                 type="date"
+                 value={editCouverture.date_couverture}
+                 onChange={(e) => setEditCouverture(prev => ({ ...prev, date_couverture: e.target.value }))}
+                 required
+               />
+             </div>
+             <div>
+               <Label htmlFor="edit_prix_futures">Prix futures (cts/bu)</Label>
+               <Input
+                 id="edit_prix_futures"
+                 type="number"
+                 step="0.01"
+                 placeholder="Prix en cents par bushel"
+                 value={editCouverture.prix_futures}
+                 onChange={(e) => setEditCouverture(prev => ({ ...prev, prix_futures: e.target.value }))}
+                 required
+               />
+             </div>
+             <div>
+               <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
+               <Input
+                 id="edit_volume_couvert"
+                 type="number"
+                 step="0.01"
+                 placeholder="Volume en tonnes métriques"
+                 value={editCouverture.volume_couvert}
+                 onChange={(e) => setEditCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                 required
+               />
+             </div>
+             <div className="flex justify-end gap-2">
+               <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                 Annuler
+               </Button>
+               <Button type="submit">Modifier</Button>
+             </div>
+           </form>
+         </DialogContent>
+       </Dialog>
+     </Card>
+   );
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus } from 'lucide-react';
+import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react';
 import CouverturesAchat from '@/components/CouverturesAchat';
 
 interface NavireWithVentes {
@@ -603,30 +603,48 @@ export default function Dashboard() {
                                       Couvertures existantes ({vente.couvertures.length})
                                     </h5>
                                     <div className="space-y-2">
-                                      {vente.couvertures.map((couverture) => (
-                                        <div key={couverture.id} className="border rounded-lg p-3 bg-card">
-                                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
-                                            <div>
-                                              <div className="text-xs text-muted-foreground">Date</div>
-                                              <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
-                                            </div>
-                                            <div>
-                                              <div className="text-xs text-muted-foreground">Volume</div>
-                                              <div className="font-medium">{couverture.volume_couvert} MT</div>
-                                            </div>
-                                            <div>
-                                              <div className="text-xs text-muted-foreground">Prix futures</div>
-                                              <div className="font-medium">{formatPrice(couverture.prix_futures)}</div>
-                                            </div>
-                                            <div className="text-right">
-                                              <div className="text-xs text-muted-foreground">Pourcentage</div>
-                                              <div className="font-medium">
-                                                {((couverture.volume_couvert / vente.volume) * 100).toFixed(1)}%
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
+                                       {vente.couvertures.map((couverture) => (
+                                         <div key={couverture.id} className="border rounded-lg p-3 bg-card">
+                                           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                                             <div>
+                                               <div className="text-xs text-muted-foreground">Date</div>
+                                               <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
+                                             </div>
+                                             <div>
+                                               <div className="text-xs text-muted-foreground">Volume</div>
+                                               <div className="font-medium">{couverture.volume_couvert} MT</div>
+                                             </div>
+                                             <div>
+                                               <div className="text-xs text-muted-foreground">Prix futures</div>
+                                               <div className="font-medium">{couverture.prix_futures.toFixed(2)} cts/bu</div>
+                                             </div>
+                                             <div>
+                                               <div className="text-xs text-muted-foreground">Pourcentage</div>
+                                               <div className="font-medium">
+                                                 {((couverture.volume_couvert / vente.volume) * 100).toFixed(1)}%
+                                               </div>
+                                             </div>
+                                             {userRole === 'admin' && (
+                                               <div className="flex justify-end gap-2">
+                                                 <Button
+                                                   size="sm"
+                                                   variant="outline"
+                                                   onClick={() => console.log('Edit couverture vente:', couverture.id)}
+                                                 >
+                                                   <Edit className="h-3 w-3" />
+                                                 </Button>
+                                                 <Button
+                                                   size="sm"
+                                                   variant="outline"
+                                                   onClick={() => console.log('Delete couverture vente:', couverture.id)}
+                                                 >
+                                                   <Trash2 className="h-3 w-3" />
+                                                 </Button>
+                                               </div>
+                                             )}
+                                           </div>
+                                         </div>
+                                       ))}
                                     </div>
                                   </div>
                                 ) : (
