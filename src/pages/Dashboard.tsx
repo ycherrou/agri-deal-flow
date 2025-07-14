@@ -17,6 +17,12 @@ interface NavireWithVentes {
   prime_achat: number | null;
   date_arrivee: string;
   fournisseur: string;
+  couvertures_achat?: Array<{
+    id: string;
+    prix_futures: number;
+    volume_couvert: number;
+    date_couverture: string;
+  }>;
   ventes: Array<{
     id: string;
     type_deal: 'prime' | 'flat';
@@ -109,6 +115,12 @@ export default function Dashboard() {
               prime_achat,
               date_arrivee,
               fournisseur,
+              couvertures_achat (
+                id,
+                prix_futures,
+                volume_couvert,
+                date_couverture
+              ),
               ventes!inner (
                 id,
                 type_deal,
@@ -154,6 +166,12 @@ export default function Dashboard() {
             prime_achat,
             date_arrivee,
             fournisseur,
+            couvertures_achat (
+              id,
+              prix_futures,
+              volume_couvert,
+              date_couverture
+            ),
             ventes (
               id,
               type_deal,
@@ -390,6 +408,97 @@ export default function Dashboard() {
                       <div className="text-sm text-muted-foreground">
                         {navireActif.ventes.length} vente(s)
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Indicateurs de couverture */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Couverture Primes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const primeAchat = navireActif.prime_achat || 0;
+                        const ventesAvecPrime = navireActif.ventes.filter(v => v.type_deal === 'prime');
+                        const primeMoyennePonderee = ventesAvecPrime.length > 0 
+                          ? ventesAvecPrime.reduce((sum, v) => sum + (v.prime_vente || 0) * v.volume, 0) / 
+                            ventesAvecPrime.reduce((sum, v) => sum + v.volume, 0)
+                          : 0;
+                        const ecartPrime = primeMoyennePonderee - primeAchat;
+                        const isPositive = ecartPrime >= 0;
+                        
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Prime achat:</span>
+                              <span className="font-medium">{primeAchat.toFixed(2)} cts/bu</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Prime vente moy.:</span>
+                              <span className="font-medium">{primeMoyennePonderee.toFixed(2)} cts/bu</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">Écart:</span>
+                              <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
+                                {isPositive ? '+' : ''}{ecartPrime.toFixed(2)} cts/bu
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Couverture Futures
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        // Calcul futures achat (couvertures_achat)
+                        const couverturesAchat = navireActif.couvertures_achat || [];
+                        const futuresAchatMoyen = couverturesAchat.length > 0
+                          ? couverturesAchat.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) /
+                            couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0)
+                          : 0;
+                        
+                        // Calcul futures vente (couvertures des ventes)
+                        const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                        const futuresVenteMoyen = toutesCouverturesVente.length > 0
+                          ? toutesCouverturesVente.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) /
+                            toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0)
+                          : 0;
+                        
+                        const ecartFutures = futuresVenteMoyen - futuresAchatMoyen;
+                        const isPositive = ecartFutures >= 0;
+                        
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Futures achat moy.:</span>
+                              <span className="font-medium">{futuresAchatMoyen.toFixed(2)} cts/bu</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Futures vente moy.:</span>
+                              <span className="font-medium">{futuresVenteMoyen.toFixed(2)} cts/bu</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">Écart:</span>
+                              <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
+                                {isPositive ? '+' : ''}{ecartFutures.toFixed(2)} cts/bu
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </div>
