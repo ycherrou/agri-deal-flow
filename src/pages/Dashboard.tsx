@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react';
 import CouverturesAchat from '@/components/CouverturesAchat';
-
 interface NavireWithVentes {
   id: string;
   nom: string;
@@ -46,42 +45,40 @@ interface NavireWithVentes {
     }>;
   }>;
 }
-
 interface PrixMarche {
   echeance: string;
   prix: number;
   date_maj: string;
 }
-
 export default function Dashboard() {
   const [navires, setNavires] = useState<NavireWithVentes[]>([]);
   const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchUserRole();
     fetchPrixMarche();
   }, []);
-
   useEffect(() => {
     if (userRole) {
       fetchNavires();
     }
   }, [userRole]);
-
   const fetchUserRole = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        const { data: client } = await supabase
-          .from('clients')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-        
+        const {
+          data: client
+        } = await supabase.from('clients').select('role').eq('user_id', user.id).single();
         if (client) {
           setUserRole(client.role);
         }
@@ -90,24 +87,24 @@ export default function Dashboard() {
       console.error('Error fetching user role:', error);
     }
   };
-
   const fetchNavires = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
       if (userRole === 'client') {
         // Pour les clients, récupérer seulement les navires avec leurs ventes
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
+        const {
+          data: clientData
+        } = await supabase.from('clients').select('id').eq('user_id', user.id).single();
         if (clientData) {
-          const { data, error } = await supabase
-            .from('navires')
-            .select(`
+          const {
+            data,
+            error
+          } = await supabase.from('navires').select(`
               id,
               nom,
               produit,
@@ -144,9 +141,7 @@ export default function Dashboard() {
                   date_revente
                 )
               )
-            `)
-            .eq('ventes.client_id', clientData.id);
-
+            `).eq('ventes.client_id', clientData.id);
           if (error) throw error;
           const naviresData = data || [];
           setNavires(naviresData);
@@ -156,9 +151,10 @@ export default function Dashboard() {
         }
       } else {
         // Pour les admins, récupérer tous les navires avec toutes les ventes
-        const { data, error } = await supabase
-          .from('navires')
-          .select(`
+        const {
+          data,
+          error
+        } = await supabase.from('navires').select(`
             id,
             nom,
             produit,
@@ -196,7 +192,6 @@ export default function Dashboard() {
               )
             )
           `);
-
         if (error) throw error;
         const naviresData = data || [];
         setNavires(naviresData);
@@ -215,21 +210,20 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
   const fetchPrixMarche = async () => {
     try {
-      const { data, error } = await supabase
-        .from('prix_marche')
-        .select('echeance, prix, date_maj')
-        .order('date_maj', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('prix_marche').select('echeance, prix, date_maj').order('date_maj', {
+        ascending: false
+      });
       if (error) throw error;
       setPrixMarche(data || []);
     } catch (error) {
       console.error('Error fetching prix marché:', error);
     }
   };
-
   const calculerPRU = (vente: NavireWithVentes['ventes'][0]) => {
     if (vente.type_deal === 'flat') {
       return vente.prix_flat || 0;
@@ -239,7 +233,6 @@ export default function Dashboard() {
     const volumeTotal = vente.volume;
     const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
     const volumeNonCouvert = volumeTotal - volumeCouvert;
-
     if (volumeCouvert === 0) {
       // Si pas de couverture, utiliser le prix marché actuel
       const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
@@ -247,25 +240,19 @@ export default function Dashboard() {
     }
 
     // Calculer le prix moyen pondéré
-    const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => 
-      sum + (c.prix_futures * c.volume_couvert), 0) / volumeCouvert;
-
+    const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
     const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
     const prixMoyenNonCouvert = prixMarcheActuel;
-
     const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixMoyenNonCouvert * volumeNonCouvert) / volumeTotal;
     return prixMoyenPondere + (vente.prime_vente || 0);
   };
-
   const calculerTauxCouverture = (vente: NavireWithVentes['ventes'][0]) => {
     const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
-    return (volumeCouvert / vente.volume) * 100;
+    return volumeCouvert / vente.volume * 100;
   };
-
   const peutRevendre = (vente: NavireWithVentes['ventes'][0]) => {
     return calculerTauxCouverture(vente) === 100;
   };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -273,33 +260,30 @@ export default function Dashboard() {
       minimumFractionDigits: 2
     }).format(price);
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
-
   const getProductBadgeColor = (produit: string) => {
     switch (produit) {
-      case 'mais': return 'bg-yellow-100 text-yellow-800';
-      case 'tourteau_soja': return 'bg-green-100 text-green-800';
-      case 'ble': return 'bg-orange-100 text-orange-800';
-      case 'orge': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'mais':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'tourteau_soja':
+        return 'bg-green-100 text-green-800';
+      case 'ble':
+        return 'bg-orange-100 text-orange-800';
+      case 'orge':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-
   const navireActif = navires.find(n => n.id === activeNavire);
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
@@ -307,14 +291,12 @@ export default function Dashboard() {
             {userRole === 'admin' ? 'Vue d\'ensemble des navires et transactions' : 'Vos positions par navire'}
           </p>
         </div>
-        {userRole === 'admin' && (
-          <div className="flex gap-2">
+        {userRole === 'admin' && <div className="flex gap-2">
             <Button variant="outline" size="sm">
               <TrendingUp className="h-4 w-4 mr-2" />
               Prix marché
             </Button>
-          </div>
-        )}
+          </div>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -327,16 +309,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {navires.map((navire) => (
-              <button
-                key={navire.id}
-                onClick={() => setActiveNavire(navire.id)}
-                className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                  activeNavire === navire.id
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card hover:bg-muted border-border'
-                }`}
-              >
+            {navires.map(navire => <button key={navire.id} onClick={() => setActiveNavire(navire.id)} className={`w-full p-3 rounded-lg border text-left transition-colors ${activeNavire === navire.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted border-border'}`}>
                 <div className="font-medium">{navire.nom}</div>
                 <div className="text-sm opacity-75">
                   {navire.produit} - {navire.quantite_totale} MT
@@ -344,15 +317,13 @@ export default function Dashboard() {
                 <div className="text-xs opacity-60">
                   {formatDate(navire.date_arrivee)}
                 </div>
-              </button>
-            ))}
+              </button>)}
           </CardContent>
         </Card>
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          {navireActif ? (
-            <Tabs defaultValue="overview" className="space-y-4">
+          {navireActif ? <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                 <TabsTrigger value="ventes">Ventes</TabsTrigger>
@@ -423,39 +394,32 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        // Volume total vendu
-                        const volumeVendu = navireActif.ventes.reduce((sum, v) => sum + v.volume, 0);
-                        
-                        // Volume couvert en achat (couvertures_achat)
-                        const couverturesAchat = navireActif.couvertures_achat || [];
-                        const volumeCouvertAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
-                        
-                        const ecartVolume = volumeCouvertAchat - volumeVendu;
-                        const isEquilibre = Math.abs(ecartVolume) < 0.1; // Tolérance de 0.1 MT
-                        const surCouvert = ecartVolume > 0;
-                        
-                        return (
-                          <div className="space-y-2">
+                    // Volume total vendu
+                    const volumeVendu = navireActif.ventes.reduce((sum, v) => sum + v.volume, 0);
+
+                    // Volume couvert en achat (couvertures_achat)
+                    const couverturesAchat = navireActif.couvertures_achat || [];
+                    const volumeCouvertAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
+                    const ecartVolume = volumeCouvertAchat - volumeVendu;
+                    const isEquilibre = Math.abs(ecartVolume) < 0.1; // Tolérance de 0.1 MT
+                    const surCouvert = ecartVolume > 0;
+                    return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Volume vendu:</span>
                               <span className="font-medium">{volumeVendu.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Volume couvert:</span>
+                              <span className="text-muted-foreground">Volume acheté:</span>
                               <span className="font-medium">{volumeCouvertAchat.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
-                              <Badge 
-                                variant={isEquilibre ? "default" : (surCouvert ? "secondary" : "destructive")} 
-                                className="text-xs"
-                              >
-                                {isEquilibre ? 'Équilibré' : (surCouvert ? `+${ecartVolume.toFixed(1)} MT` : `${ecartVolume.toFixed(1)} MT`)}
+                              <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
+                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartVolume.toFixed(1)} MT` : `${ecartVolume.toFixed(1)} MT`}
                               </Badge>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          </div>;
+                  })()}
                     </CardContent>
                   </Card>
 
@@ -468,20 +432,17 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        // Volume couvert en futures achat (couvertures_achat)
-                        const couverturesAchat = navireActif.couvertures_achat || [];
-                        const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
-                        
-                        // Volume couvert en futures vente (couvertures des ventes)
-                        const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                        const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
-                        
-                        const ecartFutures = volumeFuturesAchat - volumeFuturesVente;
-                        const isEquilibre = Math.abs(ecartFutures) < 0.1; // Tolérance de 0.1 MT
-                        const surCouvert = ecartFutures > 0;
-                        
-                        return (
-                          <div className="space-y-2">
+                    // Volume couvert en futures achat (couvertures_achat)
+                    const couverturesAchat = navireActif.couvertures_achat || [];
+                    const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
+
+                    // Volume couvert en futures vente (couvertures des ventes)
+                    const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                    const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+                    const ecartFutures = volumeFuturesAchat - volumeFuturesVente;
+                    const isEquilibre = Math.abs(ecartFutures) < 0.1; // Tolérance de 0.1 MT
+                    const surCouvert = ecartFutures > 0;
+                    return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Futures achat:</span>
                               <span className="font-medium">{volumeFuturesAchat.toFixed(1)} MT</span>
@@ -492,16 +453,12 @@ export default function Dashboard() {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
-                              <Badge 
-                                variant={isEquilibre ? "default" : (surCouvert ? "secondary" : "destructive")} 
-                                className="text-xs"
-                              >
-                                {isEquilibre ? 'Équilibré' : (surCouvert ? `+${ecartFutures.toFixed(1)} MT` : `${ecartFutures.toFixed(1)} MT`)}
+                              <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
+                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartFutures.toFixed(1)} MT` : `${ecartFutures.toFixed(1)} MT`}
                               </Badge>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          </div>;
+                  })()}
                     </CardContent>
                   </Card>
                 </div>
@@ -512,8 +469,7 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {navireActif.ventes.map((vente) => (
-                        <div key={vente.id} className="border rounded-lg p-4">
+                      {navireActif.ventes.map(vente => <div key={vente.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start mb-3">
                             <div>
                               <div className="font-medium">
@@ -527,12 +483,10 @@ export default function Dashboard() {
                               <Badge variant={vente.type_deal === 'prime' ? 'default' : 'secondary'}>
                                 {vente.type_deal === 'prime' ? 'Prime' : 'Flat'}
                               </Badge>
-                              {userRole === 'client' && peutRevendre(vente) && (
-                                <Button size="sm" variant="outline">
+                              {userRole === 'client' && peutRevendre(vente) && <Button size="sm" variant="outline">
                                   <Plus className="h-4 w-4 mr-1" />
                                   Revendre
-                                </Button>
-                              )}
+                                </Button>}
                             </div>
                           </div>
                           
@@ -564,8 +518,7 @@ export default function Dashboard() {
                             </div>
                             <Progress value={calculerTauxCouverture(vente)} className="h-2" />
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </CardContent>
                 </Card>
@@ -580,15 +533,11 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {navireActif.ventes.length === 0 ? (
-                      <div className="text-center py-8">
+                    {navireActif.ventes.length === 0 ? <div className="text-center py-8">
                         <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">Aucune vente enregistrée</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {navireActif.ventes.map((vente) => (
-                          <div key={vente.id} className="border rounded-lg p-4">
+                      </div> : <div className="space-y-4">
+                        {navireActif.ventes.map(vente => <div key={vente.id} className="border rounded-lg p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <div className="flex justify-between">
@@ -614,10 +563,7 @@ export default function Dashboard() {
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Prix:</span>
                                   <span className="text-sm font-medium">
-                                    {vente.type_deal === 'flat' 
-                                      ? formatPrice(vente.prix_flat || 0)
-                                      : `${vente.prime_vente || 0} cts/bu`
-                                    }
+                                    {vente.type_deal === 'flat' ? formatPrice(vente.prix_flat || 0) : `${vente.prime_vente || 0} cts/bu`}
                                   </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -634,10 +580,8 @@ export default function Dashboard() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          </div>)}
+                      </div>}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -658,22 +602,15 @@ export default function Dashboard() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                    {navireActif.ventes.filter(v => v.type_deal === 'prime').length === 0 ? (
-                      <div className="text-center py-8">
+                    {navireActif.ventes.filter(v => v.type_deal === 'prime').length === 0 ? <div className="text-center py-8">
                         <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">Aucune vente prime nécessitant une couverture</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {navireActif.ventes
-                          .filter(vente => vente.type_deal === 'prime')
-                          .map((vente) => {
-                            const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
-                            const volumeRestant = vente.volume - volumeCouvert;
-                            const tauxCouverture = calculerTauxCouverture(vente);
-                            
-                            return (
-                              <div key={vente.id} className="border rounded-lg p-4 space-y-4">
+                      </div> : <div className="space-y-6">
+                        {navireActif.ventes.filter(vente => vente.type_deal === 'prime').map(vente => {
+                        const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+                        const volumeRestant = vente.volume - volumeCouvert;
+                        const tauxCouverture = calculerTauxCouverture(vente);
+                        return <div key={vente.id} className="border rounded-lg p-4 space-y-4">
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
@@ -708,15 +645,13 @@ export default function Dashboard() {
                                   </div>
                                 </div>
 
-                                {vente.couvertures.length > 0 ? (
-                                  <div>
+                                {vente.couvertures.length > 0 ? <div>
                                     <h5 className="font-medium mb-3 flex items-center gap-2">
                                       <Shield className="h-4 w-4" />
                                       Couvertures existantes ({vente.couvertures.length})
                                     </h5>
                                     <div className="space-y-2">
-                                       {vente.couvertures.map((couverture) => (
-                                         <div key={couverture.id} className="border rounded-lg p-3 bg-card">
+                                       {vente.couvertures.map(couverture => <div key={couverture.id} className="border rounded-lg p-3 bg-card">
                                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                                              <div>
                                                <div className="text-xs text-muted-foreground">Date</div>
@@ -733,58 +668,40 @@ export default function Dashboard() {
                                              <div>
                                                <div className="text-xs text-muted-foreground">Pourcentage</div>
                                                <div className="font-medium">
-                                                 {((couverture.volume_couvert / vente.volume) * 100).toFixed(1)}%
+                                                 {(couverture.volume_couvert / vente.volume * 100).toFixed(1)}%
                                                </div>
                                              </div>
-                                             {userRole === 'admin' && (
-                                               <div className="flex justify-end gap-2">
-                                                 <Button
-                                                   size="sm"
-                                                   variant="outline"
-                                                   onClick={() => console.log('Edit couverture vente:', couverture.id)}
-                                                 >
+                                             {userRole === 'admin' && <div className="flex justify-end gap-2">
+                                                 <Button size="sm" variant="outline" onClick={() => console.log('Edit couverture vente:', couverture.id)}>
                                                    <Edit className="h-3 w-3" />
                                                  </Button>
-                                                 <Button
-                                                   size="sm"
-                                                   variant="outline"
-                                                   onClick={() => console.log('Delete couverture vente:', couverture.id)}
-                                                 >
+                                                 <Button size="sm" variant="outline" onClick={() => console.log('Delete couverture vente:', couverture.id)}>
                                                    <Trash2 className="h-3 w-3" />
                                                  </Button>
-                                               </div>
-                                             )}
+                                               </div>}
                                            </div>
-                                         </div>
-                                       ))}
+                                         </div>)}
                                     </div>
-                                  </div>
-                                ) : (
-                                  <div className="text-center py-4 bg-muted/20 rounded-lg">
+                                  </div> : <div className="text-center py-4 bg-muted/20 rounded-lg">
                                     <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">Aucune couverture pour cette vente</p>
                                     <p className="text-xs text-muted-foreground mt-1">
                                       Position exposée de {vente.volume} MT
                                     </p>
-                                  </div>
-                                )}
+                                  </div>}
 
-                                {volumeRestant > 0 && (
-                                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                {volumeRestant > 0 && <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                                     <div className="flex items-center gap-2 text-orange-700 mb-2">
                                       <AlertCircle className="h-4 w-4" />
                                       <span className="font-medium">Position non couverte</span>
                                     </div>
                                     <p className="text-sm text-orange-600">
-                                      {volumeRestant} MT restent à couvrir ({((volumeRestant / vente.volume) * 100).toFixed(1)}% du volume total)
+                                      {volumeRestant} MT restent à couvrir ({(volumeRestant / vente.volume * 100).toFixed(1)}% du volume total)
                                     </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                     )}
+                                  </div>}
+                              </div>;
+                      })}
+                      </div>}
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -810,9 +727,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </TabsContent>
-            </Tabs>
-          ) : (
-            <Card>
+            </Tabs> : <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Ship className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Aucun navire sélectionné</h3>
@@ -820,10 +735,8 @@ export default function Dashboard() {
                   Sélectionnez un navire dans la liste pour voir ses détails
                 </p>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
