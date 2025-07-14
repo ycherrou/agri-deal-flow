@@ -400,7 +400,7 @@ export default function Dashboard() {
                     // Volume couvert en achat (couvertures_achat)
                     const couverturesAchat = navireActif.couvertures_achat || [];
                     const volumeCouvertAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
-                    const ecartVolume = volumeCouvertAchat - volumeVendu;
+                    const ecartVolume = navireActif.quantite_totale - volumeVendu;
                     const isEquilibre = Math.abs(ecartVolume) < 0.1; // Tolérance de 0.1 MT
                     const surCouvert = ecartVolume > 0;
                     return <div className="space-y-2">
@@ -410,7 +410,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Volume acheté:</span>
-                              <span className="font-medium">{volumeCouvertAchat.toFixed(1)} MT</span>
+                              <span className="font-medium">{navireActif.quantite_totale.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
