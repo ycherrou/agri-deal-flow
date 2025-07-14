@@ -418,34 +418,39 @@ export default function Dashboard() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
                         <Shield className="h-4 w-4" />
-                        Couverture Primes
+                        Couverture Volumes
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        const primeAchat = navireActif.prime_achat || 0;
-                        const ventesAvecPrime = navireActif.ventes.filter(v => v.type_deal === 'prime');
-                        const primeMoyennePonderee = ventesAvecPrime.length > 0 
-                          ? ventesAvecPrime.reduce((sum, v) => sum + (v.prime_vente || 0) * v.volume, 0) / 
-                            ventesAvecPrime.reduce((sum, v) => sum + v.volume, 0)
-                          : 0;
-                        const ecartPrime = primeMoyennePonderee - primeAchat;
-                        const isPositive = ecartPrime >= 0;
+                        // Volume total vendu
+                        const volumeVendu = navireActif.ventes.reduce((sum, v) => sum + v.volume, 0);
+                        
+                        // Volume couvert en achat (couvertures_achat)
+                        const couverturesAchat = navireActif.couvertures_achat || [];
+                        const volumeCouvertAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
+                        
+                        const ecartVolume = volumeCouvertAchat - volumeVendu;
+                        const isEquilibre = Math.abs(ecartVolume) < 0.1; // Tolérance de 0.1 MT
+                        const surCouvert = ecartVolume > 0;
                         
                         return (
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Prime achat:</span>
-                              <span className="font-medium">{primeAchat.toFixed(2)} cts/bu</span>
+                              <span className="text-muted-foreground">Volume vendu:</span>
+                              <span className="font-medium">{volumeVendu.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Prime vente moy.:</span>
-                              <span className="font-medium">{primeMoyennePonderee.toFixed(2)} cts/bu</span>
+                              <span className="text-muted-foreground">Volume couvert:</span>
+                              <span className="font-medium">{volumeCouvertAchat.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">Écart:</span>
-                              <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
-                                {isPositive ? '+' : ''}{ecartPrime.toFixed(2)} cts/bu
+                              <span className="text-sm text-muted-foreground">Position:</span>
+                              <Badge 
+                                variant={isEquilibre ? "default" : (surCouvert ? "secondary" : "destructive")} 
+                                className="text-xs"
+                              >
+                                {isEquilibre ? 'Équilibré' : (surCouvert ? `+${ecartVolume.toFixed(1)} MT` : `${ecartVolume.toFixed(1)} MT`)}
                               </Badge>
                             </div>
                           </div>
@@ -463,37 +468,35 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        // Calcul futures achat (couvertures_achat)
+                        // Volume couvert en futures achat (couvertures_achat)
                         const couverturesAchat = navireActif.couvertures_achat || [];
-                        const futuresAchatMoyen = couverturesAchat.length > 0
-                          ? couverturesAchat.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) /
-                            couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0)
-                          : 0;
+                        const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
                         
-                        // Calcul futures vente (couvertures des ventes)
+                        // Volume couvert en futures vente (couvertures des ventes)
                         const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                        const futuresVenteMoyen = toutesCouverturesVente.length > 0
-                          ? toutesCouverturesVente.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) /
-                            toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0)
-                          : 0;
+                        const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
                         
-                        const ecartFutures = futuresVenteMoyen - futuresAchatMoyen;
-                        const isPositive = ecartFutures >= 0;
+                        const ecartFutures = volumeFuturesAchat - volumeFuturesVente;
+                        const isEquilibre = Math.abs(ecartFutures) < 0.1; // Tolérance de 0.1 MT
+                        const surCouvert = ecartFutures > 0;
                         
                         return (
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures achat moy.:</span>
-                              <span className="font-medium">{futuresAchatMoyen.toFixed(2)} cts/bu</span>
+                              <span className="text-muted-foreground">Futures achat:</span>
+                              <span className="font-medium">{volumeFuturesAchat.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures vente moy.:</span>
-                              <span className="font-medium">{futuresVenteMoyen.toFixed(2)} cts/bu</span>
+                              <span className="text-muted-foreground">Futures vente:</span>
+                              <span className="font-medium">{volumeFuturesVente.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">Écart:</span>
-                              <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
-                                {isPositive ? '+' : ''}{ecartFutures.toFixed(2)} cts/bu
+                              <span className="text-sm text-muted-foreground">Position:</span>
+                              <Badge 
+                                variant={isEquilibre ? "default" : (surCouvert ? "secondary" : "destructive")} 
+                                className="text-xs"
+                              >
+                                {isEquilibre ? 'Équilibré' : (surCouvert ? `+${ecartFutures.toFixed(1)} MT` : `${ecartFutures.toFixed(1)} MT`)}
                               </Badge>
                             </div>
                           </div>
