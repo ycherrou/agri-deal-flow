@@ -100,38 +100,38 @@ export default function Clients() {
           description: 'Client modifié avec succès'
         });
       } else {
-        // Créer un nouveau client
+        // Créer un nouveau client via Edge Function
         if (!formData.email || !formData.password) {
           throw new Error('Email et mot de passe requis pour un nouveau client');
         }
 
-        // Créer l'utilisateur dans auth
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: formData.email,
-          password: formData.password,
-          user_metadata: {
-            nom: formData.nom,
-            role: formData.role
-          }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Session expirée');
+        }
+
+        const response = await fetch(`https://ghakstxearfsffrbkuxs.supabase.co/functions/v1/manage-clients`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'CREATE_CLIENT',
+            clientData: {
+              nom: formData.nom,
+              email: formData.email,
+              telephone: formData.telephone || null,
+              role: formData.role,
+              password: formData.password
+            }
+          })
         });
 
-        if (authError) throw authError;
-
-        // Créer le client dans la table clients
-        const { error: clientError } = await supabase
-          .from('clients')
-          .insert([{
-            user_id: authData.user.id,
-            nom: formData.nom,
-            email: formData.email,
-            telephone: formData.telephone || null,
-            role: formData.role
-          }]);
-
-        if (clientError) {
-          // Si erreur lors de la création du client, supprimer l'utilisateur auth
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          throw clientError;
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Erreur lors de la création du client');
         }
 
         toast({
@@ -182,17 +182,31 @@ export default function Clients() {
     try {
       setLoading(true);
 
-      // Supprimer d'abord le client de la table clients
-      const { error: clientError } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', client.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Session expirée');
+      }
 
-      if (clientError) throw clientError;
+      const response = await fetch(`https://ghakstxearfsffrbkuxs.supabase.co/functions/v1/manage-clients`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'DELETE_CLIENT',
+          clientData: {
+            clientId: client.id,
+            userId: client.user_id
+          }
+        })
+      });
 
-      // Ensuite supprimer l'utilisateur de auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(client.user_id);
-      if (authError) console.warn('Erreur lors de la suppression de l\'utilisateur auth:', authError);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur lors de la suppression du client');
+      }
 
       toast({
         title: 'Succès',
