@@ -538,9 +538,115 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">
-                      Interface de gestion des couvertures à implémenter
-                    </p>
+                    {navireActif.ventes.filter(v => v.type_deal === 'prime').length === 0 ? (
+                      <div className="text-center py-8">
+                        <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Aucune vente prime nécessitant une couverture</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {navireActif.ventes
+                          .filter(vente => vente.type_deal === 'prime')
+                          .map((vente) => {
+                            const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+                            const volumeRestant = vente.volume - volumeCouvert;
+                            const tauxCouverture = calculerTauxCouverture(vente);
+                            
+                            return (
+                              <div key={vente.id} className="border rounded-lg p-4 space-y-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {formatDate(vente.date_deal)} • {vente.volume} MT • Prime: {vente.prime_vente || 0} cts/bu
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Référence CBOT: {vente.prix_reference || 'Non définie'}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Shield className="h-4 w-4 text-muted-foreground" />
+                                      <span className="text-sm font-medium">{tauxCouverture.toFixed(1)}%</span>
+                                    </div>
+                                    <Progress value={tauxCouverture} className="h-2 w-24" />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                  <div className="bg-muted/50 rounded-lg p-3">
+                                    <div className="text-muted-foreground mb-1">Volume total</div>
+                                    <div className="font-medium">{vente.volume} MT</div>
+                                  </div>
+                                  <div className="bg-green-50 rounded-lg p-3">
+                                    <div className="text-muted-foreground mb-1">Volume couvert</div>
+                                    <div className="font-medium text-green-700">{volumeCouvert} MT</div>
+                                  </div>
+                                  <div className="bg-orange-50 rounded-lg p-3">
+                                    <div className="text-muted-foreground mb-1">Volume restant</div>
+                                    <div className="font-medium text-orange-700">{volumeRestant} MT</div>
+                                  </div>
+                                </div>
+
+                                {vente.couvertures.length > 0 ? (
+                                  <div>
+                                    <h5 className="font-medium mb-3 flex items-center gap-2">
+                                      <Shield className="h-4 w-4" />
+                                      Couvertures existantes ({vente.couvertures.length})
+                                    </h5>
+                                    <div className="space-y-2">
+                                      {vente.couvertures.map((couverture) => (
+                                        <div key={couverture.id} className="border rounded-lg p-3 bg-card">
+                                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                                            <div>
+                                              <div className="text-xs text-muted-foreground">Date</div>
+                                              <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
+                                            </div>
+                                            <div>
+                                              <div className="text-xs text-muted-foreground">Volume</div>
+                                              <div className="font-medium">{couverture.volume_couvert} MT</div>
+                                            </div>
+                                            <div>
+                                              <div className="text-xs text-muted-foreground">Prix futures</div>
+                                              <div className="font-medium">{formatPrice(couverture.prix_futures)}</div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="text-xs text-muted-foreground">Pourcentage</div>
+                                              <div className="font-medium">
+                                                {((couverture.volume_couvert / vente.volume) * 100).toFixed(1)}%
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-4 bg-muted/20 rounded-lg">
+                                    <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground">Aucune couverture pour cette vente</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Position exposée de {vente.volume} MT
+                                    </p>
+                                  </div>
+                                )}
+
+                                {volumeRestant > 0 && (
+                                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 text-orange-700 mb-2">
+                                      <AlertCircle className="h-4 w-4" />
+                                      <span className="font-medium">Position non couverte</span>
+                                    </div>
+                                    <p className="text-sm text-orange-600">
+                                      {volumeRestant} MT restent à couvrir ({((volumeRestant / vente.volume) * 100).toFixed(1)}% du volume total)
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
