@@ -95,6 +95,7 @@ export type Database = {
           prime_achat: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
+          reference_cbot: string | null
           updated_at: string | null
         }
         Insert: {
@@ -106,6 +107,7 @@ export type Database = {
           prime_achat?: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
+          reference_cbot?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -117,6 +119,7 @@ export type Database = {
           prime_achat?: number | null
           produit?: Database["public"]["Enums"]["product_type"]
           quantite_totale?: number
+          reference_cbot?: string | null
           updated_at?: string | null
         }
         Relationships: []

@@ -25,9 +25,15 @@ interface Navire {
   date_arrivee: string;
 }
 
+interface PrixMarche {
+  echeance: string;
+  prix: number;
+}
+
 export default function CreateDeal() {
   const [clients, setClients] = useState<Client[]>([]);
   const [navires, setNavires] = useState<Navire[]>([]);
+  const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     client_id: '',
@@ -46,6 +52,7 @@ export default function CreateDeal() {
   useEffect(() => {
     fetchClients();
     fetchNavires();
+    fetchPrixMarche();
   }, []);
 
   const fetchClients = async () => {
@@ -86,9 +93,34 @@ export default function CreateDeal() {
     }
   };
 
+  const fetchPrixMarche = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prix_marche')
+        .select('echeance, prix')
+        .order('echeance');
+
+      if (error) throw error;
+      setPrixMarche(data || []);
+    } catch (error) {
+      console.error('Error fetching prix marché:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Validation : pour les deals prime, la référence CBOT est obligatoire
+    if (formData.type_deal === 'prime' && !formData.prix_reference) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Une référence CBOT est obligatoire pour les deals à prime.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const dealData = {
@@ -227,6 +259,29 @@ export default function CreateDeal() {
                 />
               </div>
 
+              {formData.type_deal === 'prime' && (
+                <div className="space-y-2">
+                  <Label htmlFor="prix_reference">Référence CBOT *</Label>
+                  <Select value={formData.prix_reference} onValueChange={(value) => handleInputChange('prix_reference', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un contrat CBOT" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prixMarche.map((prix) => (
+                        <SelectItem key={prix.echeance} value={prix.echeance}>
+                          {prix.echeance} - {prix.prix} cts/bu
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.type_deal === 'prime' && !formData.prix_reference && (
+                    <p className="text-sm text-destructive">
+                      Une référence CBOT est obligatoire pour les deals à prime
+                    </p>
+                  )}
+                </div>
+              )}
+
               {formData.type_deal === 'flat' && (
                 <div className="space-y-2">
                   <Label htmlFor="prix_flat">Prix flat</Label>
@@ -258,16 +313,6 @@ export default function CreateDeal() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="prix_reference">Prix de référence</Label>
-              <Textarea
-                id="prix_reference"
-                placeholder="Prix de référence (optionnel)"
-                value={formData.prix_reference}
-                onChange={(e) => handleInputChange('prix_reference', e.target.value)}
-                rows={3}
-              />
-            </div>
 
             <div className="flex justify-end space-x-3">
               <Button

@@ -17,11 +17,17 @@ interface Navire {
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   quantite_totale: number;
   prime_achat: number | null;
+  reference_cbot?: string | null;
   date_arrivee: string;
   fournisseur: string;
   created_at: string;
   volumeVendu?: number;
   nombreClients?: number;
+}
+
+interface PrixMarche {
+  echeance: string;
+  prix: number;
 }
 
 const PRODUCTS = [
@@ -33,6 +39,7 @@ const PRODUCTS = [
 
 export default function Navires() {
   const [navires, setNavires] = useState<Navire[]>([]);
+  const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNavire, setEditingNavire] = useState<Navire | null>(null);
@@ -43,12 +50,14 @@ export default function Navires() {
     produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
     quantite_totale: '',
     prime_achat: '',
+    reference_cbot: '',
     date_arrivee: '',
     fournisseur: ''
   });
 
   useEffect(() => {
     fetchNavires();
+    fetchPrixMarche();
   }, []);
 
   const fetchNavires = async () => {
@@ -94,9 +103,34 @@ export default function Navires() {
     }
   };
 
+  const fetchPrixMarche = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prix_marche')
+        .select('echeance, prix')
+        .order('echeance');
+
+      if (error) throw error;
+      setPrixMarche(data || []);
+    } catch (error) {
+      console.error('Error fetching prix marché:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Validation : si prime_achat est renseignée, reference_cbot doit l'être aussi
+    if (formData.prime_achat && !formData.reference_cbot) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Une référence CBOT est obligatoire quand une prime d\'achat est spécifiée.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const navireData = {
@@ -104,6 +138,7 @@ export default function Navires() {
         produit: formData.produit,
         quantite_totale: parseFloat(formData.quantite_totale),
         prime_achat: formData.prime_achat ? parseFloat(formData.prime_achat) : null,
+        reference_cbot: formData.reference_cbot || null,
         date_arrivee: formData.date_arrivee,
         fournisseur: formData.fournisseur
       };
@@ -157,6 +192,7 @@ export default function Navires() {
       produit: navire.produit,
       quantite_totale: navire.quantite_totale.toString(),
       prime_achat: navire.prime_achat?.toString() || '',
+      reference_cbot: navire.reference_cbot || '',
       date_arrivee: navire.date_arrivee,
       fournisseur: navire.fournisseur
     });
@@ -204,6 +240,7 @@ export default function Navires() {
       produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
       quantite_totale: '',
       prime_achat: '',
+      reference_cbot: '',
       date_arrivee: '',
       fournisseur: ''
     });
@@ -303,6 +340,32 @@ export default function Navires() {
                 />
               </div>
 
+              {formData.prime_achat && (
+                <div className="space-y-2">
+                  <Label htmlFor="reference_cbot">Référence CBOT *</Label>
+                  <Select
+                    value={formData.reference_cbot}
+                    onValueChange={(value) => setFormData({ ...formData, reference_cbot: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un contrat CBOT" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prixMarche.map((prix) => (
+                        <SelectItem key={prix.echeance} value={prix.echeance}>
+                          {prix.echeance} - {prix.prix} cts/bu
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.prime_achat && !formData.reference_cbot && (
+                    <p className="text-sm text-destructive">
+                      Une référence CBOT est obligatoire pour les primes
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="date_arrivee">Date d'arrivée</Label>
                 <Input
@@ -358,6 +421,7 @@ export default function Navires() {
                   <TableHead>Produit</TableHead>
                   <TableHead>Quantité</TableHead>
                   <TableHead>Prime Achat</TableHead>
+                  <TableHead>Référence CBOT</TableHead>
                   <TableHead>Date Arrivée</TableHead>
                   <TableHead>Fournisseur</TableHead>
                   <TableHead>Statut</TableHead>
@@ -376,6 +440,9 @@ export default function Navires() {
                     <TableCell>{navire.quantite_totale} MT</TableCell>
                     <TableCell>
                       {navire.prime_achat ? `${navire.prime_achat} cts/bu` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {navire.reference_cbot || '-'}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
