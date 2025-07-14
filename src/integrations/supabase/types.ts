@@ -14,16 +14,256 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          nom: string
+          role: Database["public"]["Enums"]["user_role"]
+          telephone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nom: string
+          role?: Database["public"]["Enums"]["user_role"]
+          telephone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nom?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          telephone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      couvertures: {
+        Row: {
+          created_at: string | null
+          date_couverture: string
+          id: string
+          prix_futures: number
+          updated_at: string | null
+          vente_id: string
+          volume_couvert: number
+        }
+        Insert: {
+          created_at?: string | null
+          date_couverture?: string
+          id?: string
+          prix_futures: number
+          updated_at?: string | null
+          vente_id: string
+          volume_couvert: number
+        }
+        Update: {
+          created_at?: string | null
+          date_couverture?: string
+          id?: string
+          prix_futures?: number
+          updated_at?: string | null
+          vente_id?: string
+          volume_couvert?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couvertures_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navires: {
+        Row: {
+          created_at: string | null
+          date_arrivee: string
+          fournisseur: string
+          id: string
+          nom: string
+          prime_achat: number | null
+          produit: Database["public"]["Enums"]["product_type"]
+          quantite_totale: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_arrivee: string
+          fournisseur: string
+          id?: string
+          nom: string
+          prime_achat?: number | null
+          produit: Database["public"]["Enums"]["product_type"]
+          quantite_totale: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_arrivee?: string
+          fournisseur?: string
+          id?: string
+          nom?: string
+          prime_achat?: number | null
+          produit?: Database["public"]["Enums"]["product_type"]
+          quantite_totale?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      prix_marche: {
+        Row: {
+          created_at: string | null
+          date_maj: string
+          echeance: string
+          id: string
+          prix: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_maj?: string
+          echeance: string
+          id?: string
+          prix: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_maj?: string
+          echeance?: string
+          id?: string
+          prix?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reventes_clients: {
+        Row: {
+          commentaire: string | null
+          created_at: string | null
+          date_revente: string
+          etat: Database["public"]["Enums"]["revente_status"]
+          id: string
+          prix_flat_demande: number
+          updated_at: string | null
+          vente_id: string
+          volume: number
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string | null
+          date_revente?: string
+          etat?: Database["public"]["Enums"]["revente_status"]
+          id?: string
+          prix_flat_demande: number
+          updated_at?: string | null
+          vente_id: string
+          volume: number
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string | null
+          date_revente?: string
+          etat?: Database["public"]["Enums"]["revente_status"]
+          id?: string
+          prix_flat_demande?: number
+          updated_at?: string | null
+          vente_id?: string
+          volume?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reventes_clients_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ventes: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          date_deal: string
+          id: string
+          navire_id: string
+          prime_vente: number | null
+          prix_flat: number | null
+          prix_reference: string | null
+          type_deal: Database["public"]["Enums"]["deal_type"]
+          updated_at: string | null
+          volume: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          date_deal?: string
+          id?: string
+          navire_id: string
+          prime_vente?: number | null
+          prix_flat?: number | null
+          prix_reference?: string | null
+          type_deal: Database["public"]["Enums"]["deal_type"]
+          updated_at?: string | null
+          volume: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          date_deal?: string
+          id?: string
+          navire_id?: string
+          prime_vente?: number | null
+          prix_flat?: number | null
+          prix_reference?: string | null
+          type_deal?: Database["public"]["Enums"]["deal_type"]
+          updated_at?: string | null
+          volume?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventes_navire_id_fkey"
+            columns: ["navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      deal_type: "prime" | "flat"
+      product_type: "mais" | "tourteau_soja" | "ble" | "orge"
+      revente_status: "en_attente" | "vendu" | "retire"
+      user_role: "admin" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +390,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      deal_type: ["prime", "flat"],
+      product_type: ["mais", "tourteau_soja", "ble", "orge"],
+      revente_status: ["en_attente", "vendu", "retire"],
+      user_role: ["admin", "client"],
+    },
   },
 } as const
