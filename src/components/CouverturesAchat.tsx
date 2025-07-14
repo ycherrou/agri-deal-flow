@@ -145,7 +145,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
   const tauxCouverture = (volumeCouvert / navire.quantite_totale) * 100;
 
   const formatPrice = (price: number) => {
-    return `$${price.toFixed(2)}`;
+    return `${price.toFixed(2)} cts/bu`;
   };
 
   const formatDate = (dateString: string) => {
@@ -188,12 +188,12 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="prix_futures">Prix futures ($)</Label>
+                  <Label htmlFor="prix_futures">Prix futures (cts/bu)</Label>
                   <Input
                     id="prix_futures"
                     type="number"
                     step="0.01"
-                    placeholder="Prix en dollars"
+                    placeholder="Prix en cents par bushel"
                     value={newCouverture.prix_futures}
                     onChange={(e) => setNewCouverture(prev => ({ ...prev, prix_futures: e.target.value }))}
                     required
