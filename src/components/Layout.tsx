@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings } from 'lucide-react';
+import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LayoutProps {
@@ -121,6 +121,13 @@ export default function Layout({ children }: LayoutProps) {
       label: 'Deals', 
       icon: TrendingUp,
       path: '/deals',
+      roles: ['admin']
+    },
+    { 
+      id: 'couvertures', 
+      label: 'Couvertures', 
+      icon: Shield,
+      path: '/couvertures',
       roles: ['admin']
     },
     { 
