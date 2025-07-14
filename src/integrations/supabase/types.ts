@@ -85,6 +85,44 @@ export type Database = {
           },
         ]
       }
+      couvertures_achat: {
+        Row: {
+          created_at: string | null
+          date_couverture: string
+          id: string
+          navire_id: string
+          prix_futures: number
+          updated_at: string | null
+          volume_couvert: number
+        }
+        Insert: {
+          created_at?: string | null
+          date_couverture?: string
+          id?: string
+          navire_id: string
+          prix_futures: number
+          updated_at?: string | null
+          volume_couvert: number
+        }
+        Update: {
+          created_at?: string | null
+          date_couverture?: string
+          id?: string
+          navire_id?: string
+          prix_futures?: number
+          updated_at?: string | null
+          volume_couvert?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couvertures_achat_navire_id_fkey"
+            columns: ["navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       navires: {
         Row: {
           created_at: string | null

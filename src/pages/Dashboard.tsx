@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus } from 'lucide-react';
+import CouverturesAchat from '@/components/CouverturesAchat';
 
 interface NavireWithVentes {
   id: string;
@@ -530,14 +531,21 @@ export default function Dashboard() {
               </TabsContent>
 
               <TabsContent value="couvertures">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Couvertures (Hedging)</CardTitle>
-                    <CardDescription>
-                      Gestion des couvertures pour le navire {navireActif.nom}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                <Tabs defaultValue="vente" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="vente">Couvertures Vente</TabsTrigger>
+                    <TabsTrigger value="achat">Couvertures Achat</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="vente" className="space-y-6 mt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Couvertures Vente (Hedging)</CardTitle>
+                        <CardDescription>
+                          Gestion des couvertures pour les ventes du navire {navireActif.nom}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
                     {navireActif.ventes.filter(v => v.type_deal === 'prime').length === 0 ? (
                       <div className="text-center py-8">
                         <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -646,9 +654,15 @@ export default function Dashboard() {
                             );
                           })}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                     )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="achat" className="space-y-6 mt-6">
+                    <CouverturesAchat navireId={activeNavire} />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
               <TabsContent value="reventes">
