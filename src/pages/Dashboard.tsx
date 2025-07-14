@@ -56,9 +56,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchUserRole();
-    fetchNavires();
     fetchPrixMarche();
   }, []);
+
+  useEffect(() => {
+    if (userRole) {
+      fetchNavires();
+    }
+  }, [userRole]);
 
   const fetchUserRole = async () => {
     try {
@@ -84,42 +89,8 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let query = supabase
-        .from('navires')
-        .select(`
-          id,
-          nom,
-          produit,
-          quantite_totale,
-          prime_achat,
-          date_arrivee,
-          fournisseur,
-          ventes (
-            id,
-            type_deal,
-            volume,
-            prix_flat,
-            prime_vente,
-            prix_reference,
-            date_deal,
-            couvertures (
-              id,
-              volume_couvert,
-              prix_futures,
-              date_couverture
-            ),
-            reventes_clients (
-              id,
-              volume,
-              prix_flat_demande,
-              etat,
-              date_revente
-            )
-          )
-        `);
-
-      // Si client, ne voir que ses propres ventes
       if (userRole === 'client') {
+        // Pour les clients, récupérer seulement les navires avec leurs ventes
         const { data: clientData } = await supabase
           .from('clients')
           .select('id')
@@ -127,16 +98,92 @@ export default function Dashboard() {
           .single();
 
         if (clientData) {
-          query = query.eq('ventes.client_id', clientData.id);
+          const { data, error } = await supabase
+            .from('navires')
+            .select(`
+              id,
+              nom,
+              produit,
+              quantite_totale,
+              prime_achat,
+              date_arrivee,
+              fournisseur,
+              ventes!inner (
+                id,
+                type_deal,
+                volume,
+                prix_flat,
+                prime_vente,
+                prix_reference,
+                date_deal,
+                client_id,
+                couvertures (
+                  id,
+                  volume_couvert,
+                  prix_futures,
+                  date_couverture
+                ),
+                reventes_clients (
+                  id,
+                  volume,
+                  prix_flat_demande,
+                  etat,
+                  date_revente
+                )
+              )
+            `)
+            .eq('ventes.client_id', clientData.id);
+
+          if (error) throw error;
+          const naviresData = data || [];
+          setNavires(naviresData);
+          if (naviresData.length > 0 && !activeNavire) {
+            setActiveNavire(naviresData[0].id);
+          }
         }
-      }
+      } else {
+        // Pour les admins, récupérer tous les navires avec toutes les ventes
+        const { data, error } = await supabase
+          .from('navires')
+          .select(`
+            id,
+            nom,
+            produit,
+            quantite_totale,
+            prime_achat,
+            date_arrivee,
+            fournisseur,
+            ventes (
+              id,
+              type_deal,
+              volume,
+              prix_flat,
+              prime_vente,
+              prix_reference,
+              date_deal,
+              client_id,
+              couvertures (
+                id,
+                volume_couvert,
+                prix_futures,
+                date_couverture
+              ),
+              reventes_clients (
+                id,
+                volume,
+                prix_flat_demande,
+                etat,
+                date_revente
+              )
+            )
+          `);
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      setNavires(data || []);
-      if (data && data.length > 0 && !activeNavire) {
-        setActiveNavire(data[0].id);
+        if (error) throw error;
+        const naviresData = data || [];
+        setNavires(naviresData);
+        if (naviresData.length > 0 && !activeNavire) {
+          setActiveNavire(naviresData[0].id);
+        }
       }
     } catch (error) {
       console.error('Error fetching navires:', error);
