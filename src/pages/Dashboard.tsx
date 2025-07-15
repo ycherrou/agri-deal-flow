@@ -9,8 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CouverturesAchat from '@/components/CouverturesAchat';
+
+interface Client {
+  id: string;
+  nom: string;
+}
 interface NavireWithVentes {
   id: string;
   nom: string;
@@ -60,6 +66,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
+  const [clients, setClients] = useState<Client[]>([]);
   const [isAddCouvertureDialogOpen, setIsAddCouvertureDialogOpen] = useState(false);
   const [selectedVenteForCouverture, setSelectedVenteForCouverture] = useState<string | null>(null);
   const [couvertureFormData, setCouvertureFormData] = useState({
@@ -68,12 +75,24 @@ export default function Dashboard() {
     date_couverture: new Date().toISOString().split('T')[0]
   });
   const [addingCouverture, setAddingCouverture] = useState(false);
+  const [isAddVenteDialogOpen, setIsAddVenteDialogOpen] = useState(false);
+  const [venteFormData, setVenteFormData] = useState({
+    client_id: '',
+    volume: '',
+    type_deal: '' as 'prime' | 'flat' | '',
+    prix_flat: '',
+    prime_vente: '',
+    prix_reference: '',
+    date_deal: new Date().toISOString().split('T')[0]
+  });
+  const [addingVente, setAddingVente] = useState(false);
   const {
     toast
   } = useToast();
   useEffect(() => {
     fetchUserRole();
     fetchPrixMarche();
+    fetchClients();
   }, []);
   useEffect(() => {
     if (userRole) {
@@ -238,6 +257,20 @@ export default function Dashboard() {
       console.error('Error fetching prix marché:', error);
     }
   };
+
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, nom')
+        .order('nom');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
   const calculerPRU = (vente: NavireWithVentes['ventes'][0]) => {
     if (vente.type_deal === 'flat') {
       return vente.prix_flat || 0;
@@ -347,6 +380,65 @@ export default function Dashboard() {
       });
     } finally {
       setAddingCouverture(false);
+    }
+  };
+
+  const handleAddVente = () => {
+    setVenteFormData({
+      client_id: '',
+      volume: '',
+      type_deal: '',
+      prix_flat: '',
+      prime_vente: '',
+      prix_reference: '',
+      date_deal: new Date().toISOString().split('T')[0]
+    });
+    setIsAddVenteDialogOpen(true);
+  };
+
+  const handleSubmitVente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeNavire) return;
+
+    setAddingVente(true);
+    try {
+      const venteData: any = {
+        navire_id: activeNavire,
+        client_id: venteFormData.client_id,
+        volume: parseFloat(venteFormData.volume),
+        type_deal: venteFormData.type_deal,
+        date_deal: venteFormData.date_deal
+      };
+
+      if (venteFormData.type_deal === 'flat') {
+        venteData.prix_flat = parseFloat(venteFormData.prix_flat);
+      } else {
+        venteData.prime_vente = parseFloat(venteFormData.prime_vente);
+        venteData.prix_reference = venteFormData.prix_reference;
+      }
+
+      const { error } = await supabase
+        .from('ventes')
+        .insert([venteData]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Vente créée avec succès'
+      });
+
+      setIsAddVenteDialogOpen(false);
+      fetchNavires(); // Refresh data
+    } catch (error: any) {
+      console.error('Error adding vente:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de créer la vente',
+        variant: 'destructive'
+      });
+    } finally {
+      setAddingVente(false);
     }
   };
   
@@ -603,10 +695,20 @@ export default function Dashboard() {
               <TabsContent value="ventes">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Détail des ventes</CardTitle>
-                    <CardDescription>
-                      Informations détaillées sur les ventes du navire {navireActif.nom}
-                    </CardDescription>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle>Détail des ventes</CardTitle>
+                        <CardDescription>
+                          Informations détaillées sur les ventes du navire {navireActif.nom}
+                        </CardDescription>
+                      </div>
+                      {userRole === 'admin' && (
+                        <Button onClick={handleAddVente}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nouvelle vente
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {navireActif.ventes.length === 0 ? <div className="text-center py-8">
@@ -917,6 +1019,142 @@ export default function Dashboard() {
                   <>
                     <Save className="h-4 w-4 mr-2" />
                     Ajouter
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour ajouter une vente */}
+      <Dialog open={isAddVenteDialogOpen} onOpenChange={setIsAddVenteDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nouvelle vente</DialogTitle>
+            <DialogDescription>
+              Créer une nouvelle vente pour le navire {navireActif?.nom}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitVente} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">Client</Label>
+                <Select value={venteFormData.client_id} onValueChange={(value) => setVenteFormData(prev => ({ ...prev, client_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="volume">Volume (MT)</Label>
+                <Input
+                  id="volume"
+                  type="number"
+                  step="0.01"
+                  placeholder="Volume en MT"
+                  value={venteFormData.volume}
+                  onChange={(e) => setVenteFormData(prev => ({ ...prev, volume: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type_deal">Type de deal</Label>
+                <Select value={venteFormData.type_deal} onValueChange={(value) => setVenteFormData(prev => ({ ...prev, type_deal: value as 'prime' | 'flat' }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type de deal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flat">Flat</SelectItem>
+                    <SelectItem value="prime">Prime</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date_deal">Date du deal</Label>
+                <Input
+                  id="date_deal"
+                  type="date"
+                  value={venteFormData.date_deal}
+                  onChange={(e) => setVenteFormData(prev => ({ ...prev, date_deal: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            {venteFormData.type_deal === 'flat' && (
+              <div className="space-y-2">
+                <Label htmlFor="prix_flat">Prix flat ($/MT)</Label>
+                <Input
+                  id="prix_flat"
+                  type="number"
+                  step="0.01"
+                  placeholder="Prix en $/MT"
+                  value={venteFormData.prix_flat}
+                  onChange={(e) => setVenteFormData(prev => ({ ...prev, prix_flat: e.target.value }))}
+                  required
+                />
+              </div>
+            )}
+
+            {venteFormData.type_deal === 'prime' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prime_vente">Prime vente (cts/bu)</Label>
+                  <Input
+                    id="prime_vente"
+                    type="number"
+                    step="0.01"
+                    placeholder="Prime en cts/bu"
+                    value={venteFormData.prime_vente}
+                    onChange={(e) => setVenteFormData(prev => ({ ...prev, prime_vente: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prix_reference">Référence CBOT</Label>
+                  <Input
+                    id="prix_reference"
+                    type="text"
+                    placeholder="Ex: ZCZ24"
+                    value={venteFormData.prix_reference}
+                    onChange={(e) => setVenteFormData(prev => ({ ...prev, prix_reference: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsAddVenteDialogOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={addingVente}>
+                {addingVente ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Créer la vente
                   </>
                 )}
               </Button>
