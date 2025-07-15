@@ -271,29 +271,37 @@ export default function Dashboard() {
       console.error('Error fetching clients:', error);
     }
   };
-  const calculerPRU = (vente: NavireWithVentes['ventes'][0]) => {
-    if (vente.type_deal === 'flat') {
-      return vente.prix_flat || 0;
-    }
-
-    // Pour les deals prime, calculer le PRU
-    // Tout est déjà dans la même unité pour le produit (cts/bu pour maïs, USD/short ton pour tourteau)
-    const volumeTotal = vente.volume;
-    const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
-    const volumeNonCouvert = volumeTotal - volumeCouvert;
+  const calculerPRU = (vente: NavireWithVentes['ventes'][0], navire: NavireWithVentes) => {
+    // Définir le facteur de conversion selon le produit
+    const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
+                             navire.produit === 'tourteau_soja' ? 0.4640 : 1;
     
-    if (volumeCouvert === 0) {
-      // Si pas de couverture, utiliser le prix marché actuel
-      const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
-      return prixMarcheActuel + (vente.prime_vente || 0);
+    let pru = 0;
+    
+    if (vente.type_deal === 'flat') {
+      pru = vente.prix_flat || 0;
+    } else {
+      // Pour les deals prime, calculer le PRU
+      const volumeTotal = vente.volume;
+      const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+      const volumeNonCouvert = volumeTotal - volumeCouvert;
+      
+      if (volumeCouvert === 0) {
+        // Si pas de couverture, utiliser le prix marché actuel
+        const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+        pru = prixMarcheActuel + (vente.prime_vente || 0);
+      } else {
+        // Calculer le prix moyen pondéré
+        const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
+        const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+        const prixMoyenNonCouvert = prixMarcheActuel;
+        const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixMoyenNonCouvert * volumeNonCouvert) / volumeTotal;
+        pru = prixMoyenPondere + (vente.prime_vente || 0);
+      }
     }
-
-    // Calculer le prix moyen pondéré (pas de conversion nécessaire, même unité)
-    const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
-    const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
-    const prixMoyenNonCouvert = prixMarcheActuel;
-    const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixMoyenNonCouvert * volumeNonCouvert) / volumeTotal;
-    return prixMoyenPondere + (vente.prime_vente || 0);
+    
+    // Multiplier par le facteur de conversion
+    return pru * facteurConversion;
   };
   const calculerTauxCouverture = (vente: NavireWithVentes['ventes'][0]) => {
     const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
@@ -659,7 +667,7 @@ export default function Dashboard() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">PRU:</span>
-                              <div className="font-medium">{formatPrice(calculerPRU(vente), navireActif.produit)}</div>
+                              <div className="font-medium">{formatPrice(calculerPRU(vente, navireActif), navireActif.produit)}</div>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Couverture:</span>
@@ -744,7 +752,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">PRU:</span>
-                                  <span className="text-sm font-medium">{formatPrice(calculerPRU(vente), navireActif.produit)}</span>
+                                  <span className="text-sm font-medium">{formatPrice(calculerPRU(vente, navireActif), navireActif.produit)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Référence:</span>
