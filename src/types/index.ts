@@ -61,7 +61,6 @@ export interface PrixMarche {
   id: string;
   echeance: string;
   prix: number;
-  date_maj: string;
   created_at: string;
   updated_at: string;
 }

@@ -27,7 +27,7 @@ interface ClientPortfolioData {
 interface PrixMarche {
   echeance: string;
   prix: number;
-  date_maj: string;
+  created_at: string;
 }
 
 export default function ClientPortfolio() {
@@ -49,8 +49,8 @@ export default function ClientPortfolio() {
     try {
       const { data, error } = await supabase
         .from('prix_marche')
-        .select('echeance, prix, date_maj')
-        .order('date_maj', { ascending: false });
+        .select('echeance, prix, created_at')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setPrixMarche(data || []);
@@ -102,8 +102,8 @@ export default function ClientPortfolio() {
       // Récupérer les prix du marché les plus récents
       const { data: prixMarcheData } = await supabase
         .from('prix_marche')
-        .select('echeance, prix, date_maj')
-        .order('date_maj', { ascending: false });
+        .select('echeance, prix, created_at')
+        .order('created_at', { ascending: false });
 
       // Transformer les données pour le portfolio client
       const portfolioData: ClientPortfolioData[] = (naviresData || []).flatMap(navire => 

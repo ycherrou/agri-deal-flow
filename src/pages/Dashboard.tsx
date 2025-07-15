@@ -58,7 +58,7 @@ interface NavireWithVentes {
 interface PrixMarche {
   echeance: string;
   prix: number;
-  date_maj: string;
+  created_at: string;
 }
 export default function Dashboard() {
   const [navires, setNavires] = useState<NavireWithVentes[]>([]);
@@ -248,7 +248,7 @@ export default function Dashboard() {
       const {
         data,
         error
-      } = await supabase.from('prix_marche').select('echeance, prix, date_maj').order('date_maj', {
+      } = await supabase.from('prix_marche').select('echeance, prix, created_at').order('created_at', {
         ascending: false
       });
       if (error) throw error;

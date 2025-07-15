@@ -165,7 +165,6 @@ export type Database = {
       prix_marche: {
         Row: {
           created_at: string | null
-          date_maj: string
           echeance: string
           id: string
           prix: number
@@ -173,7 +172,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          date_maj?: string
           echeance: string
           id?: string
           prix: number
@@ -181,7 +179,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          date_maj?: string
           echeance?: string
           id?: string
           prix?: number

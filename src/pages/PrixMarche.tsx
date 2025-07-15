@@ -14,7 +14,7 @@ interface PrixMarche {
   id: string;
   echeance: string;
   prix: number;
-  date_maj: string;
+  created_at: string;
 }
 
 export default function PrixMarche() {
@@ -24,8 +24,7 @@ export default function PrixMarche() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     echeance: '',
-    prix: '',
-    date_maj: new Date().toISOString().split('T')[0]
+    prix: ''
   });
   const { toast } = useToast();
 
@@ -38,7 +37,7 @@ export default function PrixMarche() {
       const { data, error } = await supabase
         .from('prix_marche')
         .select('*')
-        .order('echeance');
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setPrixMarche(data || []);
@@ -61,8 +60,7 @@ export default function PrixMarche() {
     try {
       const prixData = {
         echeance: formData.echeance,
-        prix: parseFloat(formData.prix),
-        date_maj: formData.date_maj
+        prix: parseFloat(formData.prix)
       };
 
       if (editingId) {
@@ -92,8 +90,7 @@ export default function PrixMarche() {
 
       setFormData({
         echeance: '',
-        prix: '',
-        date_maj: new Date().toISOString().split('T')[0]
+        prix: ''
       });
       setIsEditing(false);
       setEditingId(null);
@@ -113,8 +110,7 @@ export default function PrixMarche() {
   const handleEdit = (prix: PrixMarche) => {
     setFormData({
       echeance: prix.echeance,
-      prix: prix.prix.toString(),
-      date_maj: prix.date_maj
+      prix: prix.prix.toString()
     });
     setEditingId(prix.id);
     setIsEditing(true);
@@ -150,8 +146,7 @@ export default function PrixMarche() {
   const handleCancel = () => {
     setFormData({
       echeance: '',
-      prix: '',
-      date_maj: new Date().toISOString().split('T')[0]
+      prix: ''
     });
     setIsEditing(false);
     setEditingId(null);
@@ -162,7 +157,7 @@ export default function PrixMarche() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR');
+    return new Date(dateString).toLocaleString('fr-FR');
   };
 
   if (loading && !isEditing) {
@@ -239,16 +234,6 @@ export default function PrixMarche() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="date_maj">Date de mise à jour</Label>
-                <Input
-                  id="date_maj"
-                  type="date"
-                  value={formData.date_maj}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date_maj: e.target.value }))}
-                  required
-                />
-              </div>
 
               <div className="flex space-x-2">
                 <Button type="submit" disabled={loading} className="flex-1">
@@ -292,10 +277,10 @@ export default function PrixMarche() {
                              {formatPrice(prix.prix, prix.echeance)}
                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          Mis à jour le {formatDate(prix.date_maj)}
-                        </div>
+                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                           <Calendar className="h-4 w-4" />
+                           Créé le {formatDate(prix.created_at)}
+                         </div>
                       </div>
                       <div className="flex space-x-2">
                         <Button
