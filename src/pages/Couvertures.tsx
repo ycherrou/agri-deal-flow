@@ -151,12 +151,10 @@ export default function Couvertures() {
   };
 
   const formatPrice = (price: number, product?: string) => {
-    if (product === 'mais') {
-      return `${price.toFixed(0)} cts/bu`;
-    } else if (product === 'tourteau_soja') {
-      return `$${price.toFixed(2)} USD/short ton`;
+    if (product === 'tourteau_soja') {
+      return `$${price.toFixed(2)}/short ton`;
     } else {
-      return `${price.toFixed(2)}`;
+      return `$${price.toFixed(2)}`;
     }
   };
 
@@ -323,7 +321,7 @@ export default function Couvertures() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="prix_futures">Prix futures ({venteSelectionnee?.navire.produit === 'mais' ? 'cts/bu' : venteSelectionnee?.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
+                <Label htmlFor="prix_futures">Prix futures ({venteSelectionnee?.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
                 <Input
                   id="prix_futures"
                   type="number"
@@ -501,7 +499,7 @@ export default function Couvertures() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit_prix_futures">Prix futures ({editingCouverture?.vente.navire.produit === 'mais' ? 'cts/bu' : editingCouverture?.vente.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
+              <Label htmlFor="edit_prix_futures">Prix futures ({editingCouverture?.vente.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
               <Input
                 id="edit_prix_futures"
                 type="number"

@@ -150,10 +150,8 @@ export default function ClientPortfolio() {
   };
 
   const formatPrice = (price: number, product?: string) => {
-    if (product === 'mais') {
-      return `${price.toFixed(0)} cts/bu`;
-    } else if (product === 'tourteau_soja') {
-      return `$${price.toFixed(2)} USD/short ton`;
+    if (product === 'tourteau_soja') {
+      return `$${price.toFixed(2)}/short ton`;
     } else {
       return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
@@ -297,7 +295,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.prime_payee} cts/bu</div>
+                    <div className="text-2xl font-bold">{formatPrice(navireActif.prime_payee, navireActif.produit)}</div>
                   </CardContent>
                 </Card>
 

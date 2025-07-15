@@ -158,15 +158,11 @@ export default function PrixMarche() {
   };
 
   const formatPrice = (price: number, echeance?: string) => {
-    // Détermine l'unité en fonction de l'échéance (approximation)
-    // Les échéances maïs sont généralement nommées différemment du soja
-    const isMais = echeance?.toLowerCase().includes('dec') || echeance?.toLowerCase().includes('mar') || echeance?.toLowerCase().includes('may') || echeance?.toLowerCase().includes('jul') || echeance?.toLowerCase().includes('sep');
+    // Détermine l'unité en fonction de l'échéance
     const isSoja = echeance?.toLowerCase().includes('meal') || echeance?.toLowerCase().includes('soybean');
     
-    if (isMais) {
-      return `${price.toFixed(0)} cts/bu`;
-    } else if (isSoja) {
-      return `$${price.toFixed(2)} USD/short ton`;
+    if (isSoja) {
+      return `$${price.toFixed(2)}/short ton`;
     } else {
       return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
