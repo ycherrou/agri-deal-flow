@@ -136,13 +136,6 @@ export default function Layout({ children }: LayoutProps) {
       roles: ['admin']
     },
     { 
-      id: 'couvertures', 
-      label: 'Couvertures', 
-      icon: Shield,
-      path: '/couvertures',
-      roles: ['admin']
-    },
-    { 
       id: 'clients', 
       label: 'Clients', 
       icon: Users,
