@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Shield, TrendingUp, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Shield, TrendingUp, AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Vente {
   id: string;
@@ -41,6 +43,13 @@ export default function Couvertures() {
     prix_futures: '',
     date_couverture: new Date().toISOString().split('T')[0]
   });
+  const [editingCouverture, setEditingCouverture] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState({
+    volume_couvert: '',
+    prix_futures: '',
+    date_couverture: ''
+  });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -150,6 +159,81 @@ export default function Couvertures() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR');
+  };
+
+  const handleEditCouverture = (couverture: any, vente: Vente) => {
+    setEditingCouverture({ ...couverture, vente });
+    setEditFormData({
+      volume_couvert: couverture.volume_couvert.toString(),
+      prix_futures: couverture.prix_futures.toString(),
+      date_couverture: couverture.date_couverture
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCouverture = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCouverture) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('couvertures')
+        .update({
+          volume_couvert: parseFloat(editFormData.volume_couvert),
+          prix_futures: parseFloat(editFormData.prix_futures),
+          date_couverture: editFormData.date_couverture
+        })
+        .eq('id', editingCouverture.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture modifiée avec succès'
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingCouverture(null);
+      fetchVentes();
+    } catch (error: any) {
+      console.error('Error updating couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de modifier la couverture',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCouverture = async (couvertureId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('couvertures')
+        .delete()
+        .eq('id', couvertureId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture supprimée avec succès'
+      });
+
+      fetchVentes();
+    } catch (error: any) {
+      console.error('Error deleting couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de supprimer la couverture',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const venteSelectionnee = ventes.find(v => v.id === selectedVente);
@@ -334,9 +418,49 @@ export default function Couvertures() {
                           <div className="text-sm font-medium mb-2">Couvertures existantes:</div>
                           <div className="space-y-1">
                             {vente.couvertures.map((couv) => (
-                              <div key={couv.id} className="flex justify-between text-xs bg-muted p-2 rounded">
-                                <span>{couv.volume_couvert} MT @ {formatPrice(couv.prix_futures)} cts/bu</span>
-                                <span>{formatDate(couv.date_couverture)}</span>
+                              <div key={couv.id} className="flex justify-between items-center text-xs bg-muted p-2 rounded">
+                                <div className="flex-1">
+                                  <span>{couv.volume_couvert} MT @ {formatPrice(couv.prix_futures)} cts/bu</span>
+                                  <span className="ml-2 text-muted-foreground">{formatDate(couv.date_couverture)}</span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditCouverture(couv, vente)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Supprimer la couverture</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Êtes-vous sûr de vouloir supprimer cette couverture ? Cette action est irréversible.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteCouverture(couv.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Supprimer
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -350,6 +474,63 @@ export default function Couvertures() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog d'édition */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la couverture</DialogTitle>
+            <DialogDescription>
+              Modifier les détails de cette couverture
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateCouverture} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
+              <Input
+                id="edit_volume_couvert"
+                type="number"
+                step="0.01"
+                value={editFormData.volume_couvert}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_prix_futures">Prix futures (cts/bu)</Label>
+              <Input
+                id="edit_prix_futures"
+                type="number"
+                step="0.01"
+                value={editFormData.prix_futures}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, prix_futures: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_date_couverture">Date de couverture</Label>
+              <Input
+                id="edit_date_couverture"
+                type="date"
+                value={editFormData.date_couverture}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, date_couverture: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Modification...' : 'Modifier'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
