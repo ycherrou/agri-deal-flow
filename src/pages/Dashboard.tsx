@@ -1138,14 +1138,18 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prix_reference">Référence CBOT</Label>
-                  <Input
-                    id="prix_reference"
-                    type="text"
-                    placeholder="Ex: ZCZ24"
-                    value={venteFormData.prix_reference}
-                    onChange={(e) => setVenteFormData(prev => ({ ...prev, prix_reference: e.target.value }))}
-                    required
-                  />
+                  <Select value={venteFormData.prix_reference} onValueChange={(value) => setVenteFormData(prev => ({ ...prev, prix_reference: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un contrat CBOT" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prixMarche.map((prix) => (
+                        <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
+                          {prix.echeance?.nom} - {prix.prix} cts/bu
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
