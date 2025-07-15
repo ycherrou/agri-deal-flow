@@ -119,20 +119,25 @@ export default function ClientPortfolio() {
             prixTrouve: prixCbotActuel
           });
           
-          // Calcul PRU
-          let pru = 0;
-          if (vente.type_deal === 'flat') {
-            pru = vente.prix_flat || 0;
-          } else {
-            if (volumeCouvert === 0) {
-              pru = prixCbotActuel + (vente.prime_vente || 0);
-            } else {
-              const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => 
-                sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
-              const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixCbotActuel * volumeNonCouvert) / vente.volume;
-              pru = prixMoyenPondere + (vente.prime_vente || 0);
-            }
-          }
+           // Calcul PRU
+           let pru = 0;
+           if (vente.type_deal === 'flat') {
+             pru = vente.prix_flat || 0;
+           } else {
+             if (volumeCouvert === 0) {
+               pru = prixCbotActuel + (vente.prime_vente || 0);
+             } else {
+               const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => 
+                 sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
+               const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixCbotActuel * volumeNonCouvert) / vente.volume;
+               pru = prixMoyenPondere + (vente.prime_vente || 0);
+             }
+           }
+
+           // Appliquer le facteur de conversion selon le produit
+           const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
+                                    navire.produit === 'tourteau_soja' ? 0.4640 : 1;
+           pru = pru * facteurConversion;
 
           return {
             id: navire.id,
