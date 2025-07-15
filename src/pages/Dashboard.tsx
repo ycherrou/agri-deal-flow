@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CouverturesAchat from '@/components/CouverturesAchat';
+import { getLatestPricesForMaturities } from '@/lib/priceUtils';
 
 interface Client {
   id: string;
@@ -280,24 +281,26 @@ export default function Dashboard() {
     const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
                              navire.produit === 'tourteau_soja' ? 0.4640 : 1;
     
+    // Récupérer le dernier prix pour chaque échéance
+    const latestPrices = getLatestPricesForMaturities(prixMarche);
+    
     let pru = 0;
     
     if (vente.type_deal === 'flat') {
       pru = vente.prix_flat || 0;
     } else {
-      // Pour les deals prime, calculer le PRU
+      // Pour les deals prime, calculer le PRU avec le dernier prix futures de référence
       const volumeTotal = vente.volume;
       const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
       const volumeNonCouvert = volumeTotal - volumeCouvert;
+      const prixMarcheActuel = vente.prix_reference ? (latestPrices.get(vente.prix_reference) || 0) : 0;
       
       if (volumeCouvert === 0) {
         // Si pas de couverture, utiliser le prix marché actuel
-        const prixMarcheActuel = prixMarche.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
         pru = prixMarcheActuel + (vente.prime_vente || 0);
       } else {
         // Calculer le prix moyen pondéré
         const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
-        const prixMarcheActuel = prixMarche.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
         const prixMoyenNonCouvert = prixMarcheActuel;
         const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixMoyenNonCouvert * volumeNonCouvert) / volumeTotal;
         pru = prixMoyenPondere + (vente.prime_vente || 0);

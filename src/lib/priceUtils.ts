@@ -36,3 +36,32 @@ export const getPriceLabel = (product: ProductType, priceType: 'prime' | 'flat' 
 export const getCurrencySymbol = (product: ProductType): string => {
   return ''; // Plus de symboles monétaires
 };
+
+/**
+ * Get the latest price for each maturity from prix_marche data
+ */
+export const getLatestPricesForMaturities = (prixMarche: Array<{
+  echeance_id: string;
+  prix: number;
+  created_at: string;
+  echeance?: {
+    nom: string;
+    active: boolean;
+  };
+}>) => {
+  const latestPrices = new Map<string, number>();
+  
+  // Group by echeance_id and keep only the latest price for each
+  prixMarche.forEach(price => {
+    const echeanceId = price.echeance_id;
+    const echeanceName = price.echeance?.nom;
+    
+    if (!echeanceName) return;
+    
+    if (!latestPrices.has(echeanceName)) {
+      latestPrices.set(echeanceName, price.prix);
+    }
+  });
+  
+  return latestPrices;
+};

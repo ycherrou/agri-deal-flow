@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { getLatestPricesForMaturities } from '@/lib/priceUtils';
 import { Ship, Shield, TrendingUp, DollarSign, Package, AlertCircle } from 'lucide-react';
 
 interface ClientPortfolioData {
@@ -117,16 +118,19 @@ export default function ClientPortfolio() {
           const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
           
+           // Récupérer le dernier prix pour chaque échéance
+           const latestPrices = getLatestPricesForMaturities(prixMarcheData || []);
+          
           // Chercher le prix CBOT le plus récent pour le contrat de référence
-          const prixCbotActuel = prixMarcheData?.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
+          const prixCbotActuel = vente.prix_reference ? (latestPrices.get(vente.prix_reference) || 0) : 0;
           
           console.log('Prix CBOT recherche:', {
             prix_reference: vente.prix_reference,
-            prixMarcheData: prixMarcheData,
-            prixTrouve: prixCbotActuel
+            prixTrouve: prixCbotActuel,
+            latestPrices: Array.from(latestPrices.entries())
           });
           
-           // Calcul PRU
+           // Calcul PRU avec le dernier prix futures de référence
            let pru = 0;
            if (vente.type_deal === 'flat') {
              pru = vente.prix_flat || 0;
