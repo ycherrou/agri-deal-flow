@@ -158,18 +158,7 @@ export default function PrixMarche() {
   };
 
   const formatPrice = (price: number, echeance?: string) => {
-    // Détermine l'unité en fonction de l'échéance
-    const isSoja = echeance?.toLowerCase().includes('meal') || echeance?.toLowerCase().includes('soybean');
-    
-    if (isSoja) {
-      return `$${price.toFixed(2)}/short ton`;
-    } else {
-      return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2
-      }).format(price);
-    }
+    return price.toFixed(2);
   };
 
   const formatDate = (dateString: string) => {

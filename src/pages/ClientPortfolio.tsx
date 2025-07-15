@@ -150,15 +150,7 @@ export default function ClientPortfolio() {
   };
 
   const formatPrice = (price: number, product?: string) => {
-    if (product === 'tourteau_soja') {
-      return `$${price.toFixed(2)}/short ton`;
-    } else {
-      return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2
-      }).format(price);
-    }
+    return price.toFixed(2);
   };
 
   const formatDate = (dateString: string) => {

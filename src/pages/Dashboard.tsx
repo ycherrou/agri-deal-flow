@@ -303,15 +303,7 @@ export default function Dashboard() {
     return calculerTauxCouverture(vente) === 100;
   };
   const formatPrice = (price: number, product?: string) => {
-    if (product === 'tourteau_soja') {
-      return `$${price.toFixed(2)}/short ton`;
-    } else {
-      return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2
-      }).format(price);
-    }
+    return price.toFixed(2);
   };
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR');
@@ -984,7 +976,7 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="prix_futures">Prix futures ({navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
+              <Label htmlFor="prix_futures">Prix futures</Label>
               <Input
                 id="prix_futures"
                 type="number"
@@ -1102,7 +1094,7 @@ export default function Dashboard() {
 
             {venteFormData.type_deal === 'flat' && (
               <div className="space-y-2">
-                <Label htmlFor="prix_flat">Prix flat ({navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
+                <Label htmlFor="prix_flat">Prix flat</Label>
                 <Input
                   id="prix_flat"
                   type="number"
@@ -1118,7 +1110,7 @@ export default function Dashboard() {
             {venteFormData.type_deal === 'prime' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="prime_vente">Prime vente ({navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
+                  <Label htmlFor="prime_vente">Prime vente</Label>
                   <Input
                     id="prime_vente"
                     type="number"
