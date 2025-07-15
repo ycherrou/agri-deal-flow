@@ -26,8 +26,12 @@ interface Navire {
 }
 
 interface PrixMarche {
-  echeance: string;
+  echeance_id: string;
   prix: number;
+  echeance?: {
+    nom: string;
+    active: boolean;
+  };
 }
 
 export default function CreateDeal() {
@@ -97,8 +101,9 @@ export default function CreateDeal() {
     try {
       const { data, error } = await supabase
         .from('prix_marche')
-        .select('echeance, prix')
-        .order('echeance');
+        .select('echeance_id, prix, echeance:echeances!inner(nom, active)')
+        .eq('echeance.active', true)
+        .order('echeance.nom');
 
       if (error) throw error;
       setPrixMarche(data || []);
@@ -267,11 +272,11 @@ export default function CreateDeal() {
                       <SelectValue placeholder="Sélectionner un contrat CBOT" />
                     </SelectTrigger>
                     <SelectContent>
-                      {prixMarche.map((prix) => (
-                        <SelectItem key={prix.echeance} value={prix.echeance}>
-                          {prix.echeance} - {prix.prix} cts/bu
-                        </SelectItem>
-                      ))}
+                       {prixMarche.map((prix) => (
+                         <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
+                           {prix.echeance?.nom} - {prix.prix} cts/bu
+                         </SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                   {formData.type_deal === 'prime' && !formData.prix_reference && (

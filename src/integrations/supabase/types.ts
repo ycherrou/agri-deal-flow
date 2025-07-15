@@ -123,6 +123,30 @@ export type Database = {
           },
         ]
       }
+      echeances: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       navires: {
         Row: {
           created_at: string | null
@@ -165,26 +189,34 @@ export type Database = {
       prix_marche: {
         Row: {
           created_at: string | null
-          echeance: string
+          echeance_id: string | null
           id: string
           prix: number
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          echeance: string
+          echeance_id?: string | null
           id?: string
           prix: number
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          echeance?: string
+          echeance_id?: string | null
           id?: string
           prix?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_prix_marche_echeance"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reventes_clients: {
         Row: {

@@ -25,9 +25,13 @@ interface ClientPortfolioData {
 }
 
 interface PrixMarche {
-  echeance: string;
+  echeance_id: string;
   prix: number;
   created_at: string;
+  echeance?: {
+    nom: string;
+    active: boolean;
+  };
 }
 
 export default function ClientPortfolio() {
@@ -49,7 +53,8 @@ export default function ClientPortfolio() {
     try {
       const { data, error } = await supabase
         .from('prix_marche')
-        .select('echeance, prix, created_at')
+        .select('echeance_id, prix, created_at, echeance:echeances!inner(nom, active)')
+        .eq('echeance.active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -102,7 +107,8 @@ export default function ClientPortfolio() {
       // Récupérer les prix du marché les plus récents
       const { data: prixMarcheData } = await supabase
         .from('prix_marche')
-        .select('echeance, prix, created_at')
+        .select('echeance_id, prix, created_at, echeance:echeances!inner(nom, active)')
+        .eq('echeance.active', true)
         .order('created_at', { ascending: false });
 
       // Transformer les données pour le portfolio client
@@ -112,7 +118,7 @@ export default function ClientPortfolio() {
           const volumeNonCouvert = vente.volume - volumeCouvert;
           
           // Chercher le prix CBOT le plus récent pour le contrat de référence
-          const prixCbotActuel = prixMarcheData?.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+          const prixCbotActuel = prixMarcheData?.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
           
           console.log('Prix CBOT recherche:', {
             prix_reference: vente.prix_reference,

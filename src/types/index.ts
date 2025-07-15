@@ -57,12 +57,21 @@ export interface ReventeClient {
   updated_at: string;
 }
 
+export interface Echeance {
+  id: string;
+  nom: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PrixMarche {
   id: string;
-  echeance: string;
+  echeance_id: string;
   prix: number;
   created_at: string;
   updated_at: string;
+  echeance?: Echeance;
 }
 
 export interface DashboardStats {

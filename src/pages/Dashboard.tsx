@@ -56,9 +56,13 @@ interface NavireWithVentes {
   }>;
 }
 interface PrixMarche {
-  echeance: string;
+  echeance_id: string;
   prix: number;
   created_at: string;
+  echeance?: {
+    nom: string;
+    active: boolean;
+  };
 }
 export default function Dashboard() {
   const [navires, setNavires] = useState<NavireWithVentes[]>([]);
@@ -248,7 +252,7 @@ export default function Dashboard() {
       const {
         data,
         error
-      } = await supabase.from('prix_marche').select('echeance, prix, created_at').order('created_at', {
+      } = await supabase.from('prix_marche').select('echeance_id, prix, created_at, echeance:echeances!inner(nom, active)').eq('echeance.active', true).order('created_at', {
         ascending: false
       });
       if (error) throw error;
@@ -288,12 +292,12 @@ export default function Dashboard() {
       
       if (volumeCouvert === 0) {
         // Si pas de couverture, utiliser le prix marché actuel
-        const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+        const prixMarcheActuel = prixMarche.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
         pru = prixMarcheActuel + (vente.prime_vente || 0);
       } else {
         // Calculer le prix moyen pondéré
         const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
-        const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+        const prixMarcheActuel = prixMarche.find(p => p.echeance?.nom === vente.prix_reference)?.prix || 0;
         const prixMoyenNonCouvert = prixMarcheActuel;
         const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixMoyenNonCouvert * volumeNonCouvert) / volumeTotal;
         pru = prixMoyenPondere + (vente.prime_vente || 0);
