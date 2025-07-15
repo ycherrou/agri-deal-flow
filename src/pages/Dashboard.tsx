@@ -303,10 +303,11 @@ export default function Dashboard() {
     return calculerTauxCouverture(vente) === 100;
   };
   const formatPrice = (price: number, product?: string) => {
+    console.log('formatPrice called with:', { price, product }); // Debug log
     if (product === 'mais') {
       return `${price.toFixed(0)} cts/bu`;
     } else if (product === 'tourteau_soja') {
-      return `$${price.toFixed(2)} USD/short ton`;
+      return `$${price.toFixed(2)}/short ton`;
     } else {
       return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
