@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Eye, Calendar, Package, Users } from 'lucide-react';
+import { Plus, Eye, Calendar, Package, Users, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Deal {
   id: string;
@@ -78,6 +79,32 @@ export default function Deals() {
     }).format(price);
   };
 
+  const handleDeleteDeal = async (dealId: string) => {
+    try {
+      const { error } = await supabase
+        .from('ventes')
+        .delete()
+        .eq('id', dealId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Deal supprimé avec succès'
+      });
+
+      // Refresh the deals list
+      fetchDeals();
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le deal',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -145,6 +172,27 @@ export default function Deals() {
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4" />
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer ce deal ? Cette action est irréversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteDeal(deal.id)}>
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardHeader>
