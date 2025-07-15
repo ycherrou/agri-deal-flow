@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield } from 'lucide-react';
+import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LayoutProps {
@@ -76,6 +76,11 @@ export default function Layout({ children }: LayoutProps) {
       }
 
       setClient(data);
+      
+      // Rediriger les clients vers leur portfolio si ils sont sur la page d'accueil
+      if (data.role === 'client' && location.pathname === '/') {
+        navigate('/portfolio');
+      }
     } catch (error) {
       console.error('Error fetching client data:', error);
     } finally {
@@ -107,7 +112,14 @@ export default function Layout({ children }: LayoutProps) {
       label: 'Tableau de bord', 
       icon: BarChart3,
       path: '/',
-      roles: ['admin', 'client']
+      roles: ['admin']
+    },
+    { 
+      id: 'portfolio', 
+      label: 'Mon Portfolio', 
+      icon: UserIcon,
+      path: '/portfolio',
+      roles: ['client']
     },
     { 
       id: 'navires', 
