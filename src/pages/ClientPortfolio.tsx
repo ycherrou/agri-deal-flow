@@ -114,11 +114,11 @@ export default function ClientPortfolio() {
           // Chercher le prix CBOT le plus récent pour le contrat de référence
           const prixCbotActuel = prixMarcheData?.find(p => p.echeance === vente.prix_reference)?.prix || 0;
           
-           console.log('Prix CBOT recherche:', {
-             prix_reference: vente.prix_reference,
-             prixMarcheData: prixMarcheData,
-             prixTrouve: prixCbotActuel
-           });
+          console.log('Prix CBOT recherche:', {
+            prix_reference: vente.prix_reference,
+            prixMarcheData: prixMarcheData,
+            prixTrouve: prixCbotActuel
+          });
           
            // Calcul PRU
            let pru = 0;
