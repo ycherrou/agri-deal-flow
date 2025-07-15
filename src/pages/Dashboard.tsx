@@ -14,6 +14,7 @@ interface NavireWithVentes {
   produit: string;
   quantite_totale: number;
   prime_achat: number | null;
+  reference_cbot: string | null;
   date_arrivee: string;
   fournisseur: string;
   couvertures_achat?: Array<{
@@ -110,6 +111,7 @@ export default function Dashboard() {
               produit,
               quantite_totale,
               prime_achat,
+              reference_cbot,
               date_arrivee,
               fournisseur,
               couvertures_achat (
@@ -160,6 +162,7 @@ export default function Dashboard() {
             produit,
             quantite_totale,
             prime_achat,
+            reference_cbot,
             date_arrivee,
             fournisseur,
             couvertures_achat (
@@ -360,6 +363,9 @@ export default function Dashboard() {
                         {navireActif.prime_achat ? `${navireActif.prime_achat} cts/bu` : 'N/A'}
                       </div>
                       <div className="text-sm text-muted-foreground">
+                        {navireActif.reference_cbot && (
+                          <div>Contrat: {navireActif.reference_cbot}</div>
+                        )}
                         Arrivée: {formatDate(navireActif.date_arrivee)}
                       </div>
                     </CardContent>
