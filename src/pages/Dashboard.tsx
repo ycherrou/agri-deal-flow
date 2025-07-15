@@ -504,7 +504,9 @@ export default function Dashboard() {
               <TabsList>
                 <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                 <TabsTrigger value="ventes">Ventes</TabsTrigger>
-                <TabsTrigger value="couvertures">Couvertures</TabsTrigger>
+                {navireActif.ventes.some(v => v.type_deal === 'prime') && (
+                  <TabsTrigger value="couvertures">Couvertures</TabsTrigger>
+                )}
                 <TabsTrigger value="reventes">Reventes</TabsTrigger>
               </TabsList>
 
@@ -675,29 +677,35 @@ export default function Dashboard() {
                               <span className="text-muted-foreground">PRU:</span>
                               <div className="font-medium">{formatPrice(calculerPRU(vente, navireActif), navireActif.produit)}</div>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground">Couverture:</span>
-                              <div className="font-medium">{calculerTauxCouverture(vente).toFixed(1)}%</div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Volume non couvert:</span>
-                              <div className="font-medium">
-                                {vente.volume - vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0)}
+                            {vente.type_deal === 'prime' && (
+                              <div>
+                                <span className="text-muted-foreground">Couverture:</span>
+                                <div className="font-medium">{calculerTauxCouverture(vente).toFixed(1)}%</div>
                               </div>
-                            </div>
+                            )}
+                            {vente.type_deal === 'prime' && (
+                              <div>
+                                <span className="text-muted-foreground">Volume non couvert:</span>
+                                <div className="font-medium">
+                                  {vente.volume - vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0)}
+                                </div>
+                              </div>
+                            )}
                             <div>
                               <span className="text-muted-foreground">Reventes:</span>
                               <div className="font-medium">{vente.reventes_clients.length}</div>
                             </div>
                           </div>
 
-                          <div className="mt-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Shield className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Couverture</span>
+                          {vente.type_deal === 'prime' && (
+                            <div className="mt-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Shield className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">Couverture</span>
+                              </div>
+                              <Progress value={calculerTauxCouverture(vente)} className="h-2" />
                             </div>
-                            <Progress value={calculerTauxCouverture(vente)} className="h-2" />
-                          </div>
+                          )}
                         </div>)}
                     </div>
                   </CardContent>
@@ -760,14 +768,18 @@ export default function Dashboard() {
                                   <span className="text-sm text-muted-foreground">PRU:</span>
                                   <span className="text-sm font-medium">{formatPrice(calculerPRU(vente, navireActif), navireActif.produit)}</span>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">Référence:</span>
-                                  <span className="text-sm">{vente.prix_reference || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">Couverture:</span>
-                                  <span className="text-sm font-medium">{calculerTauxCouverture(vente).toFixed(1)}%</span>
-                                </div>
+                                {vente.type_deal === 'prime' && (
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Référence:</span>
+                                    <span className="text-sm">{vente.prix_reference || 'N/A'}</span>
+                                  </div>
+                                )}
+                                {vente.type_deal === 'prime' && (
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Couverture:</span>
+                                    <span className="text-sm font-medium">{calculerTauxCouverture(vente).toFixed(1)}%</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>)}
@@ -819,7 +831,7 @@ export default function Dashboard() {
                                       </div>
                                       <Progress value={tauxCouverture} className="h-2 w-24" />
                                     </div>
-                                    {userRole === 'admin' && volumeRestant > 0 && (
+                                    {userRole === 'admin' && vente.type_deal === 'prime' && volumeRestant > 0 && (
                                       <Button
                                         size="sm"
                                         onClick={() => handleAddCouverture(vente.id)}
