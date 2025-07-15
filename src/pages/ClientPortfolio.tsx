@@ -149,12 +149,18 @@ export default function ClientPortfolio() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(price);
+  const formatPrice = (price: number, product?: string) => {
+    if (product === 'mais') {
+      return `${price.toFixed(0)} cts/bu`;
+    } else if (product === 'tourteau_soja') {
+      return `$${price.toFixed(2)} USD/short ton`;
+    } else {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2
+      }).format(price);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -303,7 +309,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.prix_cbot_actuel)}</div>
+                    <div className="text-2xl font-bold">{formatPrice(navireActif.prix_cbot_actuel, navireActif.produit)}</div>
                   </CardContent>
                 </Card>
 
@@ -315,7 +321,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-primary">{formatPrice(navireActif.pru)}</div>
+                    <div className="text-2xl font-bold text-primary">{formatPrice(navireActif.pru, navireActif.produit)}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -363,7 +369,7 @@ export default function ClientPortfolio() {
                     <div className="p-3 bg-muted rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">Valeur exposition (prix actuel)</div>
                       <div className="text-lg font-bold">
-                        {formatPrice(navireActif.volume_non_couvert * navireActif.prix_cbot_actuel)}
+                        {formatPrice(navireActif.volume_non_couvert * navireActif.prix_cbot_actuel, navireActif.produit)}
                       </div>
                     </div>
                     {navireActif.volume_non_couvert > 0 && (
@@ -396,7 +402,7 @@ export default function ClientPortfolio() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-medium">{formatPrice(couverture.prix_futures)}</div>
+                            <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
                             <div className="text-sm text-muted-foreground">Prix futures</div>
                           </div>
                         </div>

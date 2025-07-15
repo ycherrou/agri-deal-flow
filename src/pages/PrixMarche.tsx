@@ -157,12 +157,23 @@ export default function PrixMarche() {
     setEditingId(null);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(price);
+  const formatPrice = (price: number, echeance?: string) => {
+    // Détermine l'unité en fonction de l'échéance (approximation)
+    // Les échéances maïs sont généralement nommées différemment du soja
+    const isMais = echeance?.toLowerCase().includes('dec') || echeance?.toLowerCase().includes('mar') || echeance?.toLowerCase().includes('may') || echeance?.toLowerCase().includes('jul') || echeance?.toLowerCase().includes('sep');
+    const isSoja = echeance?.toLowerCase().includes('meal') || echeance?.toLowerCase().includes('soybean');
+    
+    if (isMais) {
+      return `${price.toFixed(0)} cts/bu`;
+    } else if (isSoja) {
+      return `$${price.toFixed(2)} USD/short ton`;
+    } else {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2
+      }).format(price);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -292,9 +303,9 @@ export default function PrixMarche() {
                           <Badge variant="outline" className="font-mono">
                             {prix.echeance}
                           </Badge>
-                          <div className="text-lg font-bold">
-                            {prix.prix} cts/bu
-                          </div>
+                           <div className="text-lg font-bold">
+                             {formatPrice(prix.prix, prix.echeance)}
+                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />

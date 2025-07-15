@@ -150,11 +150,14 @@ export default function Couvertures() {
     return vente.volume - volumeCouvert;
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(price);
+  const formatPrice = (price: number, product?: string) => {
+    if (product === 'mais') {
+      return `${price.toFixed(0)} cts/bu`;
+    } else if (product === 'tourteau_soja') {
+      return `$${price.toFixed(2)} USD/short ton`;
+    } else {
+      return `${price.toFixed(2)}`;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -320,7 +323,7 @@ export default function Couvertures() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="prix_futures">Prix futures (cts/bu)</Label>
+                <Label htmlFor="prix_futures">Prix futures ({venteSelectionnee?.navire.produit === 'mais' ? 'cts/bu' : venteSelectionnee?.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
                 <Input
                   id="prix_futures"
                   type="number"
@@ -405,7 +408,7 @@ export default function Couvertures() {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Prime:</span>
-                          <div className="font-medium">{vente.prime_vente} cts/bu</div>
+                          <div className="font-medium">{formatPrice(vente.prime_vente || 0, vente.navire.produit)}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Référence:</span>
@@ -420,7 +423,7 @@ export default function Couvertures() {
                             {vente.couvertures.map((couv) => (
                               <div key={couv.id} className="flex justify-between items-center text-xs bg-muted p-2 rounded">
                                 <div className="flex-1">
-                                  <span>{couv.volume_couvert} MT @ {formatPrice(couv.prix_futures)} cts/bu</span>
+                                  <span>{couv.volume_couvert} MT @ {formatPrice(couv.prix_futures, vente.navire.produit)}</span>
                                   <span className="ml-2 text-muted-foreground">{formatDate(couv.date_couverture)}</span>
                                 </div>
                                 <div className="flex gap-1">
@@ -498,7 +501,7 @@ export default function Couvertures() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit_prix_futures">Prix futures (cts/bu)</Label>
+              <Label htmlFor="edit_prix_futures">Prix futures ({editingCouverture?.vente.navire.produit === 'mais' ? 'cts/bu' : editingCouverture?.vente.navire.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
               <Input
                 id="edit_prix_futures"
                 type="number"

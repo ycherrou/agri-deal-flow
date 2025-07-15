@@ -277,16 +277,18 @@ export default function Dashboard() {
     }
 
     // Pour les deals prime, calculer le PRU
+    // Tout est déjà dans la même unité pour le produit (cts/bu pour maïs, USD/short ton pour tourteau)
     const volumeTotal = vente.volume;
     const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
     const volumeNonCouvert = volumeTotal - volumeCouvert;
+    
     if (volumeCouvert === 0) {
       // Si pas de couverture, utiliser le prix marché actuel
       const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
       return prixMarcheActuel + (vente.prime_vente || 0);
     }
 
-    // Calculer le prix moyen pondéré
+    // Calculer le prix moyen pondéré (pas de conversion nécessaire, même unité)
     const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
     const prixMarcheActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
     const prixMoyenNonCouvert = prixMarcheActuel;
@@ -300,12 +302,18 @@ export default function Dashboard() {
   const peutRevendre = (vente: NavireWithVentes['ventes'][0]) => {
     return calculerTauxCouverture(vente) === 100;
   };
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(price);
+  const formatPrice = (price: number, product?: string) => {
+    if (product === 'mais') {
+      return `${price.toFixed(0)} cts/bu`;
+    } else if (product === 'tourteau_soja') {
+      return `$${price.toFixed(2)} USD/short ton`;
+    } else {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2
+      }).format(price);
+    }
   };
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR');
@@ -661,7 +669,7 @@ export default function Dashboard() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">PRU:</span>
-                              <div className="font-medium">{formatPrice(calculerPRU(vente))}</div>
+                              <div className="font-medium">{formatPrice(calculerPRU(vente), navireActif.produit)}</div>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Couverture:</span>
@@ -740,13 +748,13 @@ export default function Dashboard() {
                               <div className="space-y-2">
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Prix:</span>
-                                  <span className="text-sm font-medium">
-                                    {vente.type_deal === 'flat' ? formatPrice(vente.prix_flat || 0) : `${vente.prime_vente || 0} cts/bu`}
-                                  </span>
+                                   <span className="text-sm font-medium">
+                                     {vente.type_deal === 'flat' ? formatPrice(vente.prix_flat || 0, navireActif.produit) : formatPrice(vente.prime_vente || 0, navireActif.produit)}
+                                   </span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">PRU:</span>
-                                  <span className="text-sm font-medium">{formatPrice(calculerPRU(vente))}</span>
+                                  <span className="text-sm font-medium">{formatPrice(calculerPRU(vente), navireActif.produit)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Référence:</span>
@@ -792,9 +800,9 @@ export default function Dashboard() {
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {formatDate(vente.date_deal)} • {vente.volume} MT • Prime: {vente.prime_vente || 0} cts/bu
-                                    </p>
+                                     <p className="text-sm text-muted-foreground">
+                                       {formatDate(vente.date_deal)} • {vente.volume} MT • Prime: {formatPrice(vente.prime_vente || 0, navireActif.produit)}
+                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                       Référence CBOT: {vente.prix_reference || 'Non définie'}
                                     </p>
@@ -853,7 +861,7 @@ export default function Dashboard() {
                                              </div>
                                              <div>
                                                <div className="text-xs text-muted-foreground">Prix futures</div>
-                                               <div className="font-medium">{couverture.prix_futures.toFixed(2)} cts/bu</div>
+                                               <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
                                              </div>
                                              <div>
                                                <div className="text-xs text-muted-foreground">Pourcentage</div>
@@ -978,7 +986,7 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="prix_futures">Prix futures (cts/bu)</Label>
+              <Label htmlFor="prix_futures">Prix futures ({navireActif?.produit === 'mais' ? 'cts/bu' : navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
               <Input
                 id="prix_futures"
                 type="number"
@@ -1096,7 +1104,7 @@ export default function Dashboard() {
 
             {venteFormData.type_deal === 'flat' && (
               <div className="space-y-2">
-                <Label htmlFor="prix_flat">Prix flat ($/MT)</Label>
+                <Label htmlFor="prix_flat">Prix flat ({navireActif?.produit === 'mais' ? 'cts/bu' : navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
                 <Input
                   id="prix_flat"
                   type="number"
@@ -1112,7 +1120,7 @@ export default function Dashboard() {
             {venteFormData.type_deal === 'prime' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="prime_vente">Prime vente (cts/bu)</Label>
+                  <Label htmlFor="prime_vente">Prime vente ({navireActif?.produit === 'mais' ? 'cts/bu' : navireActif?.produit === 'tourteau_soja' ? 'USD/short ton' : 'USD/MT'})</Label>
                   <Input
                     id="prime_vente"
                     type="number"
