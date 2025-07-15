@@ -102,7 +102,7 @@ export default function Couvertures() {
       const nouveauVolume = parseFloat(formData.volume_couvert);
 
       if (nouveauVolume > volumeRestant) {
-        throw new Error(`Volume maximum autorisé: ${volumeRestant} MT`);
+        throw new Error(`Volume maximum autorisé: ${volumeRestant}`);
       }
 
       const { error } = await supabase
@@ -278,7 +278,7 @@ export default function Couvertures() {
                   <SelectContent>
                     {ventes.filter(v => getVolumeRestant(v) > 0).map((vente) => (
                       <SelectItem key={vente.id} value={vente.id}>
-                        {vente.navire.nom} - {vente.client.nom} ({getVolumeRestant(vente)} MT restant)
+                        {vente.navire.nom} - {vente.client.nom} ({getVolumeRestant(vente)} restant)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -289,11 +289,11 @@ export default function Couvertures() {
                 <div className="p-3 bg-muted rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Volume total:</span>
-                    <span className="font-medium">{venteSelectionnee.volume} MT</span>
+                    <span className="font-medium">{venteSelectionnee.volume}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Volume restant:</span>
-                    <span className="font-medium text-warning">{getVolumeRestant(venteSelectionnee)} MT</span>
+                    <span className="font-medium text-warning">{getVolumeRestant(venteSelectionnee)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Référence:</span>
@@ -303,12 +303,12 @@ export default function Couvertures() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="volume_couvert">Volume à couvrir (MT)</Label>
+                <Label htmlFor="volume_couvert">Volume à couvrir</Label>
                 <Input
                   id="volume_couvert"
                   type="number"
                   step="0.01"
-                  placeholder="Volume en MT"
+                  placeholder="Volume"
                   value={formData.volume_couvert}
                   onChange={(e) => setFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
                   max={venteSelectionnee ? getVolumeRestant(venteSelectionnee) : undefined}
@@ -394,11 +394,11 @@ export default function Couvertures() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                         <div>
                           <span className="text-muted-foreground">Volume total:</span>
-                          <div className="font-medium">{vente.volume} MT</div>
+                          <div className="font-medium">{vente.volume}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Volume restant:</span>
-                          <div className="font-medium">{volumeRestant} MT</div>
+                          <div className="font-medium">{volumeRestant}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Prime:</span>
@@ -417,7 +417,7 @@ export default function Couvertures() {
                             {vente.couvertures.map((couv) => (
                               <div key={couv.id} className="flex justify-between items-center text-xs bg-muted p-2 rounded">
                                 <div className="flex-1">
-                                  <span>{couv.volume_couvert} MT @ {formatPrice(couv.prix_futures, vente.navire.produit)}</span>
+                                  <span>{couv.volume_couvert} @ {formatPrice(couv.prix_futures, vente.navire.produit)}</span>
                                   <span className="ml-2 text-muted-foreground">{formatDate(couv.date_couverture)}</span>
                                 </div>
                                 <div className="flex gap-1">
@@ -483,7 +483,7 @@ export default function Couvertures() {
           </DialogHeader>
           <form onSubmit={handleUpdateCouverture} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
+              <Label htmlFor="edit_volume_couvert">Volume couvert</Label>
               <Input
                 id="edit_volume_couvert"
                 type="number"

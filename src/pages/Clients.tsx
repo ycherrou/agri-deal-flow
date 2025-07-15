@@ -477,7 +477,7 @@ export default function Clients() {
                           <div className="text-sm">
                             <span className="text-muted-foreground">Activité: </span>
                             <span className="font-medium">
-                              {client.ventes.length} vente(s) - {getTotalVolume(client)} MT total
+                              {client.ventes.length} vente(s) - {getTotalVolume(client)} total
                             </span>
                           </div>
                         </div>

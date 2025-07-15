@@ -223,7 +223,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
   const tauxCouverture = (volumeCouvert / navire.quantite_totale) * 100;
 
   const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} cts/bu`;
+    return price.toFixed(2);
   };
 
   const formatDate = (dateString: string) => {
@@ -237,7 +237,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
           <div>
             <CardTitle>Couvertures d'Achat - {navire.nom}</CardTitle>
             <CardDescription>
-              Gestion des couvertures pour la position d'achat totale ({navire.quantite_totale} MT)
+              Gestion des couvertures pour la position d'achat totale ({navire.quantite_totale})
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -266,30 +266,30 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="prix_futures">Prix futures (cts/bu)</Label>
+                  <Label htmlFor="prix_futures">Prix futures</Label>
                   <Input
                     id="prix_futures"
                     type="number"
                     step="0.01"
-                    placeholder="Prix en cents par bushel"
+                    placeholder="Prix futures"
                     value={newCouverture.prix_futures}
                     onChange={(e) => setNewCouverture(prev => ({ ...prev, prix_futures: e.target.value }))}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="volume_couvert">Volume couvert (MT)</Label>
+                  <Label htmlFor="volume_couvert">Volume couvert</Label>
                   <Input
                     id="volume_couvert"
                     type="number"
                     step="0.01"
-                    placeholder="Volume en tonnes métriques"
+                    placeholder="Volume"
                     value={newCouverture.volume_couvert}
                     onChange={(e) => setNewCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Volume restant à couvrir: {volumeRestant.toLocaleString()} MT
+                    Volume restant à couvrir: {volumeRestant.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -311,11 +311,11 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
               <div>
                 <h4 className="font-medium">Position d'achat totale</h4>
                 <p className="text-sm text-muted-foreground">
-                  Navire: {navire.nom} • {navire.quantite_totale} MT
+                  Navire: {navire.nom} • {navire.quantite_totale}
                 </p>
                 {navire.prime_achat && (
                   <p className="text-xs text-muted-foreground">
-                    Prime d'achat: {navire.prime_achat} cts/bu • Référence: {navire.reference_cbot || 'Non définie'}
+                    Prime d'achat: {navire.prime_achat} • Référence: {navire.reference_cbot || 'Non définie'}
                   </p>
                 )}
               </div>
@@ -331,15 +331,15 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="bg-muted/50 rounded-lg p-3">
                 <div className="text-muted-foreground mb-1">Volume total</div>
-                <div className="font-medium">{navire.quantite_totale} MT</div>
+                <div className="font-medium">{navire.quantite_totale}</div>
               </div>
               <div className="bg-green-50 rounded-lg p-3">
                 <div className="text-muted-foreground mb-1">Volume couvert</div>
-                <div className="font-medium text-green-700">{volumeCouvert} MT</div>
+                <div className="font-medium text-green-700">{volumeCouvert}</div>
               </div>
               <div className="bg-orange-50 rounded-lg p-3">
                 <div className="text-muted-foreground mb-1">Volume restant</div>
-                <div className="font-medium text-orange-700">{volumeRestant} MT</div>
+                <div className="font-medium text-orange-700">{volumeRestant}</div>
               </div>
             </div>
 
@@ -350,7 +350,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                   <span className="font-medium">Position non couverte</span>
                 </div>
                 <p className="text-sm text-orange-600">
-                  {volumeRestant} MT restent à couvrir ({((volumeRestant / navire.quantite_totale) * 100).toFixed(1)}% du volume total)
+                  {volumeRestant} restent à couvrir ({((volumeRestant / navire.quantite_totale) * 100).toFixed(1)}% du volume total)
                 </p>
               </div>
             )}
@@ -373,7 +373,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Volume</div>
-                        <div className="font-medium">{couverture.volume_couvert} MT</div>
+                        <div className="font-medium">{couverture.volume_couvert}</div>
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Prix futures</div>
@@ -411,7 +411,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
               <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Aucune couverture d'achat</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Position exposée de {navire.quantite_totale} MT
+                Position exposée de {navire.quantite_totale}
               </p>
             </div>
            )}
@@ -439,24 +439,24 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                />
              </div>
              <div>
-               <Label htmlFor="edit_prix_futures">Prix futures (cts/bu)</Label>
+               <Label htmlFor="edit_prix_futures">Prix futures</Label>
                <Input
                  id="edit_prix_futures"
                  type="number"
                  step="0.01"
-                 placeholder="Prix en cents par bushel"
+                 placeholder="Prix futures"
                  value={editCouverture.prix_futures}
                  onChange={(e) => setEditCouverture(prev => ({ ...prev, prix_futures: e.target.value }))}
                  required
                />
              </div>
              <div>
-               <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
+               <Label htmlFor="edit_volume_couvert">Volume couvert</Label>
                <Input
                  id="edit_volume_couvert"
                  type="number"
                  step="0.01"
-                 placeholder="Volume en tonnes métriques"
+                 placeholder="Volume"
                  value={editCouverture.volume_couvert}
                  onChange={(e) => setEditCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
                  required

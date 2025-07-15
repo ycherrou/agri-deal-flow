@@ -233,7 +233,7 @@ export default function ClientPortfolio() {
               >
                 <div className="font-medium">{navire.nom}</div>
                 <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.volume_achete} MT
+                  {navire.produit} - {navire.volume_achete}
                 </div>
                 <div className="text-xs opacity-60">
                   {navire.contrat_reference}
@@ -275,7 +275,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.volume_achete} MT</div>
+                    <div className="text-2xl font-bold">{navireActif.volume_achete}</div>
                   </CardContent>
                 </Card>
 
@@ -334,11 +334,11 @@ export default function ClientPortfolio() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume couvert:</span>
-                        <span className="font-medium">{(navireActif.volume_achete - navireActif.volume_non_couvert).toFixed(1)} MT</span>
+                        <span className="font-medium">{(navireActif.volume_achete - navireActif.volume_non_couvert).toFixed(1)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume non couvert:</span>
-                        <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)} MT</span>
+                        <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -354,7 +354,7 @@ export default function ClientPortfolio() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Volume exposé</span>
-                      <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)} MT</span>
+                      <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)}</span>
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">Valeur exposition (prix actuel)</div>
@@ -386,7 +386,7 @@ export default function ClientPortfolio() {
                       {navireActif.couvertures.map((couverture) => (
                         <div key={couverture.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <div className="space-y-1">
-                            <div className="font-medium">{couverture.volume_couvert} MT</div>
+                            <div className="font-medium">{couverture.volume_couvert}</div>
                             <div className="text-sm text-muted-foreground">
                               {formatDate(couverture.date_couverture)}
                             </div>

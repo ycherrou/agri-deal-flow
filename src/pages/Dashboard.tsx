@@ -347,7 +347,7 @@ export default function Dashboard() {
       const nouveauVolume = parseFloat(couvertureFormData.volume_couvert);
 
       if (nouveauVolume > volumeRestant) {
-        throw new Error(`Volume maximum autorisé: ${volumeRestant} MT`);
+        throw new Error(`Volume maximum autorisé: ${volumeRestant}`);
       }
 
       const { error } = await supabase
@@ -475,7 +475,7 @@ export default function Dashboard() {
             {navires.map(navire => <button key={navire.id} onClick={() => setActiveNavire(navire.id)} className={`w-full p-3 rounded-lg border text-left transition-colors ${activeNavire === navire.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted border-border'}`}>
                 <div className="font-medium">{navire.nom}</div>
                 <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.quantite_totale} MT
+                  {navire.produit} - {navire.quantite_totale}
                 </div>
                 <div className="text-xs opacity-60">
                   {formatDate(navire.date_arrivee)}
@@ -504,7 +504,7 @@ export default function Dashboard() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{navireActif.quantite_totale} MT</div>
+                      <div className="text-2xl font-bold">{navireActif.quantite_totale}</div>
                       <div className="text-sm text-muted-foreground">
                         {navireActif.produit} - {navireActif.fournisseur}
                       </div>
@@ -520,7 +520,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {navireActif.prime_achat ? `${navireActif.prime_achat} cts/bu` : 'N/A'}
+                        {navireActif.prime_achat ? navireActif.prime_achat : 'N/A'}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {navireActif.reference_cbot && (
@@ -540,7 +540,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {navireActif.ventes.reduce((sum, v) => sum + v.volume, 0)} MT
+                        {navireActif.ventes.reduce((sum, v) => sum + v.volume, 0)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {navireActif.ventes.length} vente(s)
@@ -572,16 +572,16 @@ export default function Dashboard() {
                     return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Volume vendu:</span>
-                              <span className="font-medium">{volumeVendu.toFixed(1)} MT</span>
+                              <span className="font-medium">{volumeVendu.toFixed(1)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Volume acheté:</span>
-                              <span className="font-medium">{navireActif.quantite_totale.toFixed(1)} MT</span>
+                              <span className="font-medium">{navireActif.quantite_totale.toFixed(1)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
                               <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
-                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartVolume.toFixed(1)} MT` : `${ecartVolume.toFixed(1)} MT`}
+                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartVolume.toFixed(1)}` : `${ecartVolume.toFixed(1)}`}
                               </Badge>
                             </div>
                           </div>;
@@ -611,16 +611,16 @@ export default function Dashboard() {
                     return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Futures vente:</span>
-                              <span className="font-medium">{volumeFuturesAchat.toFixed(1)} MT</span>
+                              <span className="font-medium">{volumeFuturesAchat.toFixed(1)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Futures achat:</span>
-                              <span className="font-medium">{volumeFuturesVente.toFixed(1)} MT</span>
+                              <span className="font-medium">{volumeFuturesVente.toFixed(1)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
                               <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
-                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartFutures.toFixed(1)} MT` : `${ecartFutures.toFixed(1)} MT`}
+                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartFutures.toFixed(1)}` : `${ecartFutures.toFixed(1)}`}
                               </Badge>
                             </div>
                           </div>;
@@ -642,7 +642,7 @@ export default function Dashboard() {
                                 Vente #{vente.id.slice(0, 8)}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {formatDate(vente.date_deal)} - {vente.volume} MT
+                                {formatDate(vente.date_deal)} - {vente.volume}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -668,7 +668,7 @@ export default function Dashboard() {
                             <div>
                               <span className="text-muted-foreground">Volume non couvert:</span>
                               <div className="font-medium">
-                                {vente.volume - vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0)} MT
+                                {vente.volume - vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0)}
                               </div>
                             </div>
                             <div>
@@ -732,7 +732,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Volume:</span>
-                                  <span className="text-sm font-medium">{vente.volume} MT</span>
+                                  <span className="text-sm font-medium">{vente.volume}</span>
                                 </div>
                               </div>
                               <div className="space-y-2">
@@ -791,7 +791,7 @@ export default function Dashboard() {
                                   <div>
                                     <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
                                      <p className="text-sm text-muted-foreground">
-                                       {formatDate(vente.date_deal)} • {vente.volume} MT • Prime: {formatPrice(vente.prime_vente || 0, navireActif.produit)}
+                                       {formatDate(vente.date_deal)} • {vente.volume} • Prime: {formatPrice(vente.prime_vente || 0, navireActif.produit)}
                                      </p>
                                     <p className="text-xs text-muted-foreground">
                                       Référence CBOT: {vente.prix_reference || 'Non définie'}
@@ -821,15 +821,15 @@ export default function Dashboard() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                   <div className="bg-muted/50 rounded-lg p-3">
                                     <div className="text-muted-foreground mb-1">Volume total</div>
-                                    <div className="font-medium">{vente.volume} MT</div>
+                                    <div className="font-medium">{vente.volume}</div>
                                   </div>
                                   <div className="bg-green-50 rounded-lg p-3">
                                     <div className="text-muted-foreground mb-1">Volume couvert</div>
-                                    <div className="font-medium text-green-700">{volumeCouvert} MT</div>
+                                    <div className="font-medium text-green-700">{volumeCouvert}</div>
                                   </div>
                                   <div className="bg-orange-50 rounded-lg p-3">
                                     <div className="text-muted-foreground mb-1">Volume restant</div>
-                                    <div className="font-medium text-orange-700">{volumeRestant} MT</div>
+                                    <div className="font-medium text-orange-700">{volumeRestant}</div>
                                   </div>
                                 </div>
 
@@ -847,7 +847,7 @@ export default function Dashboard() {
                                              </div>
                                              <div>
                                                <div className="text-xs text-muted-foreground">Volume</div>
-                                               <div className="font-medium">{couverture.volume_couvert} MT</div>
+                                               <div className="font-medium">{couverture.volume_couvert}</div>
                                              </div>
                                              <div>
                                                <div className="text-xs text-muted-foreground">Prix futures</div>
@@ -874,7 +874,7 @@ export default function Dashboard() {
                                     <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">Aucune couverture pour cette vente</p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      Position exposée de {vente.volume} MT
+                                      Position exposée de {vente.volume}
                                     </p>
                                   </div>}
 
@@ -884,7 +884,7 @@ export default function Dashboard() {
                                       <span className="font-medium">Position non couverte</span>
                                     </div>
                                     <p className="text-sm text-orange-600">
-                                      {volumeRestant} MT restent à couvrir ({(volumeRestant / vente.volume * 100).toFixed(1)}% du volume total)
+                                      {volumeRestant} restent à couvrir ({(volumeRestant / vente.volume * 100).toFixed(1)}% du volume total)
                                     </p>
                                   </div>}
                               </div>;
@@ -963,12 +963,12 @@ export default function Dashboard() {
             })()}
 
             <div className="space-y-2">
-              <Label htmlFor="volume_couvert">Volume à couvrir (MT)</Label>
+              <Label htmlFor="volume_couvert">Volume à couvrir</Label>
               <Input
                 id="volume_couvert"
                 type="number"
                 step="0.01"
-                placeholder="Volume en MT"
+                placeholder="Volume"
                 value={couvertureFormData.volume_couvert}
                 onChange={(e) => setCouvertureFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
                 required
@@ -1053,12 +1053,12 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="volume">Volume (MT)</Label>
+                <Label htmlFor="volume">Volume</Label>
                 <Input
                   id="volume"
                   type="number"
                   step="0.01"
-                  placeholder="Volume en MT"
+                  placeholder="Volume"
                   value={venteFormData.volume}
                   onChange={(e) => setVenteFormData(prev => ({ ...prev, volume: e.target.value }))}
                   required
@@ -1099,7 +1099,7 @@ export default function Dashboard() {
                   id="prix_flat"
                   type="number"
                   step="0.01"
-                  placeholder="Prix en $/MT"
+                  placeholder="Prix"
                   value={venteFormData.prix_flat}
                   onChange={(e) => setVenteFormData(prev => ({ ...prev, prix_flat: e.target.value }))}
                   required
