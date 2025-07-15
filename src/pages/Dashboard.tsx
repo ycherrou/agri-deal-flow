@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react';
+import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CouverturesAchat from '@/components/CouverturesAchat';
 interface NavireWithVentes {
   id: string;
@@ -57,6 +60,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
+  const [isAddCouvertureDialogOpen, setIsAddCouvertureDialogOpen] = useState(false);
+  const [selectedVenteForCouverture, setSelectedVenteForCouverture] = useState<string | null>(null);
+  const [couvertureFormData, setCouvertureFormData] = useState({
+    volume_couvert: '',
+    prix_futures: '',
+    date_couverture: new Date().toISOString().split('T')[0]
+  });
+  const [addingCouverture, setAddingCouverture] = useState(false);
   const {
     toast
   } = useToast();
@@ -280,6 +291,65 @@ export default function Dashboard() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleAddCouverture = (venteId: string) => {
+    setSelectedVenteForCouverture(venteId);
+    setCouvertureFormData({
+      volume_couvert: '',
+      prix_futures: '',
+      date_couverture: new Date().toISOString().split('T')[0]
+    });
+    setIsAddCouvertureDialogOpen(true);
+  };
+
+  const handleSubmitCouverture = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVenteForCouverture) return;
+
+    setAddingCouverture(true);
+    try {
+      const vente = navireActif?.ventes.find(v => v.id === selectedVenteForCouverture);
+      if (!vente) throw new Error('Vente introuvable');
+
+      const volumeDejaCouverte = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+      const volumeRestant = vente.volume - volumeDejaCouverte;
+      const nouveauVolume = parseFloat(couvertureFormData.volume_couvert);
+
+      if (nouveauVolume > volumeRestant) {
+        throw new Error(`Volume maximum autorisé: ${volumeRestant} MT`);
+      }
+
+      const { error } = await supabase
+        .from('couvertures')
+        .insert([{
+          vente_id: selectedVenteForCouverture,
+          volume_couvert: nouveauVolume,
+          prix_futures: parseFloat(couvertureFormData.prix_futures),
+          date_couverture: couvertureFormData.date_couverture
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture ajoutée avec succès'
+      });
+
+      setIsAddCouvertureDialogOpen(false);
+      setSelectedVenteForCouverture(null);
+      fetchNavires(); // Refresh data
+    } catch (error: any) {
+      console.error('Error adding couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible d\'ajouter la couverture',
+        variant: 'destructive'
+      });
+    } finally {
+      setAddingCouverture(false);
+    }
+  };
+  
   const navireActif = navires.find(n => n.id === activeNavire);
   if (loading) {
     return <div className="flex items-center justify-center h-64">
@@ -627,12 +697,24 @@ export default function Dashboard() {
                                       Référence CBOT: {vente.prix_reference || 'Non définie'}
                                     </p>
                                   </div>
-                                  <div className="text-right">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Shield className="h-4 w-4 text-muted-foreground" />
-                                      <span className="text-sm font-medium">{tauxCouverture.toFixed(1)}%</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-right">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Shield className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">{tauxCouverture.toFixed(1)}%</span>
+                                      </div>
+                                      <Progress value={tauxCouverture} className="h-2 w-24" />
                                     </div>
-                                    <Progress value={tauxCouverture} className="h-2 w-24" />
+                                    {userRole === 'admin' && volumeRestant > 0 && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAddCouverture(vente.id)}
+                                        className="ml-2"
+                                      >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Ajouter
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
 
@@ -742,7 +824,105 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>}
-        </div>
+         </div>
       </div>
+
+      {/* Dialog pour ajouter une couverture */}
+      <Dialog open={isAddCouvertureDialogOpen} onOpenChange={setIsAddCouvertureDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter une couverture</DialogTitle>
+            <DialogDescription>
+              Ajouter une nouvelle couverture pour cette vente
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitCouverture} className="space-y-4">
+            {selectedVenteForCouverture && (() => {
+              const vente = navireActif?.ventes.find(v => v.id === selectedVenteForCouverture);
+              if (!vente) return null;
+              
+              const volumeDejaCouverte = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+              const volumeRestant = vente.volume - volumeDejaCouverte;
+              
+              return (
+                <div className="p-3 bg-muted rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Volume total:</span>
+                    <span className="font-medium">{vente.volume} MT</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Volume restant:</span>
+                    <span className="font-medium text-warning">{volumeRestant} MT</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Référence:</span>
+                    <span className="font-medium">{vente.prix_reference}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="space-y-2">
+              <Label htmlFor="volume_couvert">Volume à couvrir (MT)</Label>
+              <Input
+                id="volume_couvert"
+                type="number"
+                step="0.01"
+                placeholder="Volume en MT"
+                value={couvertureFormData.volume_couvert}
+                onChange={(e) => setCouvertureFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prix_futures">Prix futures (cts/bu)</Label>
+              <Input
+                id="prix_futures"
+                type="number"
+                step="0.01"
+                placeholder="Ex: 425.50"
+                value={couvertureFormData.prix_futures}
+                onChange={(e) => setCouvertureFormData(prev => ({ ...prev, prix_futures: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="date_couverture">Date de couverture</Label>
+              <Input
+                id="date_couverture"
+                type="date"
+                value={couvertureFormData.date_couverture}
+                onChange={(e) => setCouvertureFormData(prev => ({ ...prev, date_couverture: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsAddCouvertureDialogOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={addingCouverture}>
+                {addingCouverture ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Ajout...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Ajouter
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>;
 }
