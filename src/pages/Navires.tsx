@@ -52,8 +52,20 @@ export default function Navires() {
     prime_achat: '',
     reference_cbot: '',
     date_arrivee: '',
-    fournisseur: ''
+    fournisseur: '',
+    facteur_conversion: ''
   });
+
+  // Calcul automatique du facteur de conversion
+  useEffect(() => {
+    let facteur = '';
+    if (formData.produit === 'mais') {
+      facteur = '127';
+    } else if (formData.produit === 'tourteau_soja') {
+      facteur = '136';
+    }
+    setFormData(prev => ({ ...prev, facteur_conversion: facteur }));
+  }, [formData.produit]);
 
   useEffect(() => {
     fetchNavires();
@@ -187,6 +199,7 @@ export default function Navires() {
 
   const handleEdit = (navire: Navire) => {
     setEditingNavire(navire);
+    const facteur = navire.produit === 'mais' ? '127' : navire.produit === 'tourteau_soja' ? '136' : '';
     setFormData({
       nom: navire.nom,
       produit: navire.produit,
@@ -194,7 +207,8 @@ export default function Navires() {
       prime_achat: navire.prime_achat?.toString() || '',
       reference_cbot: navire.reference_cbot || '',
       date_arrivee: navire.date_arrivee,
-      fournisseur: navire.fournisseur
+      fournisseur: navire.fournisseur,
+      facteur_conversion: facteur
     });
     setIsDialogOpen(true);
   };
@@ -242,7 +256,8 @@ export default function Navires() {
       prime_achat: '',
       reference_cbot: '',
       date_arrivee: '',
-      fournisseur: ''
+      fournisseur: '',
+      facteur_conversion: ''
     });
     setEditingNavire(null);
   };
@@ -384,6 +399,16 @@ export default function Navires() {
                   value={formData.fournisseur}
                   onChange={(e) => setFormData({ ...formData, fournisseur: e.target.value })}
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facteur_conversion">Facteur de conversion</Label>
+                <Input
+                  id="facteur_conversion"
+                  value={formData.facteur_conversion}
+                  disabled
+                  className="bg-muted"
                 />
               </div>
 
