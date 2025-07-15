@@ -60,9 +60,9 @@ export default function Navires() {
   useEffect(() => {
     let facteur = '';
     if (formData.produit === 'mais') {
-      facteur = '127';
+      facteur = '0.3937';
     } else if (formData.produit === 'tourteau_soja') {
-      facteur = '136';
+      facteur = '0.4640';
     }
     setFormData(prev => ({ ...prev, facteur_conversion: facteur }));
   }, [formData.produit]);
@@ -199,7 +199,7 @@ export default function Navires() {
 
   const handleEdit = (navire: Navire) => {
     setEditingNavire(navire);
-    const facteur = navire.produit === 'mais' ? '127' : navire.produit === 'tourteau_soja' ? '136' : '';
+    const facteur = navire.produit === 'mais' ? '0.3937' : navire.produit === 'tourteau_soja' ? '0.4640' : '';
     setFormData({
       nom: navire.nom,
       produit: navire.produit,
