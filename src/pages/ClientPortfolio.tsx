@@ -99,12 +99,25 @@ export default function ClientPortfolio() {
 
       if (error) throw error;
 
+      // S'assurer que les prix du marché sont disponibles
+      if (prixMarche.length === 0) {
+        await fetchPrixMarche();
+      }
+
       // Transformer les données pour le portfolio client
       const portfolioData: ClientPortfolioData[] = (naviresData || []).flatMap(navire => 
         navire.ventes.map(vente => {
           const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
+          
+          // Chercher le prix CBOT actuel correspondant au contrat de référence
           const prixCbotActuel = prixMarche.find(p => p.echeance === vente.prix_reference)?.prix || 0;
+          
+          console.log('Prix CBOT recherche:', {
+            prix_reference: vente.prix_reference,
+            prixMarche: prixMarche,
+            prixTrouve: prixCbotActuel
+          });
           
           // Calcul PRU
           let pru = 0;
