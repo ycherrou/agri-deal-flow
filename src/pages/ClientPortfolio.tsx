@@ -38,8 +38,11 @@ export default function ClientPortfolio() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchClientPortfolio();
-    fetchPrixMarche();
+    const loadData = async () => {
+      await fetchPrixMarche();
+      await fetchClientPortfolio();
+    };
+    loadData();
   }, []);
 
   const fetchPrixMarche = async () => {
