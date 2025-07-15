@@ -444,11 +444,11 @@ export default function Dashboard() {
                     const surCouvert = ecartFutures > 0;
                     return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures achat:</span>
+                              <span className="text-muted-foreground">Futures vente:</span>
                               <span className="font-medium">{volumeFuturesAchat.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures vente:</span>
+                              <span className="text-muted-foreground">Futures achat:</span>
                               <span className="font-medium">{volumeFuturesVente.toFixed(1)} MT</span>
                             </div>
                             <div className="flex justify-between items-center">
