@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { AlertCircle, Shield, Plus, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -38,15 +39,19 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCouverture, setEditingCouverture] = useState<CouvertureAchat | null>(null);
+  const [inputMode, setInputMode] = useState<'volume' | 'futures'>('volume');
+  const [editInputMode, setEditInputMode] = useState<'volume' | 'futures'>('volume');
   const [newCouverture, setNewCouverture] = useState({
     date_couverture: new Date().toISOString().split('T')[0],
     prix_futures: '',
-    volume_couvert: ''
+    volume_couvert: '',
+    nombre_futures: ''
   });
   const [editCouverture, setEditCouverture] = useState({
     date_couverture: '',
     prix_futures: '',
-    volume_couvert: ''
+    volume_couvert: '',
+    nombre_futures: ''
   });
   const { toast } = useToast();
 
@@ -103,6 +108,15 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
     e.preventDefault();
     if (!navireId) return;
 
+    // Calculer le volume selon le mode de saisie
+    let volumeCouvert: number;
+    if (inputMode === 'futures') {
+      // 1 future = 127.006 MT pour le maïs (5000 bushels * 25.4 kg/bushel / 1000)
+      volumeCouvert = parseFloat(newCouverture.nombre_futures) * 127.006;
+    } else {
+      volumeCouvert = parseFloat(newCouverture.volume_couvert);
+    }
+
     try {
       const { error } = await supabase
         .from('couvertures_achat')
@@ -110,7 +124,7 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
           navire_id: navireId,
           date_couverture: newCouverture.date_couverture,
           prix_futures: parseFloat(newCouverture.prix_futures),
-          volume_couvert: parseFloat(newCouverture.volume_couvert)
+          volume_couvert: volumeCouvert
         });
 
       if (error) throw error;
@@ -123,7 +137,8 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
       setNewCouverture({
         date_couverture: new Date().toISOString().split('T')[0],
         prix_futures: '',
-        volume_couvert: ''
+        volume_couvert: '',
+        nombre_futures: ''
       });
       setIsDialogOpen(false);
       fetchCouvertures();
@@ -139,10 +154,12 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
 
   const handleEditClick = (couverture: CouvertureAchat) => {
     setEditingCouverture(couverture);
+    const nombreFutures = (couverture.volume_couvert / 127.006).toFixed(2);
     setEditCouverture({
       date_couverture: couverture.date_couverture,
       prix_futures: couverture.prix_futures.toString(),
-      volume_couvert: couverture.volume_couvert.toString()
+      volume_couvert: couverture.volume_couvert.toString(),
+      nombre_futures: nombreFutures
     });
     setIsEditDialogOpen(true);
   };
@@ -151,13 +168,21 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
     e.preventDefault();
     if (!editingCouverture) return;
 
+    // Calculer le volume selon le mode de saisie
+    let volumeCouvert: number;
+    if (editInputMode === 'futures') {
+      volumeCouvert = parseFloat(editCouverture.nombre_futures) * 127.006;
+    } else {
+      volumeCouvert = parseFloat(editCouverture.volume_couvert);
+    }
+
     try {
       const { error } = await supabase
         .from('couvertures_achat')
         .update({
           date_couverture: editCouverture.date_couverture,
           prix_futures: parseFloat(editCouverture.prix_futures),
-          volume_couvert: parseFloat(editCouverture.volume_couvert)
+          volume_couvert: volumeCouvert
         })
         .eq('id', editingCouverture.id);
 
@@ -278,17 +303,51 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="volume_couvert">Volume couvert (MT)</Label>
-                  <Input
-                    id="volume_couvert"
-                    type="number"
-                    step="0.01"
-                    placeholder="Volume en tonnes métriques"
-                    value={newCouverture.volume_couvert}
-                    onChange={(e) => setNewCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>Mode de saisie</Label>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="input-mode" className="text-sm">Volume (MT)</Label>
+                      <Switch
+                        id="input-mode"
+                        checked={inputMode === 'futures'}
+                        onCheckedChange={(checked) => setInputMode(checked ? 'futures' : 'volume')}
+                      />
+                      <Label htmlFor="input-mode" className="text-sm">Nombre de futures</Label>
+                    </div>
+                  </div>
+                  
+                  {inputMode === 'volume' ? (
+                    <div>
+                      <Label htmlFor="volume_couvert">Volume couvert (MT)</Label>
+                      <Input
+                        id="volume_couvert"
+                        type="number"
+                        step="0.01"
+                        placeholder="Volume en tonnes métriques"
+                        value={newCouverture.volume_couvert}
+                        onChange={(e) => setNewCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="nombre_futures">Nombre de futures</Label>
+                      <Input
+                        id="nombre_futures"
+                        type="number"
+                        step="0.01"
+                        placeholder="Nombre de contrats futures"
+                        value={newCouverture.nombre_futures}
+                        onChange={(e) => setNewCouverture(prev => ({ ...prev, nombre_futures: e.target.value }))}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        1 future = 127 MT (5000 bushels)
+                      </p>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
                     Volume restant à couvrir: {volumeRestant.toLocaleString()} MT
                   </p>
                 </div>
@@ -372,8 +431,13 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                         <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-muted-foreground">Volume</div>
-                        <div className="font-medium">{couverture.volume_couvert} MT</div>
+                        <div className="text-xs text-muted-foreground">Volume / Futures</div>
+                        <div className="font-medium">
+                          {couverture.volume_couvert} MT
+                          <div className="text-xs text-muted-foreground">
+                            ({(couverture.volume_couvert / 127.006).toFixed(1)} futures)
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Prix futures</div>
@@ -450,18 +514,51 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                  required
                />
              </div>
-             <div>
-               <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
-               <Input
-                 id="edit_volume_couvert"
-                 type="number"
-                 step="0.01"
-                 placeholder="Volume en tonnes métriques"
-                 value={editCouverture.volume_couvert}
-                 onChange={(e) => setEditCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
-                 required
-               />
-             </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <Label>Mode de saisie</Label>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="edit-input-mode" className="text-sm">Volume (MT)</Label>
+                    <Switch
+                      id="edit-input-mode"
+                      checked={editInputMode === 'futures'}
+                      onCheckedChange={(checked) => setEditInputMode(checked ? 'futures' : 'volume')}
+                    />
+                    <Label htmlFor="edit-input-mode" className="text-sm">Nombre de futures</Label>
+                  </div>
+                </div>
+                
+                {editInputMode === 'volume' ? (
+                  <div>
+                    <Label htmlFor="edit_volume_couvert">Volume couvert (MT)</Label>
+                    <Input
+                      id="edit_volume_couvert"
+                      type="number"
+                      step="0.01"
+                      placeholder="Volume en tonnes métriques"
+                      value={editCouverture.volume_couvert}
+                      onChange={(e) => setEditCouverture(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="edit_nombre_futures">Nombre de futures</Label>
+                    <Input
+                      id="edit_nombre_futures"
+                      type="number"
+                      step="0.01"
+                      placeholder="Nombre de contrats futures"
+                      value={editCouverture.nombre_futures}
+                      onChange={(e) => setEditCouverture(prev => ({ ...prev, nombre_futures: e.target.value }))}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      1 future = 127 MT (5000 bushels)
+                    </p>
+                  </div>
+                )}
+              </div>
              <div className="flex justify-end gap-2">
                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                  Annuler
