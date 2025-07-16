@@ -65,7 +65,7 @@ interface NavireWithVentes {
       id: string;
       volume: number;
       prix_flat_demande: number;
-      etat: 'en_attente' | 'vendu' | 'retire';
+      etat: 'en_attente' | 'vendu' | 'retire' | 'en_attente_validation';
       date_revente: string;
     }>;
   }>;

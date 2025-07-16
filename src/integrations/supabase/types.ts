@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      bids_marche_secondaire: {
+        Row: {
+          client_id: string
+          created_at: string
+          date_bid: string
+          id: string
+          prix_bid: number
+          revente_id: string
+          statut: string
+          updated_at: string
+          volume_bid: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          date_bid?: string
+          id?: string
+          prix_bid: number
+          revente_id: string
+          statut?: string
+          updated_at?: string
+          volume_bid: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          date_bid?: string
+          id?: string
+          prix_bid?: number
+          revente_id?: string
+          statut?: string
+          updated_at?: string
+          volume_bid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_marche_secondaire_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_marche_secondaire_revente_id_fkey"
+            columns: ["revente_id"]
+            isOneToOne: false
+            referencedRelation: "reventes_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string | null
@@ -237,39 +288,58 @@ export type Database = {
       }
       reventes_clients: {
         Row: {
+          admin_id: string | null
+          admin_validation_date: string | null
           commentaire: string | null
           created_at: string | null
+          date_expiration_validation: string | null
           date_revente: string
           etat: Database["public"]["Enums"]["revente_status"]
           id: string
           prix_flat_demande: number
           updated_at: string | null
+          validated_by_admin: boolean | null
           vente_id: string
           volume: number
         }
         Insert: {
+          admin_id?: string | null
+          admin_validation_date?: string | null
           commentaire?: string | null
           created_at?: string | null
+          date_expiration_validation?: string | null
           date_revente?: string
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prix_flat_demande: number
           updated_at?: string | null
+          validated_by_admin?: boolean | null
           vente_id: string
           volume: number
         }
         Update: {
+          admin_id?: string | null
+          admin_validation_date?: string | null
           commentaire?: string | null
           created_at?: string | null
+          date_expiration_validation?: string | null
           date_revente?: string
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prix_flat_demande?: number
           updated_at?: string | null
+          validated_by_admin?: boolean | null
           vente_id?: string
           volume?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "reventes_clients_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reventes_clients_vente_id_fkey"
             columns: ["vente_id"]
@@ -363,7 +433,11 @@ export type Database = {
     Enums: {
       deal_type: "prime" | "flat"
       product_type: "mais" | "tourteau_soja" | "ble" | "orge"
-      revente_status: "en_attente" | "vendu" | "retire"
+      revente_status:
+        | "en_attente"
+        | "vendu"
+        | "retire"
+        | "en_attente_validation"
       user_role: "admin" | "client"
     }
     CompositeTypes: {
@@ -494,7 +568,12 @@ export const Constants = {
     Enums: {
       deal_type: ["prime", "flat"],
       product_type: ["mais", "tourteau_soja", "ble", "orge"],
-      revente_status: ["en_attente", "vendu", "retire"],
+      revente_status: [
+        "en_attente",
+        "vendu",
+        "retire",
+        "en_attente_validation",
+      ],
       user_role: ["admin", "client"],
     },
   },

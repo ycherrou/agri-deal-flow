@@ -18,6 +18,7 @@ import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import PrixMarche from "./pages/PrixMarche";
 import PnL from "./pages/PnL";
+import MarcheSecondaire from "./pages/MarcheSecondaire";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,8 +43,9 @@ const App = () => (
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="/prix-marche" element={<Layout><PrixMarche /></Layout>} />
-          <Route path="/pnl" element={<Layout><PnL /></Layout>} />
-          <Route path="*" element={<NotFound />} />
+            <Route path="/pnl" element={<Layout><PnL /></Layout>} />
+            <Route path="/marche-secondaire" element={<Layout><MarcheSecondaire /></Layout>} />
+            <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

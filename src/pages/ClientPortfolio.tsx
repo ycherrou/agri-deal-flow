@@ -3,8 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, Shield, Package, AlertCircle, Anchor, Calendar } from 'lucide-react';
+import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart } from 'lucide-react';
 
 interface NavirePortfolioData {
   navire_id: string;
@@ -39,6 +42,11 @@ export default function ClientPortfolio() {
   const [portfolioData, setPortfolioData] = useState<NavirePortfolioData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string>('');
+  const [reventeDialog, setReventeDialog] = useState<{open: boolean, position: any}>({open: false, position: null});
+  const [reventeVolume, setReventeVolume] = useState('');
+  const [reventePrix, setReventePrix] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,6 +65,7 @@ export default function ClientPortfolio() {
         .single();
 
       if (!clientData) return;
+      setClientId(clientData.id);
 
       // Récupérer les navires avec les ventes du client
       const { data: naviresData, error } = await supabase
@@ -151,6 +160,82 @@ export default function ClientPortfolio() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getPositionsWithCouverture = () => {
+    if (!navireActif) return [];
+    return navireActif.positions.filter(pos => getVolumeCouvert(pos) > 0);
+  };
+
+  const getVolumeCouvert = (position: any) => {
+    return position.couvertures.reduce((total: number, couv: any) => total + couv.volume_couvert, 0);
+  };
+
+  const handleRevente = async () => {
+    if (!reventeDialog.position) return;
+
+    const volume = parseFloat(reventeVolume);
+    const prix = parseFloat(reventePrix);
+    const volumeCouvert = getVolumeCouvert(reventeDialog.position);
+
+    if (!volume || !prix || volume <= 0 || prix <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez saisir un volume et un prix valides",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (volume > volumeCouvert) {
+      toast({
+        title: "Erreur",
+        description: `Vous ne pouvez remettre en vente que ${volumeCouvert} MT (volume couvert)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const expirationDate = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+
+      const { error } = await supabase
+        .from('reventes_clients')
+        .insert({
+          vente_id: reventeDialog.position.id,
+          volume: volume,
+          prix_flat_demande: prix,
+          etat: 'en_attente_validation',
+          date_expiration_validation: expirationDate.toISOString(),
+          date_revente: new Date().toISOString().split('T')[0], // Today's date
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Votre demande de revente a été soumise et est en attente de validation administrateur (30 min max)",
+      });
+
+      // Reset form
+      setReventeVolume('');
+      setReventePrix('');
+      setReventeDialog({open: false, position: null});
+
+    } catch (error) {
+      console.error('Erreur lors de la création de la revente:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de soumettre votre demande de revente",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -432,10 +517,115 @@ export default function ClientPortfolio() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Section Revente */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Revente de positions
+                  </CardTitle>
+                  <CardDescription>
+                    Remettez en vente vos positions couvertes sur le marché secondaire
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {getPositionsWithCouverture().length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      Aucune position couverte disponible pour la revente.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {getPositionsWithCouverture().map((pos, idx) => (
+                        <div key={pos.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium">Position #{idx + 1}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
+                              </div>
+                              <div className="text-sm">
+                                Volume couvert: <span className="font-medium text-green-600">{getVolumeCouvert(pos)} tonnes</span>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setReventeDialog({open: true, position: pos})}
+                            >
+                              Remettre en vente
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
       </div>
+
+      {/* Dialog de revente */}
+      <Dialog open={reventeDialog.open} onOpenChange={(open) => setReventeDialog({open, position: null})}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remettre en vente</DialogTitle>
+          </DialogHeader>
+          {reventeDialog.position && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Volume total:</span>
+                  <div>{reventeDialog.position.volume_achete} MT</div>
+                </div>
+                <div>
+                  <span className="font-medium">Volume couvert:</span>
+                  <div className="text-green-600">{getVolumeCouvert(reventeDialog.position)} MT</div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium">Volume à remettre en vente (MT)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder={`Max: ${getVolumeCouvert(reventeDialog.position)}`}
+                    max={getVolumeCouvert(reventeDialog.position)}
+                    value={reventeVolume}
+                    onChange={(e) => setReventeVolume(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Prix de vente demandé (USD/MT)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 280.00"
+                    value={reventePrix}
+                    onChange={(e) => setReventePrix(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded text-sm text-blue-800">
+                <strong>Important :</strong> Votre demande sera soumise à validation administrateur. 
+                L'administrateur a 30 minutes pour valider votre demande, sinon elle sera automatiquement rejetée.
+              </div>
+              
+              <Button 
+                onClick={handleRevente}
+                disabled={submitting || !reventeVolume || !reventePrix}
+                className="w-full"
+              >
+                {submitting ? 'Soumission...' : 'Soumettre la demande'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
