@@ -11,18 +11,29 @@ interface ClientPortfolioData {
   id: string;
   nom: string;
   produit: string;
-  contrat_reference: string;
-  volume_achete: number;
-  prime_payee: number;
-  couvertures: Array<{
+  positions: Array<{
     id: string;
-    volume_couvert: number;
-    prix_futures: number;
-    date_couverture: string;
+    contrat_reference: string;
+    volume_achete: number;
+    prime_payee: number;
+    type_deal: 'prime' | 'flat';
+    prix_flat: number | null;
+    date_deal: string;
+    couvertures: Array<{
+      id: string;
+      volume_couvert: number;
+      prix_futures: number;
+      date_couverture: string;
+    }>;
+    volume_non_couvert: number;
+    prix_cbot_actuel: number;
+    pru: number;
   }>;
-  volume_non_couvert: number;
-  prix_cbot_actuel: number;
-  pru: number;
+  volume_total: number;
+  volume_couvert_total: number;
+  volume_non_couvert_total: number;
+  prime_moyenne: number;
+  pru_moyen: number;
 }
 
 interface PrixMarche {
@@ -115,59 +126,90 @@ export default function ClientPortfolio() {
         .eq('echeance.active', true)
         .order('created_at', { ascending: false });
 
+      const latestPrices = getLatestPricesForMaturities(prixMarcheData || []);
+
+      // Regrouper les ventes par navire
+      const naviresGroupes = new Map<string, any>();
+      
+      (naviresData || []).forEach(navire => {
+        if (!naviresGroupes.has(navire.id)) {
+          naviresGroupes.set(navire.id, {
+            id: navire.id,
+            nom: navire.nom,
+            produit: navire.produit,
+            ventes: []
+          });
+        }
+        naviresGroupes.get(navire.id)!.ventes.push(...navire.ventes);
+      });
+
       // Transformer les données pour le portfolio client
-      const portfolioData: ClientPortfolioData[] = (naviresData || []).flatMap(navire => 
-        navire.ventes.map(vente => {
-          const volumeCouvert = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+      const portfolioData: ClientPortfolioData[] = Array.from(naviresGroupes.values()).map(navire => {
+        const positions = navire.ventes.map((vente: any) => {
+          const volumeCouvert = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
-          
-           // Récupérer le dernier prix pour chaque échéance
-           const latestPrices = getLatestPricesForMaturities(prixMarcheData || []);
           
           // Chercher le prix CBOT le plus récent pour le contrat de référence
           const prixCbotActuel = vente.prix_reference ? (latestPrices.get(vente.prix_reference) || 0) : 0;
           
-          console.log('Prix CBOT recherche:', {
-            prix_reference: vente.prix_reference,
-            prixTrouve: prixCbotActuel,
-            latestPrices: Array.from(latestPrices.entries())
-          });
-          
-           // Calcul PRU avec le dernier prix futures de référence
-           let pru = 0;
-           if (vente.type_deal === 'flat') {
-             // Pour les ventes flat, le PRU est égal au prix de vente (déjà en €/tonne)
-             pru = vente.prix_flat || 0;
-           } else {
-             if (volumeCouvert === 0) {
-               pru = prixCbotActuel + (vente.prime_vente || 0);
-             } else {
-               const prixMoyenCouvert = vente.couvertures.reduce((sum, c) => 
-                 sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
-               const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixCbotActuel * volumeNonCouvert) / vente.volume;
-               pru = prixMoyenPondere + (vente.prime_vente || 0);
-             }
-             
-             // Appliquer le facteur de conversion seulement pour les ventes prime (prix futures en cts/bu -> €/tonne)
-             const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
-                                      navire.produit === 'tourteau_soja' ? 0.4640 : 1;
-             pru = pru * facteurConversion;
-           }
+          // Calcul PRU
+          let pru = 0;
+          if (vente.type_deal === 'flat') {
+            pru = vente.prix_flat || 0;
+          } else {
+            if (volumeCouvert === 0) {
+              pru = prixCbotActuel + (vente.prime_vente || 0);
+            } else {
+              const prixMoyenCouvert = vente.couvertures.reduce((sum: number, c: any) => 
+                sum + c.prix_futures * c.volume_couvert, 0) / volumeCouvert;
+              const prixMoyenPondere = (prixMoyenCouvert * volumeCouvert + prixCbotActuel * volumeNonCouvert) / vente.volume;
+              pru = prixMoyenPondere + (vente.prime_vente || 0);
+            }
+            
+            // Facteur de conversion pour les ventes prime
+            const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
+                                     navire.produit === 'tourteau_soja' ? 0.4640 : 1;
+            pru = pru * facteurConversion;
+          }
 
           return {
-            id: navire.id,
-            nom: navire.nom,
-            produit: navire.produit,
+            id: vente.id,
             contrat_reference: vente.prix_reference || 'N/A',
             volume_achete: vente.volume,
             prime_payee: vente.prime_vente || 0,
+            type_deal: vente.type_deal,
+            prix_flat: vente.prix_flat,
+            date_deal: vente.date_deal,
             couvertures: vente.couvertures,
             volume_non_couvert: volumeNonCouvert,
             prix_cbot_actuel: prixCbotActuel,
             pru
           };
-        })
-      );
+        });
+
+        // Calculs agrégés pour le navire
+        const volumeTotal = positions.reduce((sum, p) => sum + p.volume_achete, 0);
+        const volumeCouvertTotal = positions.reduce((sum, p) => sum + (p.volume_achete - p.volume_non_couvert), 0);
+        const volumeNonCouvertTotal = volumeTotal - volumeCouvertTotal;
+        
+        // Prime moyenne pondérée
+        const primeMoyenne = positions.reduce((sum, p) => sum + (p.prime_payee * p.volume_achete), 0) / volumeTotal;
+        
+        // PRU moyen pondéré
+        const pruMoyen = positions.reduce((sum, p) => sum + (p.pru * p.volume_achete), 0) / volumeTotal;
+
+        return {
+          id: navire.id,
+          nom: navire.nom,
+          produit: navire.produit,
+          positions,
+          volume_total: volumeTotal,
+          volume_couvert_total: volumeCouvertTotal,
+          volume_non_couvert_total: volumeNonCouvertTotal,
+          prime_moyenne: primeMoyenne,
+          pru_moyen: pruMoyen
+        };
+      });
 
       setPortfolioData(portfolioData);
       if (portfolioData.length > 0 && !activeNavire) {
@@ -209,7 +251,7 @@ export default function ClientPortfolio() {
   };
 
   const calculerTauxCouverture = (navire: ClientPortfolioData) => {
-    return navire.volume_achete > 0 ? ((navire.volume_achete - navire.volume_non_couvert) / navire.volume_achete) * 100 : 0;
+    return navire.volume_total > 0 ? (navire.volume_couvert_total / navire.volume_total) * 100 : 0;
   };
 
   const navireActif = portfolioData.find(n => n.id === activeNavire);
@@ -269,10 +311,10 @@ export default function ClientPortfolio() {
               >
                 <div className="font-medium">{navire.nom}</div>
                 <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.volume_achete}
+                  {navire.produit} - {navire.volume_total} tonnes
                 </div>
                 <div className="text-xs opacity-60">
-                  {navire.contrat_reference}
+                  {navire.positions.length} position{navire.positions.length > 1 ? 's' : ''}
                 </div>
               </button>
             ))}
@@ -296,7 +338,7 @@ export default function ClientPortfolio() {
                     </Badge>
                   </div>
                   <CardDescription>
-                    Contrat de référence: {navireActif.contrat_reference}
+                    {navireActif.positions.length} position{navireActif.positions.length > 1 ? 's' : ''} - Volume total: {navireActif.volume_total} tonnes
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -311,7 +353,10 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.volume_achete}</div>
+                    <div className="text-2xl font-bold">{navireActif.volume_total} tonnes</div>
+                    <div className="text-sm text-muted-foreground">
+                      Couvert: {navireActif.volume_couvert_total} | Non couvert: {navireActif.volume_non_couvert_total}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -323,7 +368,8 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.prime_payee, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold">{formatPrice(navireActif.prime_moyenne, navireActif.produit)}</div>
+                    <div className="text-sm text-muted-foreground">Moyenne pondérée</div>
                   </CardContent>
                 </Card>
 
@@ -331,11 +377,12 @@ export default function ClientPortfolio() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" />
-                      Prix CBOT Actuel
+                      Prix de Marché
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.prix_cbot_actuel, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold">{formatPrice(navireActif.positions[0]?.prix_cbot_actuel || 0, navireActif.produit)}</div>
+                    <div className="text-sm text-muted-foreground">Prix CBOT actuel</div>
                   </CardContent>
                 </Card>
 
@@ -347,7 +394,8 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-primary">{formatPrice(navireActif.pru, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold text-primary">{formatPrice(navireActif.pru_moyen, navireActif.produit)}</div>
+                    <div className="text-sm text-muted-foreground">Prix de revient moyen</div>
                   </CardContent>
                 </Card>
               </div>
@@ -370,11 +418,11 @@ export default function ClientPortfolio() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume couvert:</span>
-                        <span className="font-medium">{(navireActif.volume_achete - navireActif.volume_non_couvert).toFixed(1)}</span>
+                        <span className="font-medium">{navireActif.volume_couvert_total.toFixed(1)} tonnes</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume non couvert:</span>
-                        <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)}</span>
+                        <span className="font-medium">{navireActif.volume_non_couvert_total.toFixed(1)} tonnes</span>
                       </div>
                     </div>
                   </CardContent>
@@ -390,15 +438,15 @@ export default function ClientPortfolio() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Volume exposé</span>
-                      <span className="font-medium">{navireActif.volume_non_couvert.toFixed(1)}</span>
+                      <span className="font-medium">{navireActif.volume_non_couvert_total.toFixed(1)} tonnes</span>
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
-                      <div className="text-sm text-muted-foreground mb-1">Valeur exposition (prix actuel)</div>
+                      <div className="text-sm text-muted-foreground mb-1">Valeur exposition (prix moyen)</div>
                       <div className="text-lg font-bold">
-                        {formatPrice(navireActif.volume_non_couvert * navireActif.prix_cbot_actuel, navireActif.produit)}
+                        {formatPrice(navireActif.volume_non_couvert_total * (navireActif.positions[0]?.prix_cbot_actuel || 0), navireActif.produit)}
                       </div>
                     </div>
-                    {navireActif.volume_non_couvert > 0 && (
+                    {navireActif.volume_non_couvert_total > 0 && (
                       <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
                         <AlertCircle className="h-4 w-4" />
                         Position non couverte exposée aux variations de prix
@@ -408,35 +456,75 @@ export default function ClientPortfolio() {
                 </Card>
               </div>
 
-              {/* Détail des couvertures */}
-              {navireActif.couvertures.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Détail des Couvertures</CardTitle>
-                    <CardDescription>
-                      Historique de vos opérations de couverture
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {navireActif.couvertures.map((couverture) => (
-                        <div key={couverture.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div className="space-y-1">
-                            <div className="font-medium">{couverture.volume_couvert}</div>
+              {/* Détail des positions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Détail des Positions</CardTitle>
+                  <CardDescription>
+                    Vue détaillée de vos positions par contrat de référence
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {navireActif.positions.map((position, index) => (
+                      <div key={position.id} className="border rounded-lg p-4 bg-muted/50">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-medium">Position #{index + 1}</div>
                             <div className="text-sm text-muted-foreground">
-                              {formatDate(couverture.date_couverture)}
+                              {position.contrat_reference} - {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
-                            <div className="text-sm text-muted-foreground">Prix futures</div>
+                          <Badge variant={position.type_deal === 'prime' ? 'default' : 'secondary'}>
+                            {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <div className="text-muted-foreground">Volume</div>
+                            <div className="font-medium">{position.volume_achete} tonnes</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">
+                              {position.type_deal === 'prime' ? 'Prime' : 'Prix flat'}
+                            </div>
+                            <div className="font-medium">
+                              {formatPrice(position.type_deal === 'prime' ? position.prime_payee : (position.prix_flat || 0), navireActif.produit)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Volume couvert</div>
+                            <div className="font-medium">{(position.volume_achete - position.volume_non_couvert).toFixed(1)} tonnes</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">PRU</div>
+                            <div className="font-medium">{formatPrice(position.pru, navireActif.produit)}</div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+
+                        {/* Détail des couvertures pour cette position */}
+                        {position.couvertures.length > 0 && (
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="text-sm font-medium mb-2">Couvertures:</div>
+                            <div className="space-y-2">
+                              {position.couvertures.map((couverture) => (
+                                <div key={couverture.id} className="flex justify-between items-center text-sm bg-background p-2 rounded">
+                                  <div>
+                                    <span className="font-medium">{couverture.volume_couvert} tonnes</span>
+                                    <span className="text-muted-foreground ml-2">le {formatDate(couverture.date_couverture)}</span>
+                                  </div>
+                                  <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
