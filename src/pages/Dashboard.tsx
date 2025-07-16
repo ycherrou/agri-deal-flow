@@ -79,10 +79,31 @@ interface PrixMarche {
     active: boolean;
   };
 }
+
+interface ReventeEnAttente {
+  id: string;
+  volume: number;
+  prix_flat_demande: number;
+  date_revente: string;
+  date_expiration_validation: string;
+  vente_id: string;
+  ventes: {
+    navire_id: string;
+    navires: {
+      nom: string;
+      produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+    };
+    clients: {
+      nom: string;
+    };
+  };
+}
+
 export default function Dashboard() {
   const [navires, setNavires] = useState<NavireWithVentes[]>([]);
   const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reventesEnAttente, setReventesEnAttente] = useState<ReventeEnAttente[]>([]);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('client');
   const [clients, setClients] = useState<Client[]>([]);
@@ -113,6 +134,7 @@ export default function Dashboard() {
     fetchUserRole();
     fetchPrixMarche();
     fetchClients();
+    fetchReventesEnAttente();
   }, []);
   useEffect(() => {
     if (userRole) {
@@ -285,6 +307,83 @@ export default function Dashboard() {
       setPrixMarche(data || []);
     } catch (error) {
       console.error('Error fetching prix marché:', error);
+    }
+  };
+
+  const fetchReventesEnAttente = async () => {
+    const { data, error } = await supabase
+      .from('reventes_clients')
+      .select(`
+        id,
+        volume,
+        prix_flat_demande,
+        date_revente,
+        date_expiration_validation,
+        vente_id,
+        ventes (
+          navire_id,
+          navires (
+            nom,
+            produit
+          ),
+          clients (
+            nom
+          )
+        )
+      `)
+      .eq('etat', 'en_attente_validation')
+      .order('date_revente', { ascending: false });
+
+    if (error) {
+      console.error('Erreur lors de la récupération des reventes en attente:', error);
+      return;
+    }
+
+    setReventesEnAttente(data || []);
+  };
+
+  const handleValidationRevente = async (reventeId: string, action: 'approve' | 'reject') => {
+    try {
+      const updates: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (action === 'approve') {
+        updates.etat = 'vendu';
+        updates.validated_by_admin = true;
+        updates.admin_validation_date = new Date().toISOString();
+      } else {
+        updates.etat = 'retire';
+        updates.validated_by_admin = false;
+        updates.admin_validation_date = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('reventes_clients')
+        .update(updates)
+        .eq('id', reventeId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Succès",
+        description: action === 'approve' 
+          ? "Demande de revente approuvée. La position est maintenant disponible sur le marché secondaire."
+          : "Demande de revente rejetée.",
+      });
+
+      // Refresh the list
+      fetchReventesEnAttente();
+
+    } catch (error) {
+      console.error('Erreur lors de la validation:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de traiter la demande de validation",
+        variant: "destructive",
+      });
     }
   };
 
@@ -673,7 +772,83 @@ export default function Dashboard() {
                           </div>;
                   })()}
                     </CardContent>
-                  </Card>
+          </Card>
+
+          {/* Section Validation Reventes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Demandes de revente en attente
+                {reventesEnAttente.length > 0 && (
+                  <Badge variant="destructive">{reventesEnAttente.length}</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Validez les demandes de revente des clients (timeout: 30 minutes)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {reventesEnAttente.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  Aucune demande de revente en attente.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {reventesEnAttente.map((revente) => {
+                    const timeLeft = new Date(revente.date_expiration_validation).getTime() - Date.now();
+                    const minutesLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60)));
+                    const isExpiring = minutesLeft < 5;
+
+                    return (
+                      <div key={revente.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-medium">
+                              {revente.ventes.navires.nom} - {revente.ventes.clients.nom}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Volume: {revente.volume} MT • Prix demandé: {formatPrice(revente.prix_flat_demande, revente.ventes.navires.produit)}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
+                                {revente.ventes.navires.produit.replace('_', ' ')}
+                              </Badge>
+                              <Badge variant={isExpiring ? "destructive" : "secondary"}>
+                                {minutesLeft}min restantes
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleValidationRevente(revente.id, 'approve')}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approuver
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleValidationRevente(revente.id, 'reject')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Rejeter
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Demande soumise le {formatDate(revente.date_revente)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
                   <Card>
                     <CardHeader className="pb-3">
