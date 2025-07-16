@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2, Save } from 'lucide-react';
+import { Ship, TrendingUp, DollarSign, Shield, Package, AlertCircle, Plus, Edit, Trash2, Save, CheckCircle, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
