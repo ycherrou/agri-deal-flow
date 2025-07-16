@@ -51,6 +51,9 @@ interface NavireWithVentes {
     prime_vente: number | null;
     prix_reference: string | null;
     date_deal: string;
+    clients: {
+      nom: string;
+    };
     couvertures: Array<{
       id: string;
       volume_couvert: number;
@@ -177,6 +180,9 @@ export default function Dashboard() {
                 prix_reference,
                 date_deal,
                 client_id,
+                clients (
+                  nom
+                ),
                 couvertures (
                   id,
                   volume_couvert,
@@ -230,6 +236,9 @@ export default function Dashboard() {
               prix_reference,
               date_deal,
               client_id,
+              clients (
+                nom
+              ),
               couvertures (
                 id,
                 volume_couvert,
@@ -735,11 +744,14 @@ export default function Dashboard() {
                       {navireActif.ventes.map(vente => <div key={vente.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start mb-3">
                             <div>
-                              <div className="font-medium">
-                                Vente #{vente.id.slice(0, 8)}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {formatDate(vente.date_deal)} - {vente.volume}
+              <div className="font-medium">
+                Vente #{vente.id.slice(0, 8)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Client: {vente.clients.nom}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formatDate(vente.date_deal)} - {vente.volume}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -896,13 +908,16 @@ export default function Dashboard() {
                         return <div key={vente.id} className="border rounded-lg p-4 space-y-4">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
-                                     <p className="text-sm text-muted-foreground">
-                                       {formatDate(vente.date_deal)} • {vente.volume} • Prime: {formatPrice(vente.prime_vente || 0, navireActif.produit)}
-                                     </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Référence CBOT: {vente.prix_reference || 'Non définie'}
-                                    </p>
+                    <h4 className="font-medium">Vente #{vente.id.slice(0, 8)}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Client: {vente.clients.nom}
+                    </p>
+                     <p className="text-sm text-muted-foreground">
+                       {formatDate(vente.date_deal)} • {vente.volume} • Prime: {formatPrice(vente.prime_vente || 0, navireActif.produit)}
+                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      Référence CBOT: {vente.prix_reference || 'Non définie'}
+                    </p>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <div className="text-right">
