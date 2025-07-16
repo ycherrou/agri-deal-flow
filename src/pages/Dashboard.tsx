@@ -880,11 +880,11 @@ export default function Dashboard() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                            <div className="flex flex-col gap-3 pt-2">
                               <Button
                                 size="lg"
                                 onClick={() => handleValidationRevente(revente.id, 'approve')}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
                               >
                                 <div className="h-4 w-4 mr-2">✓</div>
                                 Approuver la vente
@@ -893,7 +893,7 @@ export default function Dashboard() {
                                 size="lg"
                                 variant="destructive"
                                 onClick={() => handleValidationRevente(revente.id, 'reject')}
-                                className="flex-1 shadow-md hover:shadow-lg transition-all duration-200"
+                                className="w-full shadow-md hover:shadow-lg transition-all duration-200"
                               >
                                 <div className="h-4 w-4 mr-2">✕</div>
                                 Rejeter la demande
