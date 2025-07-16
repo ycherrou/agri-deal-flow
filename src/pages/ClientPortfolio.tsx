@@ -77,6 +77,12 @@ export default function ClientPortfolio() {
             prix_flat,
             date_deal,
             client_id,
+            clients (
+              id,
+              nom,
+              email,
+              telephone
+            ),
             couvertures (
               id,
               volume_couvert,
