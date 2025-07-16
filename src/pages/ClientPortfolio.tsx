@@ -95,6 +95,8 @@ export default function ClientPortfolio() {
           const volumeCouvert = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
 
+          console.log(`Vente ${vente.id} - couvertures:`, vente.couvertures);
+
           return {
             id: vente.id,
             volume_achete: vente.volume,
@@ -131,6 +133,7 @@ export default function ClientPortfolio() {
         };
       });
 
+      console.log('Portfolio data:', portfolioData);
       setPortfolioData(portfolioData);
       if (portfolioData.length > 0 && !activeNavire) {
         setActiveNavire(portfolioData[0].navire_id);
