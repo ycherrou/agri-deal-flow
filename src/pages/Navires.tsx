@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Ship, Edit, Trash2, Calendar, Package, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import CouverturesAchat from '@/components/CouverturesAchat';
 
 interface Navire {
   id: string;
@@ -47,6 +48,7 @@ export default function Navires() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNavire, setEditingNavire] = useState<Navire | null>(null);
+  const [selectedNavireId, setSelectedNavireId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -496,24 +498,31 @@ export default function Navires() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(navire)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(navire.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex space-x-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => setSelectedNavireId(navire.id)}
+                         >
+                           Couvertures d'achat
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleEdit(navire)}
+                         >
+                           <Edit className="h-4 w-4" />
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="destructive"
+                           onClick={() => handleDelete(navire.id)}
+                         >
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -521,6 +530,11 @@ export default function Navires() {
           )}
         </CardContent>
       </Card>
+
+      {/* Section des couvertures d'achat */}
+      {selectedNavireId && (
+        <CouverturesAchat navireId={selectedNavireId} />
+      )}
     </div>
   );
 }
