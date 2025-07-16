@@ -87,6 +87,7 @@ export default function Couvertures() {
         .order('date_deal', { ascending: false });
 
       if (error) throw error;
+      console.log('Ventes récupérées:', data);
       setVentes(data || []);
     } catch (error) {
       console.error('Error fetching ventes:', error);
@@ -260,6 +261,15 @@ export default function Couvertures() {
   };
 
   const venteSelectionnee = ventes.find(v => v.id === selectedVente);
+  
+  // Log de débogage pour voir la vente sélectionnée
+  if (venteSelectionnee) {
+    console.log('Vente sélectionnée:', {
+      nom: venteSelectionnee.navire.nom,
+      produit: venteSelectionnee.navire.produit,
+      supportsContracts: supportsContracts(venteSelectionnee.navire.produit)
+    });
+  }
 
   return (
     <div className="space-y-6">
