@@ -53,6 +53,7 @@ interface NavireWithVentes {
     couvertures: Array<{
       id: string;
       volume_couvert: number;
+      nombre_contrats: number;
       prix_futures: number;
       date_couverture: string;
     }>;
@@ -177,6 +178,7 @@ export default function Dashboard() {
                 couvertures (
                   id,
                   volume_couvert,
+                  nombre_contrats,
                   prix_futures,
                   date_couverture
                 ),
@@ -228,6 +230,7 @@ export default function Dashboard() {
               couvertures (
                 id,
                 volume_couvert,
+                nombre_contrats,
                 prix_futures,
                 date_couverture
               ),
@@ -920,36 +923,75 @@ export default function Dashboard() {
                                       Couvertures existantes ({vente.couvertures.length})
                                     </h5>
                                     <div className="space-y-2">
-                                       {vente.couvertures.map(couverture => <div key={couverture.id} className="border rounded-lg p-3 bg-card">
-                                           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
-                                             <div>
-                                               <div className="text-xs text-muted-foreground">Date</div>
-                                               <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
-                                             </div>
-                                             <div>
-                                               <div className="text-xs text-muted-foreground">Volume</div>
-                                               <div className="font-medium">{couverture.volume_couvert}</div>
-                                             </div>
-                                             <div>
-                                               <div className="text-xs text-muted-foreground">Prix futures</div>
-                                               <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
-                                             </div>
-                                             <div>
-                                               <div className="text-xs text-muted-foreground">Pourcentage</div>
-                                               <div className="font-medium">
-                                                 {(couverture.volume_couvert / vente.volume * 100).toFixed(1)}%
-                                               </div>
-                                             </div>
-                                             {userRole === 'admin' && <div className="flex justify-end gap-2">
-                                                 <Button size="sm" variant="outline" onClick={() => console.log('Edit couverture vente:', couverture.id)}>
-                                                   <Edit className="h-3 w-3" />
-                                                 </Button>
-                                                 <Button size="sm" variant="outline" onClick={() => console.log('Delete couverture vente:', couverture.id)}>
-                                                   <Trash2 className="h-3 w-3" />
-                                                 </Button>
-                                               </div>}
-                                           </div>
-                                         </div>)}
+                                        {vente.couvertures.map(couverture => <div key={couverture.id} className="border rounded-lg p-3 bg-card">
+                                            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                                              <div>
+                                                <div className="text-xs text-muted-foreground">Date</div>
+                                                <div className="font-medium">{formatDate(couverture.date_couverture)}</div>
+                                              </div>
+                                              {(() => {
+                                                const produit = navireActif.produit as ProductType;
+                                                const supportsContractsFutures = supportsContracts(produit);
+                                                
+                                                if (supportsContractsFutures && couverture.nombre_contrats > 0) {
+                                                  return (
+                                                    <div>
+                                                      <div className="text-xs text-muted-foreground">Contrats</div>
+                                                      <div className="font-medium">
+                                                        {couverture.nombre_contrats} contrat{couverture.nombre_contrats > 1 ? 's' : ''}
+                                                      </div>
+                                                      <div className="text-xs text-muted-foreground">
+                                                        ({couverture.volume_couvert} tonnes)
+                                                      </div>
+                                                    </div>
+                                                  );
+                                                } else {
+                                                  return (
+                                                    <div>
+                                                      <div className="text-xs text-muted-foreground">Volume</div>
+                                                      <div className="font-medium">{couverture.volume_couvert} tonnes</div>
+                                                    </div>
+                                                  );
+                                                }
+                                              })()}
+                                              <div>
+                                                <div className="text-xs text-muted-foreground">Prix futures</div>
+                                                <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
+                                              </div>
+                                              <div>
+                                                <div className="text-xs text-muted-foreground">Pourcentage</div>
+                                                <div className="font-medium">
+                                                  {(couverture.volume_couvert / vente.volume * 100).toFixed(1)}%
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <div className="text-xs text-muted-foreground">Valeur</div>
+                                                <div className="font-medium">
+                                                  {(() => {
+                                                    const produit = navireActif.produit as ProductType;
+                                                    const supportsContractsFutures = supportsContracts(produit);
+                                                    if (supportsContractsFutures && couverture.nombre_contrats > 0) {
+                                                      const contractSize = getContractSize(produit);
+                                                      const valuePerContract = couverture.prix_futures * contractSize;
+                                                      const totalValue = valuePerContract * couverture.nombre_contrats;
+                                                      return `$${totalValue.toLocaleString()}`;
+                                                    } else {
+                                                      const totalValue = couverture.prix_futures * couverture.volume_couvert;
+                                                      return `$${totalValue.toLocaleString()}`;
+                                                    }
+                                                  })()}
+                                                </div>
+                                              </div>
+                                              {userRole === 'admin' && <div className="flex justify-end gap-2">
+                                                  <Button size="sm" variant="outline" onClick={() => console.log('Edit couverture vente:', couverture.id)}>
+                                                    <Edit className="h-3 w-3" />
+                                                  </Button>
+                                                  <Button size="sm" variant="outline" onClick={() => console.log('Delete couverture vente:', couverture.id)}>
+                                                    <Trash2 className="h-3 w-3" />
+                                                  </Button>
+                                                </div>}
+                                            </div>
+                                          </div>)}
                                     </div>
                                   </div> : <div className="text-center py-4 bg-muted/20 rounded-lg">
                                     <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
