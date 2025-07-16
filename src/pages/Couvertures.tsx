@@ -87,7 +87,6 @@ export default function Couvertures() {
         .order('date_deal', { ascending: false });
 
       if (error) throw error;
-      console.log('Ventes récupérées:', data);
       setVentes(data || []);
     } catch (error) {
       console.error('Error fetching ventes:', error);
@@ -334,7 +333,7 @@ export default function Couvertures() {
                 </div>
               )}
 
-              {venteSelectionnee && (console.log('Vente sélectionnée:', venteSelectionnee.navire.produit, 'Supports contracts:', supportsContracts(venteSelectionnee.navire.produit)), supportsContracts(venteSelectionnee.navire.produit)) ? (
+              {venteSelectionnee && supportsContracts(venteSelectionnee.navire.produit) ? (
                 <div className="space-y-2">
                   <Label htmlFor="nombre_contrats">Nombre de contrats</Label>
                   <Input

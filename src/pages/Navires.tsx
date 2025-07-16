@@ -124,8 +124,7 @@ export default function Navires() {
       const { data, error } = await supabase
         .from('prix_marche')
         .select('echeance_id, prix, echeance:echeances!inner(nom, active)')
-        .eq('echeance.active', true)
-        .order('echeance.nom');
+        .eq('echeance.active', true);
 
       if (error) throw error;
       setPrixMarche(data || []);
