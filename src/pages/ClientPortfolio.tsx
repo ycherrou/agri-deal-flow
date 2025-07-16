@@ -95,8 +95,6 @@ export default function ClientPortfolio() {
           const volumeCouvert = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
 
-          console.log(`Vente ${vente.id} - couvertures:`, vente.couvertures);
-
           return {
             id: vente.id,
             volume_achete: vente.volume,
