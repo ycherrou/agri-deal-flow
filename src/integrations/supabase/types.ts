@@ -275,6 +275,7 @@ export type Database = {
           date_deal: string
           id: string
           navire_id: string
+          parent_deal_id: string | null
           prime_vente: number | null
           prix_flat: number | null
           prix_reference: string | null
@@ -288,6 +289,7 @@ export type Database = {
           date_deal?: string
           id?: string
           navire_id: string
+          parent_deal_id?: string | null
           prime_vente?: number | null
           prix_flat?: number | null
           prix_reference?: string | null
@@ -301,6 +303,7 @@ export type Database = {
           date_deal?: string
           id?: string
           navire_id?: string
+          parent_deal_id?: string | null
           prime_vente?: number | null
           prix_flat?: number | null
           prix_reference?: string | null
@@ -321,6 +324,13 @@ export type Database = {
             columns: ["navire_id"]
             isOneToOne: false
             referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventes_parent_deal_id_fkey"
+            columns: ["parent_deal_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
             referencedColumns: ["id"]
           },
         ]

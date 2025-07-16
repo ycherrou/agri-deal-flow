@@ -16,6 +16,7 @@ interface Deal {
   prix_flat: number | null;
   prime_vente: number | null;
   prix_reference: string | null;
+  parent_deal_id: string | null;
   client: {
     nom: string;
     email: string;
@@ -56,6 +57,7 @@ export default function Deals() {
           prix_flat,
           prime_vente,
           prix_reference,
+          parent_deal_id,
           client:clients(nom, email),
           navire:navires(nom, produit, fournisseur)
         `)
@@ -186,23 +188,33 @@ export default function Deals() {
                     <CardTitle className="text-lg">
                       Deal #{deal.id.slice(0, 8)}
                     </CardTitle>
-                    <CardDescription>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(deal.date_deal)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {deal.client.nom}
-                        </span>
-                      </div>
-                    </CardDescription>
+                <CardDescription>
+                  <div className="flex items-center gap-4 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {formatDate(deal.date_deal)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {deal.client.nom}
+                    </span>
+                    {deal.parent_deal_id && (
+                      <span className="text-xs text-muted-foreground">
+                        (Dérivé de #{deal.parent_deal_id.slice(0, 8)})
+                      </span>
+                    )}
+                  </div>
+                </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={deal.type_deal === 'prime' ? 'default' : 'secondary'}>
                       {deal.type_deal === 'prime' ? 'Prime' : 'Flat'}
                     </Badge>
+                    {deal.parent_deal_id && (
+                      <Badge variant="outline" className="text-xs">
+                        Dérivé
+                      </Badge>
+                    )}
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -210,7 +222,7 @@ export default function Deals() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     {canRoll(deal) && (
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/roll/${deal.id}`)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/roll/${deal.id}`)} title="Changer de référence">
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     )}
@@ -269,7 +281,7 @@ export default function Deals() {
                 </div>
                 {deal.prix_reference && (
                   <div className="mt-4 pt-4 border-t">
-                    <div className="text-sm text-muted-foreground">Prix de référence</div>
+                    <div className="text-sm text-muted-foreground">Référence CBOT</div>
                     <div className="text-sm">{deal.prix_reference}</div>
                   </div>
                 )}

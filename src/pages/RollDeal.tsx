@@ -136,7 +136,7 @@ export default function RollDeal() {
     if (volumeToRoll <= 0 || volumeToRoll > volumeNonCouvert) {
       toast({
         title: 'Erreur de validation',
-        description: `Le volume à roller doit être entre 0 et ${volumeNonCouvert} tonnes`,
+        description: `Le volume à changer de référence doit être entre 0 et ${volumeNonCouvert} tonnes`,
         variant: 'destructive'
       });
       setLoading(false);
@@ -183,7 +183,8 @@ export default function RollDeal() {
         prix_reference: formData.nouveau_prix_reference,
         prime_vente: formData.nouvelle_prime_vente ? parseFloat(formData.nouvelle_prime_vente) : deal!.prime_vente,
         prix_flat: null,
-        date_deal: formData.date_roll
+        date_deal: formData.date_roll,
+        parent_deal_id: deal!.id
       };
 
       const { error: insertError } = await supabase
@@ -194,7 +195,7 @@ export default function RollDeal() {
 
       toast({
         title: 'Succès',
-        description: `Roll effectué avec succès : ${volumeToRoll} tonnes rollées vers ${formData.nouveau_prix_reference}`
+        description: `Changement de référence effectué avec succès : ${volumeToRoll} tonnes changées vers ${formData.nouveau_prix_reference}`
       });
 
       navigate('/deals');
@@ -202,7 +203,7 @@ export default function RollDeal() {
       console.error('Error rolling deal:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'effectuer le roll',
+        description: 'Impossible d\'effectuer le changement de référence',
         variant: 'destructive'
       });
     } finally {
@@ -251,7 +252,7 @@ export default function RollDeal() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Retour
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">Roll de deal</h1>
+        <h1 className="text-2xl font-bold text-foreground">Changement de référence</h1>
       </div>
 
       {/* Informations actuelles du deal */}
@@ -295,22 +296,22 @@ export default function RollDeal() {
       {/* Formulaire de roll */}
       <Card>
         <CardHeader>
-          <CardTitle>Paramètres du roll</CardTitle>
+          <CardTitle>Paramètres du changement de référence</CardTitle>
           <CardDescription>
-            Spécifiez le volume à roller et la nouvelle référence CBOT
+            Spécifiez le volume à changer de référence et la nouvelle référence CBOT
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="volume_to_roll">Volume à roller (tonnes)</Label>
+                <Label htmlFor="volume_to_roll">Volume à changer de référence (tonnes)</Label>
                 <Input
                   id="volume_to_roll"
                   type="number"
                   step="0.01"
                   max={volumeNonCouvert}
-                  placeholder="Volume à roller"
+                  placeholder="Volume à changer de référence"
                   value={formData.volume_to_roll}
                   onChange={(e) => handleInputChange('volume_to_roll', e.target.value)}
                   required
@@ -352,7 +353,7 @@ export default function RollDeal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date_roll">Date effective du roll</Label>
+                <Label htmlFor="date_roll">Date effective du changement</Label>
                 <Input
                   id="date_roll"
                   type="date"
@@ -375,12 +376,12 @@ export default function RollDeal() {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Roll en cours...
+                    Changement en cours...
                   </>
                 ) : (
                   <>
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Effectuer le roll
+                    Changer la référence
                   </>
                 )}
               </Button>

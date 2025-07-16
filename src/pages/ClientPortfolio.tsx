@@ -8,8 +8,7 @@ import { getLatestPricesForMaturities } from '@/lib/priceUtils';
 import { Ship, Shield, TrendingUp, DollarSign, Package, AlertCircle } from 'lucide-react';
 
 interface ClientPortfolioData {
-  id: string;
-  nom: string;
+  reference_cbot: string;
   produit: string;
   positions: Array<{
     id: string;
@@ -19,6 +18,8 @@ interface ClientPortfolioData {
     type_deal: 'prime' | 'flat';
     prix_flat: number | null;
     date_deal: string;
+    navire_nom: string;
+    navire_id: string;
     couvertures: Array<{
       id: string;
       volume_couvert: number;
@@ -50,7 +51,7 @@ export default function ClientPortfolio() {
   const [portfolioData, setPortfolioData] = useState<ClientPortfolioData[]>([]);
   const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeNavire, setActiveNavire] = useState<string | null>(null);
+  const [activeReference, setActiveReference] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,24 +129,31 @@ export default function ClientPortfolio() {
 
       const latestPrices = getLatestPricesForMaturities(prixMarcheData || []);
 
-      // Regrouper les ventes par navire
-      const naviresGroupes = new Map<string, any>();
+      // Regrouper les ventes par référence CBOT
+      const referencesGroupees = new Map<string, any>();
       
       (naviresData || []).forEach(navire => {
-        if (!naviresGroupes.has(navire.id)) {
-          naviresGroupes.set(navire.id, {
-            id: navire.id,
-            nom: navire.nom,
-            produit: navire.produit,
-            ventes: []
+        navire.ventes.forEach((vente: any) => {
+          const reference = vente.prix_reference || 'N/A';
+          if (!referencesGroupees.has(reference)) {
+            referencesGroupees.set(reference, {
+              reference_cbot: reference,
+              produit: navire.produit,
+              ventes: []
+            });
+          }
+          referencesGroupees.get(reference)!.ventes.push({
+            ...vente,
+            navire_nom: navire.nom,
+            navire_id: navire.id,
+            produit: navire.produit
           });
-        }
-        naviresGroupes.get(navire.id)!.ventes.push(...navire.ventes);
+        });
       });
 
       // Transformer les données pour le portfolio client
-      const portfolioData: ClientPortfolioData[] = Array.from(naviresGroupes.values()).map(navire => {
-        const positions = navire.ventes.map((vente: any) => {
+      const portfolioData: ClientPortfolioData[] = Array.from(referencesGroupees.values()).map(referenceGroup => {
+        const positions = referenceGroup.ventes.map((vente: any) => {
           const volumeCouvert = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
           const volumeNonCouvert = vente.volume - volumeCouvert;
           
@@ -167,8 +175,8 @@ export default function ClientPortfolio() {
             }
             
             // Facteur de conversion pour les ventes prime
-            const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
-                                     navire.produit === 'tourteau_soja' ? 0.4640 : 1;
+            const facteurConversion = vente.produit === 'mais' ? 0.3937 : 
+                                     vente.produit === 'tourteau_soja' ? 0.4640 : 1;
             pru = pru * facteurConversion;
           }
 
@@ -180,6 +188,8 @@ export default function ClientPortfolio() {
             type_deal: vente.type_deal,
             prix_flat: vente.prix_flat,
             date_deal: vente.date_deal,
+            navire_nom: vente.navire_nom,
+            navire_id: vente.navire_id,
             couvertures: vente.couvertures,
             volume_non_couvert: volumeNonCouvert,
             prix_cbot_actuel: prixCbotActuel,
@@ -187,7 +197,7 @@ export default function ClientPortfolio() {
           };
         });
 
-        // Calculs agrégés pour le navire
+        // Calculs agrégés pour la référence CBOT
         const volumeTotal = positions.reduce((sum, p) => sum + p.volume_achete, 0);
         const volumeCouvertTotal = positions.reduce((sum, p) => sum + (p.volume_achete - p.volume_non_couvert), 0);
         const volumeNonCouvertTotal = volumeTotal - volumeCouvertTotal;
@@ -199,9 +209,8 @@ export default function ClientPortfolio() {
         const pruMoyen = positions.reduce((sum, p) => sum + (p.pru * p.volume_achete), 0) / volumeTotal;
 
         return {
-          id: navire.id,
-          nom: navire.nom,
-          produit: navire.produit,
+          reference_cbot: referenceGroup.reference_cbot,
+          produit: referenceGroup.produit,
           positions,
           volume_total: volumeTotal,
           volume_couvert_total: volumeCouvertTotal,
@@ -212,8 +221,8 @@ export default function ClientPortfolio() {
       });
 
       setPortfolioData(portfolioData);
-      if (portfolioData.length > 0 && !activeNavire) {
-        setActiveNavire(portfolioData[0].id);
+      if (portfolioData.length > 0 && !activeReference) {
+        setActiveReference(portfolioData[0].reference_cbot);
       }
     } catch (error) {
       console.error('Error fetching client portfolio:', error);
@@ -250,11 +259,11 @@ export default function ClientPortfolio() {
     }
   };
 
-  const calculerTauxCouverture = (navire: ClientPortfolioData) => {
-    return navire.volume_total > 0 ? (navire.volume_couvert_total / navire.volume_total) * 100 : 0;
+  const calculerTauxCouverture = (reference: ClientPortfolioData) => {
+    return reference.volume_total > 0 ? (reference.volume_couvert_total / reference.volume_total) * 100 : 0;
   };
 
-  const navireActif = portfolioData.find(n => n.id === activeNavire);
+  const referenceActive = portfolioData.find(r => r.reference_cbot === activeReference);
 
   if (loading) {
     return (
@@ -286,7 +295,7 @@ export default function ClientPortfolio() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Mon Portfolio</h1>
-        <p className="text-muted-foreground">Vos positions par navire</p>
+        <p className="text-muted-foreground">Vos positions par référence CBOT</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -295,26 +304,26 @@ export default function ClientPortfolio() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Ship className="h-5 w-5" />
-              Mes Navires
+              Mes Références CBOT
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {portfolioData.map(navire => (
+            {portfolioData.map(reference => (
               <button
-                key={navire.id}
-                onClick={() => setActiveNavire(navire.id)}
+                key={reference.reference_cbot}
+                onClick={() => setActiveReference(reference.reference_cbot)}
                 className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                  activeNavire === navire.id 
+                  activeReference === reference.reference_cbot 
                     ? 'bg-primary text-primary-foreground border-primary' 
                     : 'bg-card hover:bg-muted border-border'
                 }`}
               >
-                <div className="font-medium">{navire.nom}</div>
+                <div className="font-medium">{reference.reference_cbot}</div>
                 <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.volume_total} tonnes
+                  {reference.produit} - {reference.volume_total} tonnes
                 </div>
                 <div className="text-xs opacity-60">
-                  {navire.positions.length} position{navire.positions.length > 1 ? 's' : ''}
+                  {reference.positions.length} position{reference.positions.length > 1 ? 's' : ''}
                 </div>
               </button>
             ))}
@@ -323,7 +332,7 @@ export default function ClientPortfolio() {
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          {navireActif && (
+          {referenceActive && (
             <div className="space-y-6">
               {/* Header avec informations générales */}
               <Card>
@@ -331,14 +340,14 @@ export default function ClientPortfolio() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Ship className="h-5 w-5" />
-                      {navireActif.nom}
+                      {referenceActive.reference_cbot}
                     </CardTitle>
-                    <Badge className={getProductBadgeColor(navireActif.produit)}>
-                      {navireActif.produit}
+                    <Badge className={getProductBadgeColor(referenceActive.produit)}>
+                      {referenceActive.produit}
                     </Badge>
                   </div>
                   <CardDescription>
-                    {navireActif.positions.length} position{navireActif.positions.length > 1 ? 's' : ''} - Volume total: {navireActif.volume_total} tonnes
+                    {referenceActive.positions.length} position{referenceActive.positions.length > 1 ? 's' : ''} - Volume total: {referenceActive.volume_total} tonnes
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -353,9 +362,9 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.volume_total} tonnes</div>
+                    <div className="text-2xl font-bold">{referenceActive.volume_total} tonnes</div>
                     <div className="text-sm text-muted-foreground">
-                      Couvert: {navireActif.volume_couvert_total} | Non couvert: {navireActif.volume_non_couvert_total}
+                      Couvert: {referenceActive.volume_couvert_total} | Non couvert: {referenceActive.volume_non_couvert_total}
                     </div>
                   </CardContent>
                 </Card>
@@ -368,7 +377,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.prime_moyenne, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold">{formatPrice(referenceActive.prime_moyenne, referenceActive.produit)}</div>
                     <div className="text-sm text-muted-foreground">Moyenne pondérée</div>
                   </CardContent>
                 </Card>
@@ -381,7 +390,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.positions[0]?.prix_cbot_actuel || 0, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold">{formatPrice(referenceActive.positions[0]?.prix_cbot_actuel || 0, referenceActive.produit)}</div>
                     <div className="text-sm text-muted-foreground">Prix CBOT actuel</div>
                   </CardContent>
                 </Card>
@@ -394,7 +403,7 @@ export default function ClientPortfolio() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-primary">{formatPrice(navireActif.pru_moyen, navireActif.produit)}</div>
+                    <div className="text-2xl font-bold text-primary">{formatPrice(referenceActive.pru_moyen, referenceActive.produit)}</div>
                     <div className="text-sm text-muted-foreground">Prix de revient moyen</div>
                   </CardContent>
                 </Card>
@@ -412,17 +421,17 @@ export default function ClientPortfolio() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Taux de couverture</span>
-                      <span className="font-medium">{calculerTauxCouverture(navireActif).toFixed(1)}%</span>
+                      <span className="font-medium">{calculerTauxCouverture(referenceActive).toFixed(1)}%</span>
                     </div>
-                    <Progress value={calculerTauxCouverture(navireActif)} className="h-2" />
+                    <Progress value={calculerTauxCouverture(referenceActive)} className="h-2" />
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume couvert:</span>
-                        <span className="font-medium">{navireActif.volume_couvert_total.toFixed(1)} tonnes</span>
+                        <span className="font-medium">{referenceActive.volume_couvert_total.toFixed(1)} tonnes</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Volume non couvert:</span>
-                        <span className="font-medium">{navireActif.volume_non_couvert_total.toFixed(1)} tonnes</span>
+                        <span className="font-medium">{referenceActive.volume_non_couvert_total.toFixed(1)} tonnes</span>
                       </div>
                     </div>
                   </CardContent>
@@ -438,15 +447,15 @@ export default function ClientPortfolio() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Volume exposé</span>
-                      <span className="font-medium">{navireActif.volume_non_couvert_total.toFixed(1)} tonnes</span>
+                      <span className="font-medium">{referenceActive.volume_non_couvert_total.toFixed(1)} tonnes</span>
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <div className="text-sm text-muted-foreground mb-1">Valeur exposition (prix moyen)</div>
                       <div className="text-lg font-bold">
-                        {formatPrice(navireActif.volume_non_couvert_total * (navireActif.positions[0]?.prix_cbot_actuel || 0), navireActif.produit)}
+                        {formatPrice(referenceActive.volume_non_couvert_total * (referenceActive.positions[0]?.prix_cbot_actuel || 0), referenceActive.produit)}
                       </div>
                     </div>
-                    {navireActif.volume_non_couvert_total > 0 && (
+                    {referenceActive.volume_non_couvert_total > 0 && (
                       <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
                         <AlertCircle className="h-4 w-4" />
                         Position non couverte exposée aux variations de prix
@@ -460,66 +469,44 @@ export default function ClientPortfolio() {
               <Card>
                 <CardHeader>
                   <CardTitle>Détail des Positions</CardTitle>
-                  <CardDescription>
-                    Vue détaillée de vos positions par contrat de référence
-                  </CardDescription>
+                  <CardDescription>Liste de toutes vos positions sur cette référence CBOT</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {navireActif.positions.map((position, index) => (
-                      <div key={position.id} className="border rounded-lg p-4 bg-muted/50">
-                        <div className="flex justify-between items-start mb-3">
+                    {referenceActive.positions.map((position, index) => (
+                      <div key={position.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
                           <div>
                             <div className="font-medium">Position #{index + 1}</div>
                             <div className="text-sm text-muted-foreground">
-                              {position.contrat_reference} - {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
+                              {formatDate(position.date_deal)} - {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Navire: {position.navire_nom}
                             </div>
                           </div>
-                          <Badge variant={position.type_deal === 'prime' ? 'default' : 'secondary'}>
-                            {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
-                          </Badge>
+                          <div className="text-right">
+                            <div className="text-lg font-bold">{position.volume_achete} tonnes</div>
+                            <div className="text-sm text-muted-foreground">
+                              Couvert: {position.volume_achete - position.volume_non_couvert} tonnes
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                           <div>
-                            <div className="text-muted-foreground">Volume</div>
-                            <div className="font-medium">{position.volume_achete} tonnes</div>
+                            <div className="text-sm text-muted-foreground">Prime payée</div>
+                            <div className="font-medium">{formatPrice(position.prime_payee)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">
-                              {position.type_deal === 'prime' ? 'Prime' : 'Prix flat'}
-                            </div>
-                            <div className="font-medium">
-                              {formatPrice(position.type_deal === 'prime' ? position.prime_payee : (position.prix_flat || 0), navireActif.produit)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Volume couvert</div>
-                            <div className="font-medium">{(position.volume_achete - position.volume_non_couvert).toFixed(1)} tonnes</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">PRU</div>
-                            <div className="font-medium">{formatPrice(position.pru, navireActif.produit)}</div>
+                            <div className="text-sm text-muted-foreground">PRU</div>
+                            <div className="font-medium text-primary">{formatPrice(position.pru)}</div>
                           </div>
                         </div>
-
-                        {/* Détail des couvertures pour cette position */}
-                        {position.couvertures.length > 0 && (
-                          <div className="mt-4 pt-4 border-t">
-                            <div className="text-sm font-medium mb-2">Couvertures:</div>
-                            <div className="space-y-2">
-                              {position.couvertures.map((couverture) => (
-                                <div key={couverture.id} className="flex justify-between items-center text-sm bg-background p-2 rounded">
-                                  <div>
-                                    <span className="font-medium">{couverture.volume_couvert} tonnes</span>
-                                    <span className="text-muted-foreground ml-2">le {formatDate(couverture.date_couverture)}</span>
-                                  </div>
-                                  <div className="font-medium">{formatPrice(couverture.prix_futures, navireActif.produit)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        
+                        <div className="text-sm text-muted-foreground">
+                          Référence: {position.contrat_reference}
+                        </div>
                       </div>
                     ))}
                   </div>
