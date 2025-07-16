@@ -412,16 +412,6 @@ export default function ClientPortfolio() {
                                       <div className="text-muted-foreground">{(couv.volume_couvert / position.volume_achete * 100).toFixed(1)}% de la position</div>
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <div className="text-muted-foreground">Prix futures</div>
-                                      <div className="font-medium">{formatPrice(couv.prix_futures)}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-muted-foreground">Valeur totale</div>
-                                      <div className="font-medium">${(couv.prix_futures * couv.volume_couvert).toLocaleString()}</div>
-                                    </div>
-                                  </div>
                                 </div>
                               ))}
                             </div>
