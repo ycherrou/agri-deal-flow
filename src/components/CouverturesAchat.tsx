@@ -396,6 +396,16 @@ export default function CouverturesAchat({ navireId }: CouverturesAchatProps) {
                   <span className="text-sm font-medium">{tauxCouverture.toFixed(1)}%</span>
                 </div>
                 <Progress value={tauxCouverture} className="h-2 w-24" />
+                {navire.prime_achat && volumeRestant > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.location.href = `/navires/roll/${navire.id}`}
+                    className="mt-2"
+                  >
+                    Changer la référence
+                  </Button>
+                )}
               </div>
             </div>
 

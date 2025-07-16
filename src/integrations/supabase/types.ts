@@ -160,6 +160,7 @@ export type Database = {
           fournisseur: string
           id: string
           nom: string
+          parent_navire_id: string | null
           prime_achat: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
@@ -172,6 +173,7 @@ export type Database = {
           fournisseur: string
           id?: string
           nom: string
+          parent_navire_id?: string | null
           prime_achat?: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
@@ -184,13 +186,22 @@ export type Database = {
           fournisseur?: string
           id?: string
           nom?: string
+          parent_navire_id?: string | null
           prime_achat?: number | null
           produit?: Database["public"]["Enums"]["product_type"]
           quantite_totale?: number
           reference_cbot?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "navires_parent_navire_id_fkey"
+            columns: ["parent_navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prix_marche: {
         Row: {
