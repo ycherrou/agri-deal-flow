@@ -87,6 +87,7 @@ export default function Couvertures() {
         .order('date_deal', { ascending: false });
 
       if (error) throw error;
+      console.log('Ventes récupérées:', data);
       setVentes(data || []);
     } catch (error) {
       console.error('Error fetching ventes:', error);
