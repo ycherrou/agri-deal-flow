@@ -52,6 +52,7 @@ export type Database = {
           created_at: string | null
           date_couverture: string
           id: string
+          nombre_contrats: number
           prix_futures: number
           updated_at: string | null
           vente_id: string
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string | null
           date_couverture?: string
           id?: string
+          nombre_contrats?: number
           prix_futures: number
           updated_at?: string | null
           vente_id: string
@@ -70,6 +72,7 @@ export type Database = {
           created_at?: string | null
           date_couverture?: string
           id?: string
+          nombre_contrats?: number
           prix_futures?: number
           updated_at?: string | null
           vente_id?: string
@@ -91,6 +94,7 @@ export type Database = {
           date_couverture: string
           id: string
           navire_id: string
+          nombre_contrats: number
           prix_futures: number
           updated_at: string | null
           volume_couvert: number
@@ -100,6 +104,7 @@ export type Database = {
           date_couverture?: string
           id?: string
           navire_id: string
+          nombre_contrats?: number
           prix_futures: number
           updated_at?: string | null
           volume_couvert: number
@@ -109,6 +114,7 @@ export type Database = {
           date_couverture?: string
           id?: string
           navire_id?: string
+          nombre_contrats?: number
           prix_futures?: number
           updated_at?: string | null
           volume_couvert?: number
@@ -324,6 +330,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_contract_size: {
+        Args: { produit_type: string }
+        Returns: number
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]

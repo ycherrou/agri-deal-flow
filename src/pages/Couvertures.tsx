@@ -11,6 +11,15 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Shield, TrendingUp, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { 
+  getContractSize, 
+  supportsContracts, 
+  volumeToContracts, 
+  contractsToVolume, 
+  formatContractsWithVolume,
+  calculateOvercoverage
+} from '@/lib/futuresUtils';
+import type { ProductType } from '@/lib/futuresUtils';
 
 interface Vente {
   id: string;
@@ -21,7 +30,7 @@ interface Vente {
   date_deal: string;
   navire: {
     nom: string;
-    produit: string;
+    produit: ProductType;
   };
   client: {
     nom: string;
@@ -29,6 +38,7 @@ interface Vente {
   couvertures: Array<{
     id: string;
     volume_couvert: number;
+    nombre_contrats: number;
     prix_futures: number;
     date_couverture: string;
   }>;
@@ -39,13 +49,14 @@ export default function Couvertures() {
   const [selectedVente, setSelectedVente] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    nombre_contrats: '',
     volume_couvert: '',
     prix_futures: '',
     date_couverture: new Date().toISOString().split('T')[0]
   });
   const [editingCouverture, setEditingCouverture] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({
-    volume_couvert: '',
+    nombre_contrats: '',
     prix_futures: '',
     date_couverture: ''
   });
@@ -70,7 +81,7 @@ export default function Couvertures() {
           date_deal,
           navire:navires(nom, produit),
           client:clients(nom),
-          couvertures(id, volume_couvert, prix_futures, date_couverture)
+          couvertures(id, volume_couvert, nombre_contrats, prix_futures, date_couverture)
         `)
         .eq('type_deal', 'prime')
         .order('date_deal', { ascending: false });
@@ -99,17 +110,31 @@ export default function Couvertures() {
 
       const volumeDejaCouverte = venteSelected.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
       const volumeRestant = venteSelected.volume - volumeDejaCouverte;
-      const nouveauVolume = parseFloat(formData.volume_couvert);
+      const nombreContrats = parseInt(formData.nombre_contrats);
+      
+      if (!supportsContracts(venteSelected.navire.produit)) {
+        throw new Error('Les contrats futures ne sont pas supportés pour ce produit');
+      }
 
-      if (nouveauVolume > volumeRestant) {
-        throw new Error(`Volume maximum autorisé: ${volumeRestant}`);
+      const volumeEquivalent = contractsToVolume(nombreContrats, venteSelected.navire.produit);
+      
+      if (volumeEquivalent > volumeRestant) {
+        const surcouverture = volumeEquivalent - volumeRestant;
+        const confirmation = window.confirm(
+          `Cette couverture générera une surcouverture de ${surcouverture} tonnes. Voulez-vous continuer ?`
+        );
+        if (!confirmation) {
+          setLoading(false);
+          return;
+        }
       }
 
       const { error } = await supabase
         .from('couvertures')
         .insert([{
           vente_id: selectedVente,
-          volume_couvert: nouveauVolume,
+          nombre_contrats: nombreContrats,
+          volume_couvert: volumeEquivalent, // Sera recalculé par le trigger
           prix_futures: parseFloat(formData.prix_futures),
           date_couverture: formData.date_couverture
         }]);
@@ -122,6 +147,7 @@ export default function Couvertures() {
       });
 
       setFormData({
+        nombre_contrats: '',
         volume_couvert: '',
         prix_futures: '',
         date_couverture: new Date().toISOString().split('T')[0]
@@ -161,7 +187,7 @@ export default function Couvertures() {
   const handleEditCouverture = (couverture: any, vente: Vente) => {
     setEditingCouverture({ ...couverture, vente });
     setEditFormData({
-      volume_couvert: couverture.volume_couvert.toString(),
+      nombre_contrats: couverture.nombre_contrats.toString(),
       prix_futures: couverture.prix_futures.toString(),
       date_couverture: couverture.date_couverture
     });
@@ -177,7 +203,7 @@ export default function Couvertures() {
       const { error } = await supabase
         .from('couvertures')
         .update({
-          volume_couvert: parseFloat(editFormData.volume_couvert),
+          nombre_contrats: parseInt(editFormData.nombre_contrats),
           prix_futures: parseFloat(editFormData.prix_futures),
           date_couverture: editFormData.date_couverture
         })
@@ -279,6 +305,11 @@ export default function Couvertures() {
                     {ventes.filter(v => getVolumeRestant(v) > 0).map((vente) => (
                       <SelectItem key={vente.id} value={vente.id}>
                         {vente.navire.nom} - {vente.client.nom} ({getVolumeRestant(vente)} restant)
+                        {supportsContracts(vente.navire.produit) && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Contrats supportés)
+                          </span>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -302,19 +333,52 @@ export default function Couvertures() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="volume_couvert">Volume à couvrir</Label>
-                <Input
-                  id="volume_couvert"
-                  type="number"
-                  step="0.01"
-                  placeholder="Volume"
-                  value={formData.volume_couvert}
-                  onChange={(e) => setFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
-                  max={venteSelectionnee ? getVolumeRestant(venteSelectionnee) : undefined}
-                  required
-                />
-              </div>
+              {venteSelectionnee && supportsContracts(venteSelectionnee.navire.produit) ? (
+                <div className="space-y-2">
+                  <Label htmlFor="nombre_contrats">Nombre de contrats</Label>
+                  <Input
+                    id="nombre_contrats"
+                    type="number"
+                    step="1"
+                    min="1"
+                    placeholder="Nombre de contrats"
+                    value={formData.nombre_contrats}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nombre_contrats: e.target.value }))}
+                    required
+                  />
+                  {formData.nombre_contrats && (
+                    <div className="text-sm text-muted-foreground">
+                      = {contractsToVolume(parseInt(formData.nombre_contrats) || 0, venteSelectionnee.navire.produit)} tonnes
+                      {parseInt(formData.nombre_contrats) > 0 && (
+                        <div className="text-xs text-orange-600">
+                          Surcouverture: {calculateOvercoverage(
+                            getVolumeRestant(venteSelectionnee),
+                            parseInt(formData.nombre_contrats),
+                            venteSelectionnee.navire.produit
+                          )} tonnes
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="volume_couvert">Volume à couvrir</Label>
+                  <Input
+                    id="volume_couvert"
+                    type="number"
+                    step="0.01"
+                    placeholder="Volume"
+                    value={formData.volume_couvert || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                    max={venteSelectionnee ? getVolumeRestant(venteSelectionnee) : undefined}
+                    required
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Contrats futures non supportés pour ce produit
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="prix_futures">Prix futures</Label>
@@ -417,7 +481,13 @@ export default function Couvertures() {
                             {vente.couvertures.map((couv) => (
                               <div key={couv.id} className="flex justify-between items-center text-xs bg-muted p-2 rounded">
                                 <div className="flex-1">
-                                  <span>{couv.volume_couvert} @ {formatPrice(couv.prix_futures, vente.navire.produit)}</span>
+                                  {supportsContracts(vente.navire.produit) ? (
+                                    <span>
+                                      {formatContractsWithVolume(couv.nombre_contrats, vente.navire.produit)} @ {formatPrice(couv.prix_futures, vente.navire.produit)}
+                                    </span>
+                                  ) : (
+                                    <span>{couv.volume_couvert} @ {formatPrice(couv.prix_futures, vente.navire.produit)}</span>
+                                  )}
                                   <span className="ml-2 text-muted-foreground">{formatDate(couv.date_couverture)}</span>
                                 </div>
                                 <div className="flex gap-1">
@@ -483,15 +553,21 @@ export default function Couvertures() {
           </DialogHeader>
           <form onSubmit={handleUpdateCouverture} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_volume_couvert">Volume couvert</Label>
+              <Label htmlFor="edit_nombre_contrats">Nombre de contrats</Label>
               <Input
-                id="edit_volume_couvert"
+                id="edit_nombre_contrats"
                 type="number"
-                step="0.01"
-                value={editFormData.volume_couvert}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                step="1"
+                min="1"
+                value={editFormData.nombre_contrats}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, nombre_contrats: e.target.value }))}
                 required
               />
+              {editFormData.nombre_contrats && editingCouverture && (
+                <div className="text-sm text-muted-foreground">
+                  = {contractsToVolume(parseInt(editFormData.nombre_contrats) || 0, editingCouverture.vente.navire.produit)} tonnes
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
