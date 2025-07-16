@@ -964,24 +964,6 @@ export default function Dashboard() {
                                                   {(couverture.volume_couvert / vente.volume * 100).toFixed(1)}%
                                                 </div>
                                               </div>
-                                              <div>
-                                                <div className="text-xs text-muted-foreground">Valeur</div>
-                                                <div className="font-medium">
-                                                  {(() => {
-                                                    const produit = navireActif.produit as ProductType;
-                                                    const supportsContractsFutures = supportsContracts(produit);
-                                                    if (supportsContractsFutures && couverture.nombre_contrats > 0) {
-                                                      const contractSize = getContractSize(produit);
-                                                      const valuePerContract = couverture.prix_futures * contractSize;
-                                                      const totalValue = valuePerContract * couverture.nombre_contrats;
-                                                      return `$${totalValue.toLocaleString()}`;
-                                                    } else {
-                                                      const totalValue = couverture.prix_futures * couverture.volume_couvert;
-                                                      return `$${totalValue.toLocaleString()}`;
-                                                    }
-                                                  })()}
-                                                </div>
-                                              </div>
                                               {userRole === 'admin' && <div className="flex justify-end gap-2">
                                                   <Button size="sm" variant="outline" onClick={() => console.log('Edit couverture vente:', couverture.id)}>
                                                     <Edit className="h-3 w-3" />
