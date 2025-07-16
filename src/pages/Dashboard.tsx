@@ -776,73 +776,142 @@ export default function Dashboard() {
 
           {/* Section Validation Reventes */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Demandes de revente en attente
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  Demandes de revente en attente
+                </div>
                 {reventesEnAttente.length > 0 && (
-                  <Badge variant="destructive">{reventesEnAttente.length}</Badge>
+                  <Badge variant="destructive" className="animate-pulse">
+                    {reventesEnAttente.length}
+                  </Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Validez les demandes de revente des clients (timeout: 30 minutes)
+                Validez les demandes de revente des clients • Timeout automatique après 30 minutes
               </CardDescription>
             </CardHeader>
             <CardContent>
               {reventesEnAttente.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  Aucune demande de revente en attente.
-                </p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-lg font-medium">
+                    Aucune demande en attente
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Les nouvelles demandes de revente apparaîtront ici
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {reventesEnAttente.map((revente) => {
                     const timeLeft = new Date(revente.date_expiration_validation).getTime() - Date.now();
                     const minutesLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60)));
                     const isExpiring = minutesLeft < 5;
+                    const isUrgent = minutesLeft < 10;
 
                     return (
-                      <div key={revente.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="font-medium">
-                              {revente.ventes.navires.nom} - {revente.ventes.clients.nom}
+                      <Card key={revente.id} className={`transition-all duration-200 ${
+                        isExpiring 
+                          ? 'border-red-200 bg-red-50/50 shadow-md' 
+                          : isUrgent 
+                            ? 'border-orange-200 bg-orange-50/30' 
+                            : 'border-border hover:border-primary/30 hover:shadow-sm'
+                      }`}>
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            {/* Header avec infos principales */}
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-2 flex-1">
+                                <div className="flex items-center gap-3">
+                                  <h3 className="font-semibold text-lg text-foreground">
+                                    {revente.ventes.navires.nom}
+                                  </h3>
+                                  <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
+                                    {revente.ventes.navires.produit.replace('_', ' ')}
+                                  </Badge>
+                                </div>
+                                <p className="text-muted-foreground">
+                                  Client: <span className="font-medium text-foreground">{revente.ventes.clients.nom}</span>
+                                </p>
+                              </div>
+                              
+                              {/* Indicateur de temps */}
+                              <div className="text-right">
+                                <Badge 
+                                  variant={isExpiring ? "destructive" : isUrgent ? "secondary" : "outline"}
+                                  className={`text-sm font-medium ${
+                                    isExpiring ? 'animate-pulse' : ''
+                                  }`}
+                                >
+                                  {isExpiring && "🔥 "}
+                                  {minutesLeft}min restantes
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Expire à {new Date(revente.date_expiration_validation).toLocaleTimeString('fr-FR', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              Volume: {revente.volume} MT • Prix demandé: {formatPrice(revente.prix_flat_demande, revente.ventes.navires.produit)}
+
+                            {/* Détails de la transaction */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Volume</p>
+                                <p className="text-xl font-bold text-foreground">{revente.volume} MT</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Prix demandé</p>
+                                <p className="text-xl font-bold text-primary">
+                                  {formatPrice(revente.prix_flat_demande, revente.ventes.navires.produit)}
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Soumise le</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {formatDate(revente.date_revente)}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
-                                {revente.ventes.navires.produit.replace('_', ' ')}
-                              </Badge>
-                              <Badge variant={isExpiring ? "destructive" : "secondary"}>
-                                {minutesLeft}min restantes
-                              </Badge>
+
+                            {/* Actions */}
+                            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                              <Button
+                                size="lg"
+                                onClick={() => handleValidationRevente(revente.id, 'approve')}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                              >
+                                <div className="h-4 w-4 mr-2">✓</div>
+                                Approuver la vente
+                              </Button>
+                              <Button
+                                size="lg"
+                                variant="destructive"
+                                onClick={() => handleValidationRevente(revente.id, 'reject')}
+                                className="flex-1 shadow-md hover:shadow-lg transition-all duration-200"
+                              >
+                                <div className="h-4 w-4 mr-2">✕</div>
+                                Rejeter la demande
+                              </Button>
                             </div>
+
+                            {/* Message d'aide pour les cas urgents */}
+                            {isExpiring && (
+                              <div className="flex items-center gap-2 p-3 bg-red-100 border border-red-200 rounded-lg">
+                                <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                                <p className="text-sm text-red-800">
+                                  <strong>Action urgente requise !</strong> Cette demande expire dans moins de 5 minutes.
+                                </p>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleValidationRevente(revente.id, 'approve')}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <div className="h-4 w-4 mr-1">✓</div>
-                              Approuver
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleValidationRevente(revente.id, 'reject')}
-                            >
-                              <div className="h-4 w-4 mr-1">✕</div>
-                              Rejeter
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Demande soumise le {formatDate(revente.date_revente)}
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
