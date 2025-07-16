@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Eye, Calendar, Package, Users, Trash2, Edit } from 'lucide-react';
+import { Plus, Eye, Calendar, Package, Users, Trash2, Edit, RotateCcw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Deal {
@@ -27,14 +27,21 @@ interface Deal {
   };
 }
 
+interface Couverture {
+  vente_id: string;
+  volume_couvert: number;
+}
+
 export default function Deals() {
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [couvertures, setCouvertures] = useState<Couverture[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDeals();
+    fetchCouvertures();
   }, []);
 
   const fetchDeals = async () => {
@@ -65,6 +72,19 @@ export default function Deals() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCouvertures = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('couvertures')
+        .select('vente_id, volume_couvert');
+
+      if (error) throw error;
+      setCouvertures(data || []);
+    } catch (error) {
+      console.error('Error fetching couvertures:', error);
     }
   };
 
@@ -103,6 +123,20 @@ export default function Deals() {
         variant: 'destructive'
       });
     }
+  };
+
+  const getVolumeCouvert = (dealId: string) => {
+    return couvertures
+      .filter(c => c.vente_id === dealId)
+      .reduce((sum, c) => sum + c.volume_couvert, 0);
+  };
+
+  const getVolumeNonCouvert = (deal: Deal) => {
+    return deal.volume - getVolumeCouvert(deal.id);
+  };
+
+  const canRoll = (deal: Deal) => {
+    return deal.type_deal === 'prime' && getVolumeNonCouvert(deal) > 0;
   };
 
   if (loading) {
@@ -175,6 +209,11 @@ export default function Deals() {
                     <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/edit/${deal.id}`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
+                    {canRoll(deal) && (
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/roll/${deal.id}`)}>
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -211,6 +250,11 @@ export default function Deals() {
                   <div>
                     <div className="text-sm text-muted-foreground">Volume</div>
                     <div className="font-medium">{deal.volume} tonnes</div>
+                    {getVolumeCouvert(deal.id) > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Couvert: {getVolumeCouvert(deal.id)} tonnes
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Prix</div>

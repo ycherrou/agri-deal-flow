@@ -11,6 +11,7 @@ import Navires from "./pages/Navires";
 import Deals from "./pages/Deals";
 import CreateDeal from "./pages/CreateDeal";
 import EditDeal from "./pages/EditDeal";
+import RollDeal from "./pages/RollDeal";
 import Couvertures from "./pages/Couvertures";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/deals" element={<Layout><Deals /></Layout>} />
           <Route path="/deals/create" element={<Layout><CreateDeal /></Layout>} />
           <Route path="/deals/edit/:id" element={<Layout><EditDeal /></Layout>} />
+          <Route path="/deals/roll/:id" element={<Layout><RollDeal /></Layout>} />
           <Route path="/couvertures" element={<Layout><Couvertures /></Layout>} />
           <Route path="/clients" element={<Layout><Clients /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
