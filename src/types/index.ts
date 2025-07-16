@@ -100,3 +100,40 @@ export interface NavireWithStats extends Navire {
   nombreClients: number;
   valeurTotale: number;
 }
+
+export interface CouvertureAchat {
+  id: string;
+  navire_id: string;
+  volume_couvert: number;
+  prix_futures: number;
+  nombre_contrats: number;
+  date_couverture: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PnLData {
+  navire_id: string;
+  navire_nom: string;
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  prime_achat: number;
+  prime_vente_moyenne: number;
+  pnl_prime: number;
+  prix_futures_achat_moyen: number;
+  prix_futures_vente_moyen: number;
+  pnl_futures: number;
+  pnl_total: number;
+  volume_total_achete: number;
+  volume_total_vendu: number;
+  volume_couvert_achat: number;
+  volume_couvert_vente: number;
+}
+
+export interface PortfolioPnL {
+  pnl_total: number;
+  pnl_prime_total: number;
+  pnl_futures_total: number;
+  nombre_navires: number;
+  volume_total: number;
+  navires: PnLData[];
+}

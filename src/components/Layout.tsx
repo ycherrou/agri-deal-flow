@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon } from 'lucide-react';
+import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 interface LayoutProps {
   children: React.ReactNode;
@@ -115,6 +115,12 @@ export default function Layout({
     icon: UserIcon,
     path: '/portfolio',
     roles: ['client']
+  }, {
+    id: 'pnl',
+    label: 'P&L',
+    icon: DollarSign,
+    path: '/pnl',
+    roles: ['admin', 'client']
   }, {
     id: 'navires',
     label: 'Navires',
