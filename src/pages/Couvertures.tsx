@@ -333,7 +333,7 @@ export default function Couvertures() {
                 </div>
               )}
 
-              {venteSelectionnee && supportsContracts(venteSelectionnee.navire.produit) ? (
+              {venteSelectionnee && (console.log('Vente sélectionnée:', venteSelectionnee.navire.produit, 'Supports contracts:', supportsContracts(venteSelectionnee.navire.produit)), supportsContracts(venteSelectionnee.navire.produit)) ? (
                 <div className="space-y-2">
                   <Label htmlFor="nombre_contrats">Nombre de contrats</Label>
                   <Input
