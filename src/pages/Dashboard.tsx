@@ -826,7 +826,7 @@ export default function Dashboard() {
                               onClick={() => handleValidationRevente(revente.id, 'approve')}
                               className="bg-green-600 hover:bg-green-700"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <div className="h-4 w-4 mr-1">✓</div>
                               Approuver
                             </Button>
                             <Button
@@ -834,7 +834,7 @@ export default function Dashboard() {
                               variant="destructive"
                               onClick={() => handleValidationRevente(revente.id, 'reject')}
                             >
-                              <XCircle className="h-4 w-4 mr-1" />
+                              <div className="h-4 w-4 mr-1">✕</div>
                               Rejeter
                             </Button>
                           </div>
