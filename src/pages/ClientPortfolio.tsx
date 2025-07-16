@@ -258,7 +258,7 @@ export default function ClientPortfolio() {
                     </Badge>
                   </div>
                   <CardDescription>
-                    <div className="flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <Anchor className="h-4 w-4" />
                         {navireActif.fournisseur}
@@ -267,7 +267,7 @@ export default function ClientPortfolio() {
                         <Calendar className="h-4 w-4" />
                         Arrivée: {formatDate(navireActif.date_arrivee)}
                       </span>
-                    </div>
+                    </span>
                   </CardDescription>
                 </CardHeader>
               </Card>

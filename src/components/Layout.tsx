@@ -120,7 +120,7 @@ export default function Layout({
     label: 'P&L',
     icon: DollarSign,
     path: '/pnl',
-    roles: ['admin', 'client']
+    roles: ['admin']
   }, {
     id: 'navires',
     label: 'Navires',
