@@ -225,7 +225,7 @@ export default function MarcheSecondaire() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {reventes.map((revente) => (
+          {reventes.filter(revente => revente.ventes?.navires && revente.ventes?.clients).map((revente) => (
             <Card key={revente.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -286,7 +286,7 @@ export default function MarcheSecondaire() {
                             .map((bid) => (
                               <div key={bid.id} className="text-xs p-2 bg-muted rounded">
                                 <div className="flex justify-between">
-                                  <span>{bid.clients.nom}</span>
+                                  <span>{bid.clients?.nom || 'Client inconnu'}</span>
                                   <span className="font-medium">{formatPrice(bid.prix_bid, revente.ventes.navires.produit)}</span>
                                 </div>
                                 <div className="text-muted-foreground">
