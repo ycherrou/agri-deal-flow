@@ -40,6 +40,7 @@ interface NavireWithVentes {
     id: string;
     prix_futures: number;
     volume_couvert: number;
+    nombre_contrats: number;
     date_couverture: string;
   }>;
   ventes: Array<{
@@ -164,6 +165,7 @@ export default function Dashboard() {
                 id,
                 prix_futures,
                 volume_couvert,
+                nombre_contrats,
                 date_couverture
               ),
               ventes!inner (
@@ -216,6 +218,7 @@ export default function Dashboard() {
               id,
               prix_futures,
               volume_couvert,
+              nombre_contrats,
               date_couverture
             ),
             ventes (
@@ -672,29 +675,49 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                    // Volume couvert en futures achat (couvertures_achat)
+                    // Contrats en futures achat (couvertures_achat)
                     const couverturesAchat = navireActif.couvertures_achat || [];
-                    const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
-
-                    // Volume couvert en futures vente (couvertures des ventes)
-                    const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                    const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
-                    const ecartFutures = volumeFuturesAchat - volumeFuturesVente;
-                    const isEquilibre = Math.abs(ecartFutures) < 0.1; // Tolérance de 0.1 MT
-                    const surCouvert = ecartFutures > 0;
+                    const produit = navireActif.produit as ProductType;
+                    const supportsContractsFutures = supportsContracts(produit);
+                    
+                    let contractsFuturesAchat = 0;
+                    let contractsFuturesVente = 0;
+                    
+                    if (supportsContractsFutures) {
+                      // Calculer en nombre de contrats
+                      contractsFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                      
+                      // Contrats en futures vente (couvertures des ventes)
+                      const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                      contractsFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                    } else {
+                      // Pour les produits sans contrats, afficher en volume
+                      const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
+                      const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                      const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+                      
+                      // Convertir en "contrats virtuels" pour l'affichage
+                      contractsFuturesAchat = Math.round(volumeFuturesAchat);
+                      contractsFuturesVente = Math.round(volumeFuturesVente);
+                    }
+                    
+                    const ecartContrats = contractsFuturesAchat - contractsFuturesVente;
+                    const isEquilibre = ecartContrats === 0;
+                    const surCouvert = ecartContrats > 0;
+                    
                     return <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures vente:</span>
-                              <span className="font-medium">{volumeFuturesAchat.toFixed(1)}</span>
+                              <span className="text-muted-foreground">Futures envoyés:</span>
+                              <span className="font-medium">{supportsContractsFutures ? contractsFuturesAchat : `${contractsFuturesAchat} MT`}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures achat:</span>
-                              <span className="font-medium">{volumeFuturesVente.toFixed(1)}</span>
+                              <span className="text-muted-foreground">Futures reçus:</span>
+                              <span className="font-medium">{supportsContractsFutures ? contractsFuturesVente : `${contractsFuturesVente} MT`}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
                               <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
-                                {isEquilibre ? 'Équilibré' : surCouvert ? `+${ecartFutures.toFixed(1)}` : `${ecartFutures.toFixed(1)}`}
+                                {isEquilibre ? "Équilibré" : surCouvert ? `+${ecartContrats}` : `${ecartContrats}`} {supportsContractsFutures ? 'contrats' : 'MT'}
                               </Badge>
                             </div>
                           </div>;
