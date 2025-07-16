@@ -13,6 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CouverturesAchat from '@/components/CouverturesAchat';
 import { getLatestPricesForMaturities } from '@/lib/priceUtils';
+import { 
+  getContractSize, 
+  supportsContracts, 
+  volumeToContracts, 
+  contractsToVolume, 
+  formatContractsWithVolume,
+  calculateOvercoverage,
+  type ProductType
+} from '@/lib/futuresUtils';
 
 interface Client {
   id: string;
@@ -75,6 +84,7 @@ export default function Dashboard() {
   const [isAddCouvertureDialogOpen, setIsAddCouvertureDialogOpen] = useState(false);
   const [selectedVenteForCouverture, setSelectedVenteForCouverture] = useState<string | null>(null);
   const [couvertureFormData, setCouvertureFormData] = useState({
+    nombre_contrats: '',
     volume_couvert: '',
     prix_futures: '',
     date_couverture: new Date().toISOString().split('T')[0]
@@ -340,6 +350,7 @@ export default function Dashboard() {
   const handleAddCouverture = (venteId: string) => {
     setSelectedVenteForCouverture(venteId);
     setCouvertureFormData({
+      nombre_contrats: '',
       volume_couvert: '',
       prix_futures: '',
       date_couverture: new Date().toISOString().split('T')[0]
@@ -354,14 +365,32 @@ export default function Dashboard() {
     setAddingCouverture(true);
     try {
       const vente = navireActif?.ventes.find(v => v.id === selectedVenteForCouverture);
-      if (!vente) throw new Error('Vente introuvable');
+      if (!vente || !navireActif) throw new Error('Vente ou navire introuvable');
 
+      const produit = navireActif.produit as ProductType;
       const volumeDejaCouverte = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
       const volumeRestant = vente.volume - volumeDejaCouverte;
-      const nouveauVolume = parseFloat(couvertureFormData.volume_couvert);
+      
+      let nouveauVolume: number;
+      let nombreContrats = 0;
 
-      if (nouveauVolume > volumeRestant) {
-        throw new Error(`Volume maximum autorisé: ${volumeRestant}`);
+      if (supportsContracts(produit)) {
+        // Utiliser le système de contrats
+        nombreContrats = parseInt(couvertureFormData.nombre_contrats);
+        if (!nombreContrats || nombreContrats <= 0) {
+          throw new Error('Nombre de contrats requis');
+        }
+        nouveauVolume = contractsToVolume(nombreContrats, produit);
+      } else {
+        // Utiliser le volume direct
+        nouveauVolume = parseFloat(couvertureFormData.volume_couvert);
+        if (!nouveauVolume || nouveauVolume <= 0) {
+          throw new Error('Volume requis');
+        }
+      }
+
+      if (nouveauVolume > volumeRestant + (volumeRestant * 0.1)) { // Autoriser 10% de surcouverture
+        throw new Error(`Volume maximum autorisé: ${volumeRestant} tonnes`);
       }
 
       const { error } = await supabase
@@ -369,6 +398,7 @@ export default function Dashboard() {
         .insert([{
           vente_id: selectedVenteForCouverture,
           volume_couvert: nouveauVolume,
+          nombre_contrats: nombreContrats,
           prix_futures: parseFloat(couvertureFormData.prix_futures),
           date_couverture: couvertureFormData.date_couverture
         }]);
@@ -1015,18 +1045,65 @@ export default function Dashboard() {
               );
             })()}
 
-            <div className="space-y-2">
-              <Label htmlFor="volume_couvert">Volume à couvrir</Label>
-              <Input
-                id="volume_couvert"
-                type="number"
-                step="0.01"
-                placeholder="Volume"
-                value={couvertureFormData.volume_couvert}
-                onChange={(e) => setCouvertureFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
-                required
-              />
-            </div>
+            {(() => {
+              const vente = navireActif?.ventes.find(v => v.id === selectedVenteForCouverture);
+              const navire = navireActif;
+              
+              if (!vente || !navire) return null;
+              
+              const produit = navire.produit as ProductType;
+              const supportsContractsFutures = supportsContracts(produit);
+              
+              if (supportsContractsFutures) {
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="nombre_contrats">Nombre de contrats</Label>
+                    <Input
+                      id="nombre_contrats"
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="Nombre de contrats"
+                      value={couvertureFormData.nombre_contrats}
+                      onChange={(e) => setCouvertureFormData(prev => ({ ...prev, nombre_contrats: e.target.value }))}
+                      required
+                    />
+                    {couvertureFormData.nombre_contrats && (
+                      <div className="text-sm text-muted-foreground">
+                        = {contractsToVolume(parseInt(couvertureFormData.nombre_contrats) || 0, produit)} tonnes
+                        {parseInt(couvertureFormData.nombre_contrats) > 0 && (
+                          <div className="text-xs text-orange-600">
+                            Surcouverture: {calculateOvercoverage(
+                              (() => {
+                                const volumeDejaCouverte = vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0);
+                                return vente.volume - volumeDejaCouverte;
+                              })(),
+                              parseInt(couvertureFormData.nombre_contrats),
+                              produit
+                            )} tonnes
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="volume_couvert">Volume à couvrir</Label>
+                    <Input
+                      id="volume_couvert"
+                      type="number"
+                      step="0.01"
+                      placeholder="Volume"
+                      value={couvertureFormData.volume_couvert}
+                      onChange={(e) => setCouvertureFormData(prev => ({ ...prev, volume_couvert: e.target.value }))}
+                      required
+                    />
+                  </div>
+                );
+              }
+            })()}
 
             <div className="space-y-2">
               <Label htmlFor="prix_futures">Prix futures</Label>
