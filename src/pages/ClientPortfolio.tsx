@@ -394,13 +394,26 @@ export default function ClientPortfolio() {
                         
                         {position.couvertures.length > 0 && (
                           <div className="pt-2 border-t">
-                            <div className="text-sm text-muted-foreground mb-2">Couvertures:</div>
-                            <div className="space-y-1">
+                            <div className="text-sm text-muted-foreground mb-2">Couvertures Futures:</div>
+                            <div className="space-y-2">
                               {position.couvertures.map((couv, idx) => (
-                                <div key={couv.id} className="text-xs bg-muted p-2 rounded">
-                                  <div className="flex justify-between">
-                                    <span>{formatDate(couv.date_couverture)}</span>
-                                    <span>{couv.volume_couvert} tonnes à {formatPrice(couv.prix_futures)}</span>
+                                <div key={couv.id} className="text-xs bg-muted p-3 rounded">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <span className="font-medium">{formatDate(couv.date_couverture)}</span>
+                                    <span className="text-right">
+                                      <div className="font-medium">{couv.volume_couvert} tonnes</div>
+                                      <div className="text-muted-foreground">{(couv.volume_couvert / position.volume_achete * 100).toFixed(1)}% de la position</div>
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <div className="text-muted-foreground">Prix futures</div>
+                                      <div className="font-medium">{formatPrice(couv.prix_futures)}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-muted-foreground">Valeur totale</div>
+                                      <div className="font-medium">${(couv.prix_futures * couv.volume_couvert).toLocaleString()}</div>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
