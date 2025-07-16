@@ -78,56 +78,70 @@ export default function MarcheSecondaire() {
   };
 
   const fetchReventes = async () => {
-    const { data, error } = await supabase
-      .from('reventes_clients')
-      .select(`
-        id,
-        volume,
-        prix_flat_demande,
-        date_revente,
-        vente_id,
-        ventes (
-          navire_id,
-          volume,
-          prime_vente,
-          prix_reference,
-          navires (
-            nom,
-            produit,
-            date_arrivee
-          ),
-          clients (
-            nom
-          )
-        ),
-        bids_marche_secondaire (
+    try {
+      console.log('Fetching reventes...');
+      
+      const { data, error } = await supabase
+        .from('reventes_clients')
+        .select(`
           id,
-          prix_bid,
-          volume_bid,
-          date_bid,
-          client_id,
-          statut,
-          clients (
-            nom
+          volume,
+          prix_flat_demande,
+          date_revente,
+          vente_id,
+          ventes!inner (
+            navire_id,
+            volume,
+            prime_vente,
+            prix_reference,
+            client_id,
+            navires!inner (
+              nom,
+              produit,
+              date_arrivee
+            ),
+            clients!inner (
+              nom
+            )
+          ),
+          bids_marche_secondaire (
+            id,
+            prix_bid,
+            volume_bid,
+            date_bid,
+            client_id,
+            statut,
+            clients (
+              nom
+            )
           )
-        )
-      `)
-      .eq('etat', 'vendu')
-      .eq('validated_by_admin', true)
-      .order('date_revente', { ascending: false });
+        `)
+        .eq('etat', 'vendu')
+        .eq('validated_by_admin', true)
+        .order('date_revente', { ascending: false });
 
-    if (error) {
-      console.error('Erreur lors de la récupération des reventes:', error);
+      if (error) {
+        console.error('Erreur lors de la récupération des reventes:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les positions en vente",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Reventes fetched:', data);
+      setReventes(data || []);
+    } catch (err) {
+      console.error('Erreur inattendue:', err);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les positions en vente",
+        description: "Une erreur inattendue s'est produite",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setReventes(data || []);
-    setLoading(false);
   };
 
   const handleBid = async (reventeId: string) => {
