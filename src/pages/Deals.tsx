@@ -259,9 +259,9 @@ export default function Deals() {
                   <div>
                     <div className="text-sm text-muted-foreground">Prix</div>
                     <div className="font-medium">
-                      {deal.type_deal === 'flat' && deal.prix_flat
+                      {deal.type_deal === 'flat' && deal.prix_flat !== null
                         ? formatPrice(deal.prix_flat)
-                        : deal.type_deal === 'prime' && deal.prime_vente
+                        : deal.type_deal === 'prime' && deal.prime_vente !== null
                         ? `Prime: ${formatPrice(deal.prime_vente)}`
                         : 'Non défini'}
                     </div>
