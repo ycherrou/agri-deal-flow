@@ -68,14 +68,16 @@ export default function ClientPortfolio() {
   const fetchClientPortfolio = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('User:', user);
       if (!user) return;
 
-      const { data: clientData } = await supabase
+      const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
+      console.log('Client data:', clientData, 'Error:', clientError);
       if (!clientData) return;
 
       // Récupérer les navires avec les ventes du client
@@ -103,6 +105,7 @@ export default function ClientPortfolio() {
         `)
         .eq('ventes.client_id', clientData.id);
 
+      console.log('Navires data:', naviresData, 'Error:', error);
       if (error) throw error;
 
       // Récupérer les prix du marché les plus récents
