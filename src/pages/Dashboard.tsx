@@ -486,21 +486,46 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {navires.map(navire => <button key={navire.id} onClick={() => setActiveNavire(navire.id)} className={`w-full p-3 rounded-lg border text-left transition-colors ${activeNavire === navire.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted border-border'}`}>
-                <div className="font-medium">{navire.nom}</div>
-                <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.quantite_totale}
-                </div>
-                <div className="text-xs opacity-60">
-                  {formatDate(navire.date_arrivee)}
-                </div>
-              </button>)}
+            {navires.length === 0 ? (
+              <div className="text-center py-8">
+                <Ship className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Aucun navire trouvé</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {userRole === 'admin' ? 'Aucun navire dans la base' : 'Aucune vente associée'}
+                </p>
+              </div>
+            ) : (
+              navires.map(navire => <button key={navire.id} onClick={() => setActiveNavire(navire.id)} className={`w-full p-3 rounded-lg border text-left transition-colors ${activeNavire === navire.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-muted border-border'}`}>
+                  <div className="font-medium">{navire.nom}</div>
+                  <div className="text-sm opacity-75">
+                    {navire.produit} - {navire.quantite_totale}
+                  </div>
+                  <div className="text-xs opacity-60">
+                    {formatDate(navire.date_arrivee)}
+                  </div>
+                </button>)
+            )}
           </CardContent>
         </Card>
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          {navireActif ? <Tabs defaultValue="overview" className="space-y-4">
+          {navires.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Aucun navire disponible</h3>
+                  <p className="text-muted-foreground">
+                    {userRole === 'admin' 
+                      ? 'Aucun navire n\'a été ajouté au système'
+                      : 'Vous n\'avez aucune vente associée à un navire'
+                    }
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : navireActif ? <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                 <TabsTrigger value="ventes">Ventes</TabsTrigger>
@@ -941,16 +966,18 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </TabsContent>
-            </Tabs> : <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Ship className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Aucun navire sélectionné</h3>
-                <p className="text-muted-foreground text-center">
-                  Sélectionnez un navire dans la liste pour voir ses détails
-                </p>
-              </CardContent>
-            </Card>}
-         </div>
+            </Tabs> : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Ship className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Aucun navire sélectionné</h3>
+                  <p className="text-muted-foreground text-center">
+                    Sélectionnez un navire dans la liste pour voir ses détails
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
       </div>
 
       {/* Dialog pour ajouter une couverture */}
