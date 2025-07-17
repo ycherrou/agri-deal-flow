@@ -126,7 +126,7 @@ const PnLPieCharts: React.FC<PnLPieChartsProps> = ({ navires }) => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ percentage }) => `${percentage.toFixed(1)}%`}
+                          label={({ percentage, pnl_total }) => `${percentage.toFixed(1)}%\n${formatPnL(pnl_total)}`}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="pnl_total"
@@ -167,7 +167,7 @@ const PnLPieCharts: React.FC<PnLPieChartsProps> = ({ navires }) => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ percentage }) => `${percentage.toFixed(1)}%`}
+                          label={({ percentage, volume_total }) => `${percentage.toFixed(1)}%\n${volume_total.toLocaleString('fr-FR')}t`}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="volume_total"
