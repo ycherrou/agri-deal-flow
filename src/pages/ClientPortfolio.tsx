@@ -500,6 +500,24 @@ export default function ClientPortfolio() {
                             <div className="text-sm text-muted-foreground">Prime payée</div>
                             <div className="font-medium">{formatPrice(position.prime_payee)}</div>
                           </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">PRU</div>
+                            <div className="font-medium">${(() => {
+                              // Facteur de conversion selon le produit
+                              const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
+                                : navireActif.produit === 'tourteau_soja' ? 0.4640 
+                                : 1;
+                              
+                              // Calcul du PRU si des couvertures existent
+                              if (position.couvertures.length > 0) {
+                                const prixFuturesMoyen = position.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / position.couvertures.length;
+                                const valeurTotale = (position.prime_payee + prixFuturesMoyen) * position.volume_achete * facteurConversion;
+                                const pru = valeurTotale / position.volume_achete;
+                                return formatPrice(pru);
+                              }
+                              return "N/A";
+                            })()}</div>
+                          </div>
                           {position.type_deal === 'flat' && position.prix_flat && (
                             <div>
                               <div className="text-sm text-muted-foreground">Prix flat</div>
