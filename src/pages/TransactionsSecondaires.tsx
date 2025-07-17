@@ -44,7 +44,7 @@ interface Bid {
   accepted_by_seller: boolean;
   client: {
     nom: string;
-  };
+  } | null;
   revente: {
     vente: {
       navire: {
@@ -378,7 +378,7 @@ export default function TransactionsSecondaires() {
                           <Badge variant="outline">{bid.revente.vente.navire.produit}</Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          Offre de: {bid.client.nom}
+                          Offre de: {bid.client?.nom || 'N/A'}
                         </div>
                         <div className="text-sm">
                           Volume: {bid.volume_bid.toFixed(2)} T
@@ -421,7 +421,7 @@ export default function TransactionsSecondaires() {
                     <Badge variant="outline">{bid.revente.vente.navire.produit}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Offre de: {bid.client.nom}
+                    Offre de: {bid.client?.nom || 'N/A'}
                   </div>
                   <div className="text-sm">
                     Volume: {bid.volume_bid.toFixed(2)} T
