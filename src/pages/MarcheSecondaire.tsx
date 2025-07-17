@@ -81,6 +81,15 @@ export default function MarcheSecondaire() {
     try {
       console.log('Fetching reventes...');
       
+      // Première requête pour debug : récupérer les reventes simples
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('reventes_clients')
+        .select('id, volume, prix_flat_demande, date_revente, vente_id, etat, validated_by_admin')
+        .eq('etat', 'en_attente')
+        .eq('validated_by_admin', true);
+      
+      console.log('Simple reventes query result:', simpleData, simpleError);
+      
       const { data, error } = await supabase
         .from('reventes_clients')
         .select(`
@@ -89,18 +98,18 @@ export default function MarcheSecondaire() {
           prix_flat_demande,
           date_revente,
           vente_id,
-          ventes!inner (
+          ventes (
             navire_id,
             volume,
             prime_vente,
             prix_reference,
             client_id,
-            navires!inner (
+            navires (
               nom,
               produit,
               date_arrivee
             ),
-            clients!inner (
+            clients (
               nom
             )
           ),
