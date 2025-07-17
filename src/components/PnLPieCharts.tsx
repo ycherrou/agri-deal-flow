@@ -35,7 +35,7 @@ const getProductBadge = (produit: string) => {
 
 const PnLLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, pnl_total }: any) => {
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const radius = outerRadius + 30; // Position en dehors du camembert
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -43,7 +43,7 @@ const PnLLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, pnl_
     <text 
       x={x} 
       y={y} 
-      fill="white" 
+      fill="black" 
       textAnchor={x > cx ? 'start' : 'end'} 
       dominantBaseline="central"
       fontSize={12}
@@ -57,7 +57,7 @@ const PnLLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, pnl_
 
 const VolumeLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, volume_total }: any) => {
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const radius = outerRadius + 30; // Position en dehors du camembert
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -65,7 +65,7 @@ const VolumeLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, v
     <text 
       x={x} 
       y={y} 
-      fill="white" 
+      fill="black" 
       textAnchor={x > cx ? 'start' : 'end'} 
       dominantBaseline="central"
       fontSize={12}
