@@ -260,9 +260,6 @@ export default function MarcheSecondaire() {
                       <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
                         {revente.ventes.navires.produit.replace('_', ' ')}
                       </Badge>
-                       <span className="text-sm text-muted-foreground">
-                         Vendeur: {revente.ventes.clients?.nom || 'Client privé'}
-                       </span>
                     </div>
                   </div>
                   <div className="text-right">
