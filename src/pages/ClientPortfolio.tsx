@@ -391,6 +391,25 @@ export default function ClientPortfolio() {
                     <div className="text-sm text-muted-foreground">
                       Couvert: {navireActif.volume_couvert_total} | Non couvert: {navireActif.volume_non_couvert_total}
                     </div>
+                    <div className="text-sm font-medium mt-2">
+                      Valeur totale: ${(() => {
+                        // Facteur de conversion selon le produit
+                        const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
+                          : navireActif.produit === 'tourteau_soja' ? 0.4640 
+                          : 1;
+                        
+                        // Calcul pour toutes les positions avec couverture
+                        let valeurTotale = 0;
+                        navireActif.positions.forEach(position => {
+                          if (position.couvertures.length > 0) {
+                            const prixFuturesMoyen = position.couvertures.reduce((sum, c) => sum + c.prix_futures, 0) / position.couvertures.length;
+                            valeurTotale += (position.prime_payee + prixFuturesMoyen) * position.volume_achete * facteurConversion;
+                          }
+                        });
+                        
+                        return valeurTotale.toLocaleString();
+                      })()}
+                    </div>
                   </CardContent>
                 </Card>
 
