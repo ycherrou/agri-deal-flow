@@ -99,9 +99,18 @@ interface ReventeEnAttente {
   };
 }
 
+interface CouvertureOrpheline {
+  id: string;
+  prix_futures: number;
+  volume_couvert: number;
+  nombre_contrats: number;
+  date_couverture: string;
+}
+
 export default function Dashboard() {
   const [navires, setNavires] = useState<NavireWithVentes[]>([]);
   const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
+  const [couverturesOrphelines, setCouverturesOrphelines] = useState<CouvertureOrpheline[]>([]);
   const [loading, setLoading] = useState(true);
   const [reventesEnAttente, setReventesEnAttente] = useState<ReventeEnAttente[]>([]);
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
@@ -135,6 +144,7 @@ export default function Dashboard() {
     fetchPrixMarche();
     fetchClients();
     fetchReventesEnAttente();
+    fetchCouverturesOrphelines();
   }, []);
   useEffect(() => {
     if (userRole) {
@@ -295,6 +305,28 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  const fetchCouverturesOrphelines = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('couvertures')
+        .select(`
+          id,
+          prix_futures,
+          volume_couvert,
+          nombre_contrats,
+          date_couverture
+        `)
+        .is('vente_id', null)
+        .order('date_couverture', { ascending: false });
+
+      if (error) throw error;
+      setCouverturesOrphelines(data || []);
+    } catch (error) {
+      console.error('Error fetching couvertures orphelines:', error);
+    }
+  };
+
   const fetchPrixMarche = async () => {
     try {
       const {
@@ -940,14 +972,18 @@ export default function Dashboard() {
                       // Calculer en nombre de contrats
                       contractsFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.nombre_contrats, 0);
                       
-                      // Contrats en futures vente (couvertures des ventes)
+                      // Contrats en futures vente (couvertures des ventes + orphelines)
                       const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                      contractsFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                      const contractsVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                      const contractsOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                      contractsFuturesVente = contractsVenteNormales + contractsOrphelines;
                     } else {
                       // Pour les produits sans contrats, afficher en volume
                       const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
                       const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                      const volumeFuturesVente = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+                      const volumeVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+                      const volumeOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0);
+                      const volumeFuturesVente = volumeVenteNormales + volumeOrphelines;
                       
                       // Convertir en "contrats virtuels" pour l'affichage
                       contractsFuturesAchat = Math.round(volumeFuturesAchat);
@@ -967,6 +1003,17 @@ export default function Dashboard() {
                               <span className="text-muted-foreground">Futures reçus:</span>
                               <span className="font-medium">{supportsContractsFutures ? contractsFuturesVente : `${contractsFuturesVente} MT`}</span>
                             </div>
+                            {couverturesOrphelines.length > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground text-orange-600">Futures orphelins:</span>
+                                <span className="font-medium text-orange-600">
+                                  {supportsContractsFutures 
+                                    ? couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0)
+                                    : `${Math.round(couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0))} MT`
+                                  }
+                                </span>
+                              </div>
+                            )}
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">Position:</span>
                               <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
