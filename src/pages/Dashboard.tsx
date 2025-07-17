@@ -1612,18 +1612,27 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prix_reference">Référence CBOT</Label>
-                  <Select value={venteFormData.prix_reference} onValueChange={(value) => setVenteFormData(prev => ({ ...prev, prix_reference: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un contrat CBOT" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {prixMarche.map((prix) => (
-                        <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
-                          {prix.echeance?.nom} - {prix.prix} cts/bu
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {navireActif?.reference_cbot ? (
+                    <Input
+                      id="prix_reference"
+                      value={navireActif.reference_cbot}
+                      disabled
+                      className="bg-muted"
+                    />
+                  ) : (
+                    <Select value={venteFormData.prix_reference} onValueChange={(value) => setVenteFormData(prev => ({ ...prev, prix_reference: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un contrat CBOT" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {prixMarche.map((prix) => (
+                          <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
+                            {prix.echeance?.nom} - {prix.prix} cts/bu
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             )}
