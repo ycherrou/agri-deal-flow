@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       bids_marche_secondaire: {
         Row: {
+          accepted_at: string | null
+          accepted_by_seller: boolean | null
           client_id: string
           created_at: string
           date_bid: string
@@ -27,6 +29,8 @@ export type Database = {
           volume_bid: number
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by_seller?: boolean | null
           client_id: string
           created_at?: string
           date_bid?: string
@@ -38,6 +42,8 @@ export type Database = {
           volume_bid: number
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by_seller?: boolean | null
           client_id?: string
           created_at?: string
           date_bid?: string
@@ -349,6 +355,57 @@ export type Database = {
           },
         ]
       }
+      transactions_marche_secondaire: {
+        Row: {
+          acheteur_id: string
+          bid_id: string
+          commission_admin: number | null
+          created_at: string
+          date_transaction: string
+          gain_vendeur: number
+          id: string
+          prix_achat_original: number
+          prix_vente_final: number
+          revente_id: string
+          statut: string
+          updated_at: string
+          vendeur_id: string
+          volume_transige: number
+        }
+        Insert: {
+          acheteur_id: string
+          bid_id: string
+          commission_admin?: number | null
+          created_at?: string
+          date_transaction?: string
+          gain_vendeur: number
+          id?: string
+          prix_achat_original: number
+          prix_vente_final: number
+          revente_id: string
+          statut?: string
+          updated_at?: string
+          vendeur_id: string
+          volume_transige: number
+        }
+        Update: {
+          acheteur_id?: string
+          bid_id?: string
+          commission_admin?: number | null
+          created_at?: string
+          date_transaction?: string
+          gain_vendeur?: number
+          id?: string
+          prix_achat_original?: number
+          prix_vente_final?: number
+          revente_id?: string
+          statut?: string
+          updated_at?: string
+          vendeur_id?: string
+          volume_transige?: number
+        }
+        Relationships: []
+      }
       ventes: {
         Row: {
           client_id: string
@@ -421,6 +478,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_bid_and_create_transaction: {
+        Args: { bid_id_param: string; seller_client_id: string }
+        Returns: string
+      }
+      calculate_pru_vente: {
+        Args: { vente_id_param: string }
+        Returns: number
+      }
       get_contract_size: {
         Args: { produit_type: string }
         Returns: number

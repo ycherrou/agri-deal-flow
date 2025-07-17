@@ -157,6 +157,12 @@ export default function Layout({
     icon: ShoppingCart,
     path: '/marche-secondaire',
     roles: ['client', 'admin']
+  }, {
+    id: 'transactions-secondaires',
+    label: 'Transactions Secondaires',
+    icon: TrendingUp,
+    path: '/transactions-secondaires',
+    roles: ['admin', 'client']
   }];
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-muted">
