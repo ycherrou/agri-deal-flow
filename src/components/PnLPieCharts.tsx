@@ -33,6 +33,50 @@ const getProductBadge = (produit: string) => {
   );
 };
 
+const PnLLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, pnl_total }: any) => {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text 
+      x={x} 
+      y={y} 
+      fill="white" 
+      textAnchor={x > cx ? 'start' : 'end'} 
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight="bold"
+    >
+      <tspan x={x} dy="0">{percentage.toFixed(1)}%</tspan>
+      <tspan x={x} dy="15">{formatPnL(pnl_total)}</tspan>
+    </text>
+  );
+};
+
+const VolumeLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage, volume_total }: any) => {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text 
+      x={x} 
+      y={y} 
+      fill="white" 
+      textAnchor={x > cx ? 'start' : 'end'} 
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight="bold"
+    >
+      <tspan x={x} dy="0">{percentage.toFixed(1)}%</tspan>
+      <tspan x={x} dy="15">{volume_total.toLocaleString('fr-FR')}t</tspan>
+    </text>
+  );
+};
+
 const PnLTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -126,7 +170,7 @@ const PnLPieCharts: React.FC<PnLPieChartsProps> = ({ navires }) => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ percentage, pnl_total }) => `${percentage.toFixed(1)}%\n${formatPnL(pnl_total)}`}
+                          label={PnLLabel}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="pnl_total"
@@ -167,7 +211,7 @@ const PnLPieCharts: React.FC<PnLPieChartsProps> = ({ navires }) => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ percentage, volume_total }) => `${percentage.toFixed(1)}%\n${volume_total.toLocaleString('fr-FR')}t`}
+                          label={VolumeLabel}
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="volume_total"
