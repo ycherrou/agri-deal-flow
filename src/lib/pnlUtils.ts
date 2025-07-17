@@ -40,7 +40,12 @@ export const calculatePrimePnL = (navire: NavireWithPnLData): number => {
     return sum + (v.prime_vente || 0) * v.volume;
   }, 0) / volumeTotal;
   
-  return (primeVenteMoyenne - primeAchat) * volumeTotal;
+  // Appliquer le facteur de conversion pour convertir les primes en $/tonne
+  const facteurConversion = getConversionFactor(navire.produit);
+  const primeAchatConvertie = primeAchat * facteurConversion;
+  const primeVenteConvertie = primeVenteMoyenne * facteurConversion;
+  
+  return (primeVenteConvertie - primeAchatConvertie) * volumeTotal;
 };
 
 /**
@@ -101,12 +106,17 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const primeVenteMoyenne = volumeTotalVendu > 0 ?
     ventesAvecPrime.reduce((sum, v) => sum + (v.prime_vente || 0) * v.volume, 0) / volumeTotalVendu : 0;
   
+  // Appliquer le facteur de conversion pour l'affichage des primes
+  const facteurConversion = getConversionFactor(navire.produit);
+  const primeAchatAffichage = (navire.prime_achat || 0) * facteurConversion;
+  const primeVenteAffichage = primeVenteMoyenne * facteurConversion;
+  
   return {
     navire_id: navire.id,
     navire_nom: navire.nom,
     produit: navire.produit,
-    prime_achat: navire.prime_achat || 0,
-    prime_vente_moyenne: primeVenteMoyenne,
+    prime_achat: primeAchatAffichage,
+    prime_vente_moyenne: primeVenteAffichage,
     pnl_prime: pnlPrime,
     prix_futures_achat_moyen: prixFuturesAchatMoyen,
     prix_futures_vente_moyen: prixFuturesVenteMoyen,
@@ -197,7 +207,7 @@ export const getConversionFactor = (produit: string): number => {
     case 'mais':
       return 0.3937; // cts/bu -> $/tonne
     case 'tourteau_soja':
-      return 0.4640; // cts/bu -> $/tonne
+      return 0.9072; // cts/bu -> $/tonne
     case 'ble':
     case 'orge':
     default:
