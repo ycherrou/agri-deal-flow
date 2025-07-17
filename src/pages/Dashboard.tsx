@@ -1080,6 +1080,10 @@ export default function Dashboard() {
                                   <span className="font-mono text-sm">{vente.id.slice(0, 8)}</span>
                                 </div>
                                 <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">Client:</span>
+                                  <span className="text-sm font-medium">{vente.clients.nom}</span>
+                                </div>
+                                <div className="flex justify-between">
                                   <span className="text-sm text-muted-foreground">Date:</span>
                                   <span className="text-sm">{formatDate(vente.date_deal)}</span>
                                 </div>
