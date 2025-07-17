@@ -190,23 +190,73 @@ export default function TransactionsSecondaires() {
 
   const fetchSellerBids = async () => {
     // Pour les vendeurs, récupérer leurs offres reçues
-    const { data, error } = await supabase
-      .from('bids_marche_secondaire')
-      .select(`
-        *,
-        client:clients(nom),
-        revente:reventes_clients(
-          vente:ventes!inner(
-            client_id,
-            navire:navires(nom, produit)
-          )
-        )
-      `)
-      .eq('revente.vente.client_id', currentUser.id)
-      .eq('statut', 'active');
+    try {
+      // D'abord récupérer les IDs des ventes du vendeur
+      const { data: ventesData, error: ventesError } = await supabase
+        .from('ventes')
+        .select('id')
+        .eq('client_id', currentUser.id);
 
-    if (error) throw error;
-    setPendingBids(data || []);
+      if (ventesError) {
+        console.error('Erreur ventes:', ventesError);
+        throw ventesError;
+      }
+
+      if (!ventesData || ventesData.length === 0) {
+        console.log('Aucune vente trouvée pour le vendeur');
+        setPendingBids([]);
+        return;
+      }
+
+      const venteIds = ventesData.map(v => v.id);
+      console.log('IDs de ventes trouvées:', venteIds);
+
+      // Ensuite récupérer les reventes pour ces ventes
+      const { data: reventesData, error: reventesError } = await supabase
+        .from('reventes_clients')
+        .select('id')
+        .in('vente_id', venteIds);
+
+      if (reventesError) {
+        console.error('Erreur reventes:', reventesError);
+        throw reventesError;
+      }
+
+      if (!reventesData || reventesData.length === 0) {
+        console.log('Aucune revente trouvée pour ces ventes');
+        setPendingBids([]);
+        return;
+      }
+
+      const reventeIds = reventesData.map(r => r.id);
+      console.log('IDs de reventes trouvées:', reventeIds);
+
+      // Finalement récupérer les bids pour ces reventes
+      const { data, error } = await supabase
+        .from('bids_marche_secondaire')
+        .select(`
+          *,
+          client:clients(nom),
+          revente:reventes_clients(
+            vente:ventes(
+              navire:navires(nom, produit)
+            )
+          )
+        `)
+        .in('revente_id', reventeIds)
+        .eq('statut', 'active');
+
+      if (error) {
+        console.error('Erreur bids:', error);
+        throw error;
+      }
+
+      console.log('Bids trouvés:', data);
+      setPendingBids(data || []);
+    } catch (error) {
+      console.error('Erreur dans fetchSellerBids:', error);
+      setPendingBids([]);
+    }
   };
 
   const fetchStats = async () => {
