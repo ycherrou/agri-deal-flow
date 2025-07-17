@@ -306,6 +306,7 @@ export default function Dashboard() {
             <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+                <TabsTrigger value="ventes">Ventes</TabsTrigger>
                 <TabsTrigger value="couvertures_achat">Couvertures d'Achat</TabsTrigger>
               </TabsList>
 
@@ -409,6 +410,92 @@ export default function Dashboard() {
                         </div>
                       );
                     })()}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="ventes" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Ventes - {navireActif.nom}
+                    </CardTitle>
+                    <CardDescription>
+                      Liste des ventes pour ce navire
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {navireActif.ventes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Aucune vente pour ce navire</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {navireActif.ventes.map((vente) => (
+                          <div key={vente.id} className="border rounded-lg p-4 space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium">{vente.clients.nom}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {formatDate(vente.date_deal)}
+                                </div>
+                              </div>
+                              <Badge variant={vente.type_deal === 'prime' ? 'default' : 'secondary'}>
+                                {vente.type_deal === 'prime' ? 'Prime' : 'Flat'}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <div className="text-muted-foreground">Volume</div>
+                                <div className="font-medium">{vente.volume} tonnes</div>
+                              </div>
+                              
+                              {vente.type_deal === 'prime' ? (
+                                <>
+                                  <div>
+                                    <div className="text-muted-foreground">Prime vente</div>
+                                    <div className="font-medium">{vente.prime_vente || 'N/A'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">Référence</div>
+                                    <div className="font-medium">{vente.prix_reference || 'N/A'}</div>
+                                  </div>
+                                </>
+                              ) : (
+                                <div>
+                                  <div className="text-muted-foreground">Prix flat</div>
+                                  <div className="font-medium">{vente.prix_flat || 'N/A'} $/T</div>
+                                </div>
+                              )}
+                              
+                              <div>
+                                <div className="text-muted-foreground">Couvertures</div>
+                                <div className="font-medium">
+                                  {vente.couvertures.reduce((sum, c) => sum + c.volume_couvert, 0)} tonnes
+                                </div>
+                              </div>
+                            </div>
+
+                            {vente.couvertures.length > 0 && (
+                              <div className="border-t pt-3">
+                                <div className="text-xs text-muted-foreground mb-2">Couvertures:</div>
+                                <div className="space-y-1">
+                                  {vente.couvertures.map((couverture) => (
+                                    <div key={couverture.id} className="text-xs bg-muted rounded p-2 flex justify-between">
+                                      <span>{formatDate(couverture.date_couverture)}</span>
+                                      <span>{couverture.volume_couvert} tonnes à {couverture.prix_futures}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
