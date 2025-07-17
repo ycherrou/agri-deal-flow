@@ -236,3 +236,163 @@ export const getPnLColor = (amount: number): string => {
   if (amount < 0) return 'text-red-600';
   return 'text-muted-foreground';
 };
+
+interface ClientPnLData {
+  client_id: string;
+  client_nom: string;
+  navire_id: string;
+  navire_nom: string;
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  pnl_total: number;
+  pnl_prime: number;
+  pnl_futures: number;
+  volume_total: number;
+  volume_couvert: number;
+}
+
+export interface NavirePnLByClient {
+  navire_id: string;
+  navire_nom: string;
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  clients: ClientPnLData[];
+  total_pnl: number;
+  total_volume: number;
+}
+
+/**
+ * Calcule le P&L par client pour chaque navire
+ */
+export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin'): Promise<NavirePnLByClient[]> => {
+  try {
+    let query = supabase
+      .from('navires')
+      .select(`
+        id,
+        nom,
+        produit,
+        quantite_totale,
+        prime_achat,
+        couvertures_achat (
+          volume_couvert,
+          prix_futures,
+          nombre_contrats
+        ),
+        ventes (
+          id,
+          client_id,
+          type_deal,
+          volume,
+          prime_vente,
+          couvertures (
+            volume_couvert,
+            prix_futures,
+            nombre_contrats
+          ),
+          clients (
+            id,
+            nom
+          )
+        )
+      `);
+
+    // Si c'est un client, filtrer par ses ventes uniquement
+    if (userRole === 'client') {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (clientData) {
+          query = query.eq('ventes.client_id', clientData.id);
+        }
+      }
+    }
+
+    const { data: navires, error } = await query;
+    
+    if (error) throw error;
+
+    const naviresData = navires as any[] || [];
+    const result: NavirePnLByClient[] = [];
+
+    for (const navire of naviresData) {
+      if (!navire.ventes || navire.ventes.length === 0) continue;
+
+      const clientsMap = new Map<string, ClientPnLData>();
+      
+      // Calculer les moyennes pour les futures d'achat
+      const couverturesAchat = navire.couvertures_achat || [];
+      const volumeAchatTotal = couverturesAchat.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
+      const prixFuturesAchatMoyen = volumeAchatTotal > 0 ? 
+        couverturesAchat.reduce((sum: number, c: any) => sum + c.prix_futures * c.volume_couvert, 0) / volumeAchatTotal : 0;
+
+      // Traiter chaque vente
+      for (const vente of navire.ventes) {
+        const clientId = vente.client_id;
+        const clientNom = vente.clients?.nom || 'Client inconnu';
+        
+        if (!clientsMap.has(clientId)) {
+          clientsMap.set(clientId, {
+            client_id: clientId,
+            client_nom: clientNom,
+            navire_id: navire.id,
+            navire_nom: navire.nom,
+            produit: navire.produit,
+            pnl_total: 0,
+            pnl_prime: 0,
+            pnl_futures: 0,
+            volume_total: 0,
+            volume_couvert: 0
+          });
+        }
+
+        const clientData = clientsMap.get(clientId)!;
+        clientData.volume_total += vente.volume;
+
+        // Calculer P&L sur primes pour cette vente
+        if (vente.type_deal === 'prime') {
+          const primeAchat = navire.prime_achat || 0;
+          const primeVente = vente.prime_vente || 0;
+          const facteurConversion = getConversionFactor(navire.produit);
+          const pnlPrime = (primeVente - primeAchat) * facteurConversion * vente.volume;
+          clientData.pnl_prime += pnlPrime;
+        }
+
+        // Calculer P&L sur futures pour cette vente
+        if (vente.couvertures && vente.couvertures.length > 0) {
+          const volumeVenteCouverte = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
+          const prixFuturesVenteMoyen = volumeVenteCouverte > 0 ?
+            vente.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures * c.volume_couvert, 0) / volumeVenteCouverte : 0;
+
+          const facteurConversion = getConversionFactor(navire.produit);
+          const pnlFutures = (prixFuturesVenteMoyen - prixFuturesAchatMoyen) * facteurConversion * volumeVenteCouverte;
+          clientData.pnl_futures += pnlFutures;
+          clientData.volume_couvert += volumeVenteCouverte;
+        }
+
+        clientData.pnl_total = clientData.pnl_prime + clientData.pnl_futures;
+      }
+
+      const clients = Array.from(clientsMap.values());
+      const totalPnL = clients.reduce((sum, c) => sum + c.pnl_total, 0);
+      const totalVolume = clients.reduce((sum, c) => sum + c.volume_total, 0);
+
+      result.push({
+        navire_id: navire.id,
+        navire_nom: navire.nom,
+        produit: navire.produit,
+        clients,
+        total_pnl: totalPnL,
+        total_volume: totalVolume
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error calculating P&L by client:', error);
+    throw error;
+  }
+};

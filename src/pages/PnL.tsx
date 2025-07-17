@@ -7,13 +7,15 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw } from 'lucide-react';
-import { calculatePortfolioPnL, formatPnL, getPnLColor } from '@/lib/pnlUtils';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, PieChart } from 'lucide-react';
+import { calculatePortfolioPnL, formatPnL, getPnLColor, calculatePnLByClient, NavirePnLByClient } from '@/lib/pnlUtils';
 import { PortfolioPnL, PnLData } from '@/types/index';
 import { supabase } from '@/integrations/supabase/client';
+import PnLPieCharts from '@/components/PnLPieCharts';
 
 export default function PnL() {
   const [portfolioPnL, setPortfolioPnL] = useState<PortfolioPnL | null>(null);
+  const [pnlByClient, setPnlByClient] = useState<NavirePnLByClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'client'>('admin');
   const { toast } = useToast();
@@ -50,8 +52,12 @@ export default function PnL() {
   const fetchPnLData = async () => {
     setLoading(true);
     try {
-      const data = await calculatePortfolioPnL(userRole);
+      const [data, clientData] = await Promise.all([
+        calculatePortfolioPnL(userRole),
+        calculatePnLByClient(userRole)
+      ]);
       setPortfolioPnL(data);
+      setPnlByClient(clientData);
     } catch (error) {
       console.error('Error fetching P&L data:', error);
       toast({
@@ -184,138 +190,165 @@ export default function PnL() {
         </Card>
       </div>
 
-      {/* Détail par navire */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Détail P&L par Navire</CardTitle>
-          <CardDescription>
-            Analyse détaillée des performances par navire
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Navire</TableHead>
-                  <TableHead>Produit</TableHead>
-                  <TableHead className="text-right">Prime Achat</TableHead>
-                  <TableHead className="text-right">Prime Vente Moy.</TableHead>
-                  <TableHead className="text-right">P&L Prime</TableHead>
-                  <TableHead className="text-right">Futures Achat Moy.</TableHead>
-                  <TableHead className="text-right">Futures Vente Moy.</TableHead>
-                  <TableHead className="text-right">P&L Futures</TableHead>
-                  <TableHead className="text-right">P&L Total</TableHead>
-                  <TableHead className="text-right">Volume</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {portfolioPnL.navires.map((navire) => (
-                  <TableRow key={navire.navire_id}>
-                    <TableCell className="font-medium">{navire.navire_nom}</TableCell>
-                    <TableCell>{getProductBadge(navire.produit)}</TableCell>
-                    <TableCell className="text-right">
-                      {navire.prime_achat.toFixed(2)} $/MT
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {navire.prime_vente_moyenne.toFixed(2)} $/MT
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
-                      {formatPnL(navire.pnl_prime)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {navire.prix_futures_achat_moyen.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {navire.prix_futures_vente_moyen.toFixed(2)}
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_futures)}`}>
-                      {formatPnL(navire.pnl_futures)}
-                    </TableCell>
-                    <TableCell className={`text-right font-bold ${getPnLColor(navire.pnl_total)}`}>
-                      {formatPnL(navire.pnl_total)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="text-sm">
-                        <div>{navire.volume_couvert_achat.toLocaleString('fr-FR')}t</div>
-                        <div className="text-muted-foreground text-xs">
-                          / {navire.volume_total_achete.toLocaleString('fr-FR')}t
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Répartition P&L */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Répartition P&L par Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">P&L Primes</span>
-                <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_prime_total)}`}>
-                  {formatPnL(portfolioPnL.pnl_prime_total)}
-                </span>
+      {/* Système d'onglets */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="client-charts">Répartition par client</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          {/* Détail par navire */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Détail P&L par Navire</CardTitle>
+              <CardDescription>
+                Analyse détaillée des performances par navire
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Navire</TableHead>
+                      <TableHead>Produit</TableHead>
+                      <TableHead className="text-right">Prime Achat</TableHead>
+                      <TableHead className="text-right">Prime Vente Moy.</TableHead>
+                      <TableHead className="text-right">P&L Prime</TableHead>
+                      <TableHead className="text-right">Futures Achat Moy.</TableHead>
+                      <TableHead className="text-right">Futures Vente Moy.</TableHead>
+                      <TableHead className="text-right">P&L Futures</TableHead>
+                      <TableHead className="text-right">P&L Total</TableHead>
+                      <TableHead className="text-right">Volume</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {portfolioPnL.navires.map((navire) => (
+                      <TableRow key={navire.navire_id}>
+                        <TableCell className="font-medium">{navire.navire_nom}</TableCell>
+                        <TableCell>{getProductBadge(navire.produit)}</TableCell>
+                        <TableCell className="text-right">
+                          {navire.prime_achat.toFixed(2)} $/MT
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {navire.prime_vente_moyenne.toFixed(2)} $/MT
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
+                          {formatPnL(navire.pnl_prime)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {navire.prix_futures_achat_moyen.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {navire.prix_futures_vente_moyen.toFixed(2)}
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_futures)}`}>
+                          {formatPnL(navire.pnl_futures)}
+                        </TableCell>
+                        <TableCell className={`text-right font-bold ${getPnLColor(navire.pnl_total)}`}>
+                          {formatPnL(navire.pnl_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="text-sm">
+                            <div>{navire.volume_couvert_achat.toLocaleString('fr-FR')}t</div>
+                            <div className="text-muted-foreground text-xs">
+                              / {navire.volume_total_achete.toLocaleString('fr-FR')}t
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <Progress 
-                value={Math.abs(portfolioPnL.pnl_prime_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
-                className="h-2" 
-              />
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">P&L Futures</span>
-                <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_futures_total)}`}>
-                  {formatPnL(portfolioPnL.pnl_futures_total)}
-                </span>
-              </div>
-              <Progress 
-                value={Math.abs(portfolioPnL.pnl_futures_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
-                className="h-2" 
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance par Produit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(
-                portfolioPnL.navires.reduce((acc, navire) => {
-                  if (!acc[navire.produit]) {
-                    acc[navire.produit] = { pnl: 0, volume: 0 };
-                  }
-                  acc[navire.produit].pnl += navire.pnl_total;
-                  acc[navire.produit].volume += navire.volume_total_achete;
-                  return acc;
-                }, {} as Record<string, { pnl: number; volume: number }>)
-              ).map(([produit, data]) => (
-                <div key={produit} className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    {getProductBadge(produit)}
-                    <span className="text-sm text-muted-foreground">
-                      {data.volume.toLocaleString('fr-FR')}t
+          {/* Répartition P&L */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Répartition P&L par Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">P&L Primes</span>
+                    <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_prime_total)}`}>
+                      {formatPnL(portfolioPnL.pnl_prime_total)}
                     </span>
                   </div>
-                  <span className={`text-sm font-bold ${getPnLColor(data.pnl)}`}>
-                    {formatPnL(data.pnl)}
-                  </span>
+                  <Progress 
+                    value={Math.abs(portfolioPnL.pnl_prime_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
+                    className="h-2" 
+                  />
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">P&L Futures</span>
+                    <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_futures_total)}`}>
+                      {formatPnL(portfolioPnL.pnl_futures_total)}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={Math.abs(portfolioPnL.pnl_futures_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
+                    className="h-2" 
+                  />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance par Produit</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(
+                    portfolioPnL.navires.reduce((acc, navire) => {
+                      if (!acc[navire.produit]) {
+                        acc[navire.produit] = { pnl: 0, volume: 0 };
+                      }
+                      acc[navire.produit].pnl += navire.pnl_total;
+                      acc[navire.produit].volume += navire.volume_total_achete;
+                      return acc;
+                    }, {} as Record<string, { pnl: number; volume: number }>)
+                  ).map(([produit, data]) => (
+                    <div key={produit} className="flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        {getProductBadge(produit)}
+                        <span className="text-sm text-muted-foreground">
+                          {data.volume.toLocaleString('fr-FR')}t
+                        </span>
+                      </div>
+                      <span className={`text-sm font-bold ${getPnLColor(data.pnl)}`}>
+                        {formatPnL(data.pnl)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="client-charts" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Camemberts par navire
+              </CardTitle>
+              <CardDescription>
+                Répartition des P&L et volumes par client dans chaque navire
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PnLPieCharts navires={pnlByClient} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
