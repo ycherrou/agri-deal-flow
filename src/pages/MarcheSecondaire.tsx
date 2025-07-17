@@ -24,9 +24,9 @@ interface ReventeSecondaire {
       produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
       date_arrivee: string;
     };
-    clients: {
+    clients?: {
       nom: string;
-    };
+    } | null;
   };
   bids_marche_secondaire: Array<{
     id: string;
@@ -248,7 +248,7 @@ export default function MarcheSecondaire() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {reventes.filter(revente => revente.ventes?.navires && revente.ventes?.clients).map((revente) => (
+          {reventes.filter(revente => revente.ventes?.navires).map((revente) => (
             <Card key={revente.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -260,9 +260,9 @@ export default function MarcheSecondaire() {
                       <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
                         {revente.ventes.navires.produit.replace('_', ' ')}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Vendeur: {revente.ventes.clients.nom}
-                      </span>
+                       <span className="text-sm text-muted-foreground">
+                         Vendeur: {revente.ventes.clients?.nom || 'Client privé'}
+                       </span>
                     </div>
                   </div>
                   <div className="text-right">
