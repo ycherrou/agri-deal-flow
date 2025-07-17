@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Ship, Edit, Trash2, Calendar, Package, User } from 'lucide-react';
+import { Plus, Ship, Edit, Trash2, Calendar, Package, User, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CouverturesAchat from '@/components/CouverturesAchat';
 
@@ -287,6 +287,10 @@ export default function Navires() {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
+  const getVolumeRestant = (navire: Navire) => {
+    return navire.quantite_totale - (navire.volumeVendu || 0);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -507,6 +511,16 @@ export default function Navires() {
                          >
                            Couvertures d'achat
                          </Button>
+                         {navire.prime_achat && getVolumeRestant(navire) > 0 && (
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => window.location.href = `/navires/roll/${navire.id}`}
+                             title="Changer la référence CBOT"
+                           >
+                             <RotateCcw className="h-4 w-4" />
+                           </Button>
+                         )}
                          <Button
                            size="sm"
                            variant="outline"
