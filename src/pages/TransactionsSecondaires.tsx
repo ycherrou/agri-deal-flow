@@ -50,9 +50,9 @@ interface Bid {
       navire: {
         nom: string;
         produit: string;
-      };
-    };
-  };
+      } | null;
+    } | null;
+  } | null;
 }
 
 interface Stats {
@@ -374,8 +374,8 @@ export default function TransactionsSecondaires() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold">{bid.revente.vente.navire.nom}</h3>
-                          <Badge variant="outline">{bid.revente.vente.navire.produit}</Badge>
+                          <h3 className="font-semibold">{bid.revente?.vente?.navire?.nom || 'N/A'}</h3>
+                          <Badge variant="outline">{bid.revente?.vente?.navire?.produit || 'N/A'}</Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Offre de: {bid.client?.nom || 'N/A'}
@@ -386,7 +386,7 @@ export default function TransactionsSecondaires() {
                       </div>
                       <div className="text-right space-y-2">
                         <div className="font-semibold">
-                          {formatPrice(bid.prix_bid, bid.revente.vente.navire.produit)}
+                          {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais')}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {new Date(bid.date_bid).toLocaleDateString('fr-FR')}
@@ -417,8 +417,8 @@ export default function TransactionsSecondaires() {
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold">{bid.revente.vente.navire.nom}</h3>
-                    <Badge variant="outline">{bid.revente.vente.navire.produit}</Badge>
+                    <h3 className="font-semibold">{bid.revente?.vente?.navire?.nom || 'N/A'}</h3>
+                    <Badge variant="outline">{bid.revente?.vente?.navire?.produit || 'N/A'}</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Offre de: {bid.client?.nom || 'N/A'}
@@ -430,7 +430,7 @@ export default function TransactionsSecondaires() {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="font-semibold">
-                      {formatPrice(bid.prix_bid, bid.revente.vente.navire.produit)}
+                      {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais')}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {new Date(bid.date_bid).toLocaleDateString('fr-FR')}
