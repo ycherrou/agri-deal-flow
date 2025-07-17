@@ -112,7 +112,7 @@ export type Database = {
           nombre_contrats: number
           prix_futures: number
           updated_at: string | null
-          vente_id: string
+          vente_id: string | null
           volume_couvert: number
         }
         Insert: {
@@ -122,7 +122,7 @@ export type Database = {
           nombre_contrats?: number
           prix_futures: number
           updated_at?: string | null
-          vente_id: string
+          vente_id?: string | null
           volume_couvert: number
         }
         Update: {
@@ -132,7 +132,7 @@ export type Database = {
           nombre_contrats?: number
           prix_futures?: number
           updated_at?: string | null
-          vente_id?: string
+          vente_id?: string | null
           volume_couvert?: number
         }
         Relationships: [
