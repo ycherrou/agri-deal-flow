@@ -516,25 +516,12 @@ export default function ClientPortfolio() {
                                       <div className="text-muted-foreground">{(couv.volume_couvert / position.volume_achete * 100).toFixed(1)}% de la position</div>
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <div className="text-muted-foreground">Prix futures</div>
-                                      <div className="font-medium">{formatPrice(couv.prix_futures)}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-muted-foreground">Valeur totale</div>
-                                      <div className="font-medium">${(() => {
-                                        // Facteur de conversion selon le produit
-                                        const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                                          : navireActif.produit === 'tourteau_soja' ? 0.4640 
-                                          : 1; // Déjà en $/tonne pour autres produits
-                                        
-                                        // Calcul: (prime + prix_futures) * volume_total * facteur_conversion
-                                        const valeurTotale = (position.prime_payee + couv.prix_futures) * position.volume_achete * facteurConversion;
-                                        return valeurTotale.toLocaleString();
-                                      })()}</div>
-                                    </div>
-                                  </div>
+                                   <div className="grid grid-cols-1 gap-2">
+                                     <div>
+                                       <div className="text-muted-foreground">Prix futures</div>
+                                       <div className="font-medium">{formatPrice(couv.prix_futures)}</div>
+                                     </div>
+                                   </div>
                                 </div>
                               ))}
                             </div>
