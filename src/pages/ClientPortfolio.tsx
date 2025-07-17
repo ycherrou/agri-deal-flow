@@ -172,12 +172,17 @@ export default function ClientPortfolio() {
     return position.couvertures.reduce((total: number, couv: any) => total + couv.volume_couvert, 0);
   };
 
+  const getVolumeMaxRevente = (position: any) => {
+    const volumeCouvert = getVolumeCouvert(position);
+    return Math.min(position.volume_achete, volumeCouvert);
+  };
+
   const handleRevente = async () => {
     if (!reventeDialog.position) return;
 
     const volume = parseFloat(reventeVolume);
     const prix = parseFloat(reventePrix);
-    const volumeCouvert = getVolumeCouvert(reventeDialog.position);
+    const volumeMaxRevente = getVolumeMaxRevente(reventeDialog.position);
 
     if (!volume || !prix || volume <= 0 || prix <= 0) {
       toast({
@@ -188,10 +193,10 @@ export default function ClientPortfolio() {
       return;
     }
 
-    if (volume > volumeCouvert) {
+    if (volume > volumeMaxRevente) {
       toast({
         title: "Erreur",
-        description: `Vous ne pouvez remettre en vente que ${volumeCouvert} MT (volume couvert)`,
+        description: `Vous ne pouvez remettre en vente que ${volumeMaxRevente} MT (minimum entre volume total et volume couvert)`,
         variant: "destructive",
       });
       return;
@@ -607,8 +612,8 @@ export default function ClientPortfolio() {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder={`Max: ${getVolumeCouvert(reventeDialog.position)}`}
-                    max={getVolumeCouvert(reventeDialog.position)}
+                    placeholder={`Max: ${getVolumeMaxRevente(reventeDialog.position)}`}
+                    max={getVolumeMaxRevente(reventeDialog.position)}
                     value={reventeVolume}
                     onChange={(e) => setReventeVolume(e.target.value)}
                   />
