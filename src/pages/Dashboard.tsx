@@ -404,7 +404,7 @@ export default function Dashboard() {
     let pru = 0;
     
     if (vente.type_deal === 'flat') {
-      // Pour les ventes flat, le PRU est égal au prix de vente (déjà en €/tonne)
+      // Pour les ventes flat, le PRU est égal au prix de vente (déjà en $/tonne)
       pru = vente.prix_flat || 0;
     } else {
       // Pour les deals prime, calculer le PRU avec le dernier prix futures de référence
@@ -425,7 +425,7 @@ export default function Dashboard() {
         pru = prixMoyenPondere + (vente.prime_vente || 0);
       }
       
-      // Appliquer le facteur de conversion seulement pour les ventes prime (prix futures en cts/bu -> €/tonne)
+      // Appliquer le facteur de conversion seulement pour les ventes prime (prix futures en cts/bu -> $/tonne)
       const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
                                navire.produit === 'tourteau_soja' ? 0.4640 : 1;
       pru = pru * facteurConversion;

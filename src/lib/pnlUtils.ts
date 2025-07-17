@@ -67,7 +67,7 @@ export const calculateFuturesPnL = (navire: NavireWithPnLData): number => {
     return sum + c.prix_futures * c.volume_couvert;
   }, 0) / volumeVenteTotal;
   
-  // Appliquer le facteur de conversion pour convertir les prix futures en €/tonne
+  // Appliquer le facteur de conversion pour convertir les prix futures en $/tonne
   const facteurConversion = getConversionFactor(navire.produit);
   const prixAchatConverti = prixFuturesAchatMoyen * facteurConversion;
   const prixVenteConverti = prixFuturesVenteMoyen * facteurConversion;
@@ -195,13 +195,13 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
 export const getConversionFactor = (produit: string): number => {
   switch (produit) {
     case 'mais':
-      return 0.3937; // cts/bu -> €/tonne
+      return 0.3937; // cts/bu -> $/tonne
     case 'tourteau_soja':
-      return 0.4640; // cts/bu -> €/tonne
+      return 0.4640; // cts/bu -> $/tonne
     case 'ble':
     case 'orge':
     default:
-      return 1; // Déjà en €/tonne
+      return 1; // Déjà en $/tonne
   }
 };
 
@@ -215,7 +215,7 @@ export const formatPnL = (amount: number): string => {
     maximumFractionDigits: 0
   });
   
-  return amount >= 0 ? `+${formatted} €` : `-${formatted} €`;
+  return amount >= 0 ? `+${formatted} $` : `-${formatted} $`;
 };
 
 /**

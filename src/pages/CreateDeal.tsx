@@ -293,7 +293,7 @@ export default function CreateDeal() {
                     id="prix_flat"
                     type="number"
                     step="0.01"
-                    placeholder="Prix flat en €"
+                    placeholder="Prix flat en $"
                     value={formData.prix_flat}
                     onChange={(e) => handleInputChange('prix_flat', e.target.value)}
                     required
@@ -308,7 +308,7 @@ export default function CreateDeal() {
                     id="prime_vente"
                     type="number"
                     step="0.01"
-                    placeholder="Prime de vente en €"
+                    placeholder="Prime de vente en $"
                     value={formData.prime_vente}
                     onChange={(e) => handleInputChange('prime_vente', e.target.value)}
                     required
