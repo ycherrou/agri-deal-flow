@@ -116,7 +116,7 @@ export default function MarcheSecondaire() {
             )
           )
         `)
-        .in('etat', ['en_attente', 'en_attente_validation'])
+        .eq('etat', 'en_attente')
         .eq('validated_by_admin', true)
         .order('date_revente', { ascending: false });
 

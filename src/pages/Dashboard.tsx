@@ -349,7 +349,7 @@ export default function Dashboard() {
       };
 
       if (action === 'approve') {
-        updates.etat = 'vendu';
+        updates.etat = 'en_attente';
         updates.validated_by_admin = true;
         updates.admin_validation_date = new Date().toISOString();
       } else {
