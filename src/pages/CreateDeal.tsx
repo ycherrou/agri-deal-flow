@@ -23,6 +23,7 @@ interface Navire {
   fournisseur: string;
   quantite_totale: number;
   date_arrivee: string;
+  reference_cbot: string;
 }
 
 interface PrixMarche {
@@ -82,7 +83,7 @@ export default function CreateDeal() {
     try {
       const { data, error } = await supabase
         .from('navires')
-        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee')
+        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee, reference_cbot')
         .order('nom');
       
       if (error) throw error;
@@ -115,11 +116,15 @@ export default function CreateDeal() {
     e.preventDefault();
     setLoading(true);
 
+    // Get the selected navire's CBOT reference for prime deals
+    const selectedNavire = navires.find(n => n.id === formData.navire_id);
+    const cbotReference = formData.type_deal === 'prime' && selectedNavire ? selectedNavire.reference_cbot : null;
+
     // Validation : pour les deals prime, la référence CBOT est obligatoire
-    if (formData.type_deal === 'prime' && !formData.prix_reference) {
+    if (formData.type_deal === 'prime' && !cbotReference) {
       toast({
         title: 'Erreur de validation',
-        description: 'Une référence CBOT est obligatoire pour les deals à prime.',
+        description: 'Le navire sélectionné doit avoir une référence CBOT pour les deals à prime.',
         variant: 'destructive'
       });
       setLoading(false);
@@ -135,7 +140,7 @@ export default function CreateDeal() {
         date_deal: formData.date_deal,
         prix_flat: formData.type_deal === 'flat' ? parseFloat(formData.prix_flat) : null,
         prime_vente: formData.type_deal === 'prime' ? parseFloat(formData.prime_vente) : null,
-        prix_reference: formData.prix_reference || null
+        prix_reference: cbotReference
       };
 
       const { error } = await supabase
@@ -168,6 +173,10 @@ export default function CreateDeal() {
       [field]: value
     }));
   };
+
+  // Get the selected navire's CBOT reference
+  const selectedNavire = navires.find(n => n.id === formData.navire_id);
+  const cbotReference = selectedNavire?.reference_cbot;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -265,22 +274,18 @@ export default function CreateDeal() {
 
               {formData.type_deal === 'prime' && (
                 <div className="space-y-2">
-                  <Label htmlFor="prix_reference">Référence CBOT *</Label>
-                  <Select value={formData.prix_reference} onValueChange={(value) => handleInputChange('prix_reference', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un contrat CBOT" />
-                    </SelectTrigger>
-                    <SelectContent>
-                       {prixMarche.map((prix) => (
-                         <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
-                           {prix.echeance?.nom} - {prix.prix} cts/bu
-                         </SelectItem>
-                       ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.type_deal === 'prime' && !formData.prix_reference && (
+                  <Label htmlFor="prix_reference">Référence CBOT</Label>
+                  <Input
+                    id="prix_reference"
+                    type="text"
+                    value={cbotReference || ''}
+                    placeholder="Référence CBOT du navire"
+                    readOnly
+                    className="bg-gray-100"
+                  />
+                  {formData.type_deal === 'prime' && !cbotReference && formData.navire_id && (
                     <p className="text-sm text-destructive">
-                      Une référence CBOT est obligatoire pour les deals à prime
+                      Le navire sélectionné n'a pas de référence CBOT définie
                     </p>
                   )}
                 </div>
@@ -316,7 +321,6 @@ export default function CreateDeal() {
                 </div>
               )}
             </div>
-
 
             <div className="flex justify-end space-x-3">
               <Button
