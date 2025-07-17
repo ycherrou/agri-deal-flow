@@ -498,6 +498,10 @@ export type Database = {
         Args: { client_id_param: string }
         Returns: boolean
       }
+      update_existing_transactions_pru: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       deal_type: "prime" | "flat"
