@@ -39,13 +39,24 @@ interface CouvertureVente {
   };
 }
 
+interface CouvertureOrpheline {
+  id: string;
+  date_couverture: string;
+  volume_couvert: number;
+  prix_futures: number;
+  nombre_contrats: number;
+}
+
 interface StatsFutures {
   totalVolumeAchat: number;
   totalVolumeVente: number;
   totalContratsAchat: number;
   totalContratsVente: number;
+  totalVolumeOrpheline: number;
+  totalContratsOrpheline: number;
   prixMoyenAchat: number;
   prixMoyenVente: number;
+  prixMoyenOrpheline: number;
   expositionNette: number;
   gainPotentiel: number;
 }
@@ -53,13 +64,17 @@ interface StatsFutures {
 export default function FuturesAdmin() {
   const [couverturesAchat, setCouverturesAchat] = useState<CouvertureAchat[]>([]);
   const [couverturesVente, setCouverturesVente] = useState<CouvertureVente[]>([]);
+  const [couverturesOrphelines, setCouverturesOrphelines] = useState<CouvertureOrpheline[]>([]);
   const [stats, setStats] = useState<StatsFutures>({
     totalVolumeAchat: 0,
     totalVolumeVente: 0,
     totalContratsAchat: 0,
     totalContratsVente: 0,
+    totalVolumeOrpheline: 0,
+    totalContratsOrpheline: 0,
     prixMoyenAchat: 0,
     prixMoyenVente: 0,
+    prixMoyenOrpheline: 0,
     expositionNette: 0,
     gainPotentiel: 0,
   });
@@ -76,6 +91,7 @@ export default function FuturesAdmin() {
       await Promise.all([
         fetchCouverturesAchat(),
         fetchCouverturesVente(),
+        fetchCouverturesOrphelines(),
       ]);
     } catch (error) {
       console.error('Erreur lors du chargement des données futures:', error);
@@ -124,23 +140,43 @@ export default function FuturesAdmin() {
           navire:navires(nom, produit)
         )
       `)
+      .not('vente_id', 'is', null)
       .order('date_couverture', { ascending: false });
 
     if (error) throw error;
     setCouverturesVente(data || []);
   };
 
+  const fetchCouverturesOrphelines = async () => {
+    const { data, error } = await supabase
+      .from('couvertures')
+      .select(`
+        id,
+        date_couverture,
+        volume_couvert,
+        prix_futures,
+        nombre_contrats
+      `)
+      .is('vente_id', null)
+      .order('date_couverture', { ascending: false });
+
+    if (error) throw error;
+    setCouverturesOrphelines(data || []);
+  };
+
   useEffect(() => {
-    if (couverturesAchat.length > 0 || couverturesVente.length > 0) {
+    if (couverturesAchat.length > 0 || couverturesVente.length > 0 || couverturesOrphelines.length > 0) {
       calculateStats();
     }
-  }, [couverturesAchat, couverturesVente]);
+  }, [couverturesAchat, couverturesVente, couverturesOrphelines]);
 
   const calculateStats = () => {
     const totalVolumeAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
     const totalVolumeVente = couverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+    const totalVolumeOrpheline = couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0);
     const totalContratsAchat = couverturesAchat.reduce((sum, c) => sum + c.nombre_contrats, 0);
     const totalContratsVente = couverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
+    const totalContratsOrpheline = couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0);
 
     const prixMoyenAchat = couverturesAchat.length > 0 
       ? couverturesAchat.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0) / totalVolumeAchat
@@ -150,16 +186,23 @@ export default function FuturesAdmin() {
       ? couverturesVente.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0) / totalVolumeVente
       : 0;
 
+    const prixMoyenOrpheline = couverturesOrphelines.length > 0
+      ? couverturesOrphelines.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0) / totalVolumeOrpheline
+      : 0;
+
     const expositionNette = totalVolumeVente - totalVolumeAchat;
     const gainPotentiel = (prixMoyenVente - prixMoyenAchat) * Math.min(totalVolumeAchat, totalVolumeVente);
 
     setStats({
       totalVolumeAchat,
       totalVolumeVente,
+      totalVolumeOrpheline,
       totalContratsAchat,
       totalContratsVente,
+      totalContratsOrpheline,
       prixMoyenAchat,
       prixMoyenVente,
+      prixMoyenOrpheline,
       expositionNette,
       gainPotentiel,
     });
@@ -257,6 +300,7 @@ export default function FuturesAdmin() {
         <TabsList>
           <TabsTrigger value="achats">Couvertures Achat</TabsTrigger>
           <TabsTrigger value="ventes">Couvertures Vente</TabsTrigger>
+          <TabsTrigger value="orphelines">Marché Secondaire</TabsTrigger>
           <TabsTrigger value="analysis">Analyse</TabsTrigger>
         </TabsList>
 
@@ -331,6 +375,48 @@ export default function FuturesAdmin() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="orphelines" className="space-y-4">
+          <div className="grid gap-4">
+            {couverturesOrphelines.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  Aucune couverture orpheline du marché secondaire
+                </CardContent>
+              </Card>
+            ) : (
+              couverturesOrphelines.map((couverture) => (
+                <Card key={couverture.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold">Couverture Orpheline</h3>
+                          <Badge variant="outline" className="bg-orange-100 text-orange-800">MARCHÉ SECONDAIRE</Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Futures non assignés suite à une transaction secondaire
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm">
+                          <span>Volume: {formatVolume(couverture.volume_couvert)}</span>
+                          <span>Contrats: {couverture.nombre_contrats}</span>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="text-lg font-semibold text-orange-600">
+                          {formatPrice(couverture.prix_futures)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(couverture.date_couverture), 'dd/MM/yyyy', { locale: fr })}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
