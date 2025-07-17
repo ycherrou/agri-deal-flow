@@ -676,7 +676,7 @@ export default function Dashboard() {
                 {navireActif.ventes.some(v => v.type_deal === 'prime') && (
                   <TabsTrigger value="couvertures">Couvertures</TabsTrigger>
                 )}
-                <TabsTrigger value="reventes">Reventes</TabsTrigger>
+                
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -1287,21 +1287,6 @@ export default function Dashboard() {
                 </Tabs>
               </TabsContent>
 
-              <TabsContent value="reventes">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reventes clients</CardTitle>
-                    <CardDescription>
-                      Propositions de revente pour le navire {navireActif.nom}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">
-                      Interface de gestion des reventes à implémenter
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs> : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
