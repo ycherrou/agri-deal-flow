@@ -286,10 +286,6 @@ export default function MarcheSecondaire() {
                           <span className="font-medium">{revente.volume} MT</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Prime initiale:</span>
-                          <span>{formatPrice(revente.ventes.prime_vente || 0, revente.ventes.navires.produit)}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span>Référence CBOT:</span>
                           <span>{revente.ventes.prix_reference || 'Non définie'}</span>
                         </div>
