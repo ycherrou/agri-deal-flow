@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon, DollarSign, ShoppingCart, Activity } from 'lucide-react';
+import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon, DollarSign, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 interface LayoutProps {
   children: React.ReactNode;
@@ -163,12 +163,6 @@ export default function Layout({
     icon: TrendingUp,
     path: '/transactions-secondaires',
     roles: ['admin', 'client']
-  }, {
-    id: 'futures-admin',
-    label: 'Administration Futures',
-    icon: Activity,
-    path: '/futures-admin',
-    roles: ['admin']
   }];
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-muted">

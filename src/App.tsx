@@ -20,7 +20,6 @@ import PrixMarche from "./pages/PrixMarche";
 import PnL from "./pages/PnL";
 import MarcheSecondaire from "./pages/MarcheSecondaire";
 import TransactionsSecondaires from "./pages/TransactionsSecondaires";
-import FuturesAdmin from "./pages/FuturesAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,7 +47,6 @@ const App = () => (
             <Route path="/pnl" element={<Layout><PnL /></Layout>} />
             <Route path="/marche-secondaire" element={<Layout><MarcheSecondaire /></Layout>} />
             <Route path="/transactions-secondaires" element={<Layout><TransactionsSecondaires /></Layout>} />
-            <Route path="/futures-admin" element={<Layout><FuturesAdmin /></Layout>} />
             <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
