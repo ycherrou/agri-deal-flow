@@ -429,6 +429,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      is_client_visible_on_market: {
+        Args: { client_id_param: string }
+        Returns: boolean
+      }
     }
     Enums: {
       deal_type: "prime" | "flat"
