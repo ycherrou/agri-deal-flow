@@ -1028,10 +1028,6 @@ export default function Dashboard() {
                                 </div>
                               </div>
                             )}
-                            <div>
-                              <span className="text-muted-foreground">Reventes:</span>
-                              <div className="font-medium">{vente.reventes_clients.length}</div>
-                            </div>
                           </div>
 
                           {vente.type_deal === 'prime' && (
