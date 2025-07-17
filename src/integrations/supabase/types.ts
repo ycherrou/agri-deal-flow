@@ -358,12 +358,15 @@ export type Database = {
       transactions_marche_secondaire: {
         Row: {
           acheteur_id: string
+          admin_paiement_id: string | null
           bid_id: string
           commission_admin: number | null
           created_at: string
+          date_paiement_pnl: string | null
           date_transaction: string
           gain_vendeur: number
           id: string
+          pnl_paye: boolean
           prix_achat_original: number
           prix_vente_final: number
           revente_id: string
@@ -374,12 +377,15 @@ export type Database = {
         }
         Insert: {
           acheteur_id: string
+          admin_paiement_id?: string | null
           bid_id: string
           commission_admin?: number | null
           created_at?: string
+          date_paiement_pnl?: string | null
           date_transaction?: string
           gain_vendeur: number
           id?: string
+          pnl_paye?: boolean
           prix_achat_original: number
           prix_vente_final: number
           revente_id: string
@@ -390,12 +396,15 @@ export type Database = {
         }
         Update: {
           acheteur_id?: string
+          admin_paiement_id?: string | null
           bid_id?: string
           commission_admin?: number | null
           created_at?: string
+          date_paiement_pnl?: string | null
           date_transaction?: string
           gain_vendeur?: number
           id?: string
+          pnl_paye?: boolean
           prix_achat_original?: number
           prix_vente_final?: number
           revente_id?: string

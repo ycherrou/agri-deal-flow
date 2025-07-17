@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Euro, Users, BarChart3 } from 'lucide-react';
+import { TrendingUp, Euro, Users, BarChart3, CheckCircle, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
@@ -20,6 +20,9 @@ interface Transaction {
   commission_admin: number | null;
   date_transaction: string;
   statut: string;
+  pnl_paye: boolean;
+  date_paiement_pnl: string | null;
+  admin_paiement_id: string | null;
   vendeur: {
     nom: string;
   } | null;
@@ -306,6 +309,35 @@ export default function TransactionsSecondaires() {
     }
   };
 
+  const markPnlPaid = async (transactionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions_marche_secondaire')
+        .update({
+          pnl_paye: true,
+          date_paiement_pnl: new Date().toISOString(),
+          admin_paiement_id: currentUser.id,
+        })
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "P&L marqué comme payé !",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Erreur lors du marquage du paiement:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de marquer le P&L comme payé.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatPrice = (price: number, produit: string) => {
     const currency = produit === 'mais' ? '€/T' : '€/T';
     return `${price.toFixed(2)} ${currency}`;
@@ -382,36 +414,65 @@ export default function TransactionsSecondaires() {
           <TabsContent value="transactions" className="space-y-4">
             <div className="grid gap-4">
               {transactions.map((transaction) => (
-                <Card key={transaction.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold">{transaction.navire.nom}</h3>
-                          <Badge variant="outline">{transaction.navire.produit}</Badge>
-                          <Badge variant="default">{transaction.statut}</Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {transaction.vendeur?.nom || 'N/A'} → {transaction.acheteur?.nom || 'N/A'}
-                        </div>
-                        <div className="text-sm">
-                          Volume: {transaction.volume_transige.toFixed(2)} T
-                        </div>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="text-sm text-muted-foreground">
-                          Prix: {formatPrice(transaction.prix_vente_final, transaction.navire.produit)}
-                        </div>
-                        <div className="font-semibold">
-                          Gain: {formatGain(transaction.gain_vendeur)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(transaction.date_transaction).toLocaleDateString('fr-FR')}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                 <Card key={transaction.id}>
+                   <CardContent className="p-6">
+                     <div className="flex items-center justify-between">
+                       <div className="space-y-2">
+                         <div className="flex items-center space-x-2">
+                           <h3 className="font-semibold">{transaction.navire.nom}</h3>
+                           <Badge variant="outline">{transaction.navire.produit}</Badge>
+                           <Badge variant="default">{transaction.statut}</Badge>
+                           {transaction.pnl_paye && (
+                             <Badge variant="secondary" className="bg-green-100 text-green-800">
+                               P&L Payé
+                             </Badge>
+                           )}
+                         </div>
+                         <div className="text-sm text-muted-foreground">
+                           {transaction.vendeur?.nom || 'N/A'} → {transaction.acheteur?.nom || 'N/A'}
+                         </div>
+                         <div className="text-sm">
+                           Volume: {transaction.volume_transige.toFixed(2)} T
+                         </div>
+                         {transaction.pnl_paye && transaction.date_paiement_pnl && (
+                           <div className="text-xs text-green-600">
+                             Payé le {new Date(transaction.date_paiement_pnl).toLocaleDateString('fr-FR')}
+                           </div>
+                         )}
+                       </div>
+                       <div className="flex items-center space-x-4">
+                         <div className="text-right space-y-1">
+                           <div className="text-sm text-muted-foreground">
+                             Prix: {formatPrice(transaction.prix_vente_final, transaction.navire.produit)}
+                           </div>
+                           <div className="font-semibold">
+                             Gain: {formatGain(transaction.gain_vendeur)}
+                           </div>
+                           <div className="text-xs text-muted-foreground">
+                             {new Date(transaction.date_transaction).toLocaleDateString('fr-FR')}
+                           </div>
+                         </div>
+                         {!transaction.pnl_paye && (
+                           <Button
+                             onClick={() => markPnlPaid(transaction.id)}
+                             variant="outline"
+                             size="sm"
+                             className="flex items-center space-x-2"
+                           >
+                             <Circle className="h-4 w-4" />
+                             <span>Marquer P&L payé</span>
+                           </Button>
+                         )}
+                         {transaction.pnl_paye && (
+                           <div className="flex items-center space-x-2 text-green-600">
+                             <CheckCircle className="h-5 w-5" />
+                             <span className="text-sm font-medium">P&L Payé</span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
               ))}
             </div>
           </TabsContent>
