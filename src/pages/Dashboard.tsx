@@ -588,6 +588,16 @@ export default function Dashboard() {
     e.preventDefault();
     if (!activeNavire) return;
 
+    // Validation pour les ventes prime
+    if (venteFormData.type_deal === 'prime' && !navireActif?.reference_cbot) {
+      toast({
+        title: 'Erreur',
+        description: 'Ce navire n\'a pas de référence CBOT. Impossible de créer une vente à prime.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setAddingVente(true);
     try {
       const venteData: any = {
@@ -631,6 +641,17 @@ export default function Dashboard() {
   };
   
   const navireActif = navires.find(n => n.id === activeNavire);
+  
+  // Auto-populate CBOT reference when deal type changes to prime
+  useEffect(() => {
+    if (venteFormData.type_deal === 'prime' && navireActif?.reference_cbot) {
+      setVenteFormData(prev => ({
+        ...prev,
+        prix_reference: navireActif.reference_cbot
+      }));
+    }
+  }, [venteFormData.type_deal, navireActif?.reference_cbot]);
+  
   if (loading) {
     return <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
