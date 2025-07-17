@@ -190,18 +190,31 @@ export default function FuturesAdmin() {
       ? couverturesOrphelines.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0) / totalVolumeOrpheline
       : 0;
 
-    const expositionNette = totalVolumeVente - totalVolumeAchat;
-    const gainPotentiel = (prixMoyenVente - prixMoyenAchat) * Math.min(totalVolumeAchat, totalVolumeVente);
+    // Intégrer les couvertures orphelines dans les totaux de vente pour les statistiques principales
+    const totalVolumeVenteAvecOrphelines = totalVolumeVente + totalVolumeOrpheline;
+    const totalContratsVenteAvecOrphelines = totalContratsVente + totalContratsOrpheline;
+    
+    // Calculer le prix moyen de vente global (incluant les orphelines)
+    const volumeTotalVentes = totalVolumeVente + totalVolumeOrpheline;
+    const valeurTotaleVentes = (couverturesVente.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0)) + 
+                               (couverturesOrphelines.reduce((sum, c) => sum + (c.prix_futures * c.volume_couvert), 0));
+    const prixMoyenVenteGlobal = volumeTotalVentes > 0 ? valeurTotaleVentes / volumeTotalVentes : 0;
+
+    // Exposition nette avec les orphelines incluses
+    const expositionNette = totalVolumeVenteAvecOrphelines - totalVolumeAchat;
+    
+    // Gain potentiel avec les orphelines incluses
+    const gainPotentiel = (prixMoyenVenteGlobal - prixMoyenAchat) * Math.min(totalVolumeAchat, totalVolumeVenteAvecOrphelines);
 
     setStats({
       totalVolumeAchat,
-      totalVolumeVente,
+      totalVolumeVente: totalVolumeVenteAvecOrphelines, // Inclut les orphelines
       totalVolumeOrpheline,
       totalContratsAchat,
-      totalContratsVente,
+      totalContratsVente: totalContratsVenteAvecOrphelines, // Inclut les orphelines
       totalContratsOrpheline,
       prixMoyenAchat,
-      prixMoyenVente,
+      prixMoyenVente: prixMoyenVenteGlobal, // Prix moyen global incluant les orphelines
       prixMoyenOrpheline,
       expositionNette,
       gainPotentiel,
