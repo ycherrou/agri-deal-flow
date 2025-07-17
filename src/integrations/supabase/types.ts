@@ -496,7 +496,7 @@ export type Database = {
         Returns: number
       }
       get_contract_size: {
-        Args: { produit_type: Database["public"]["Enums"]["product_type"] }
+        Args: { produit_type: string }
         Returns: number
       }
       get_current_user_role: {
