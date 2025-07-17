@@ -286,10 +286,6 @@ export default function MarcheSecondaire() {
                           <span className="font-medium">{revente.volume} MT</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Référence CBOT:</span>
-                          <span>{revente.ventes.prix_reference || 'Non définie'}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span>Date d'arrivée:</span>
                           <span>{format(new Date(revente.ventes.navires.date_arrivee), 'dd/MM/yyyy', { locale: fr })}</span>
                         </div>
