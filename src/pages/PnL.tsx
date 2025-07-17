@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -214,10 +215,10 @@ export default function PnL() {
                     <TableCell className="font-medium">{navire.navire_nom}</TableCell>
                     <TableCell>{getProductBadge(navire.produit)}</TableCell>
                     <TableCell className="text-right">
-                      {navire.prime_achat.toFixed(2)} €/t
+                      {navire.prime_achat.toFixed(2)} $/MT
                     </TableCell>
                     <TableCell className="text-right">
-                      {navire.prime_vente_moyenne.toFixed(2)} €/t
+                      {navire.prime_vente_moyenne.toFixed(2)} $/MT
                     </TableCell>
                     <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
                       {formatPnL(navire.pnl_prime)}
