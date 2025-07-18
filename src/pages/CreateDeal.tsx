@@ -23,7 +23,9 @@ interface Navire {
   fournisseur: string;
   quantite_totale: number;
   date_arrivee: string;
-  reference_cbot: string;
+  reference_cbot?: string;
+  prime_achat?: number;
+  prix_achat_flat?: number;
 }
 
 interface PrixMarche {
@@ -83,7 +85,7 @@ export default function CreateDeal() {
     try {
       const { data, error } = await supabase
         .from('navires')
-        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee, reference_cbot')
+        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee, reference_cbot, prime_achat, prix_achat_flat')
         .order('nom');
       
       if (error) throw error;
@@ -116,12 +118,42 @@ export default function CreateDeal() {
     e.preventDefault();
     setLoading(true);
 
-    // Get the selected navire's CBOT reference for prime deals
+    // Get the selected navire details
     const selectedNavire = navires.find(n => n.id === formData.navire_id);
-    const cbotReference = formData.type_deal === 'prime' && selectedNavire ? selectedNavire.reference_cbot : null;
+    
+    if (!selectedNavire) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Veuillez sélectionner un navire.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
 
-    // Validation : pour les deals prime, la référence CBOT est obligatoire
-    if (formData.type_deal === 'prime' && !cbotReference) {
+    // Validation : navire à prime = deal prime possible, navire flat = deal flat possible
+    if (formData.type_deal === 'prime' && !selectedNavire.prime_achat) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Ce navire est à prix flat, seules les ventes flat sont possibles.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.type_deal === 'flat' && selectedNavire.prime_achat && !selectedNavire.prix_achat_flat) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Ce navire est à prime, seules les ventes à prime sont possibles (sauf si un prix flat est défini).',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Pour les deals prime, la référence CBOT est obligatoire
+    if (formData.type_deal === 'prime' && !selectedNavire.reference_cbot) {
       toast({
         title: 'Erreur de validation',
         description: 'Le navire sélectionné doit avoir une référence CBOT pour les deals à prime.',
@@ -130,6 +162,8 @@ export default function CreateDeal() {
       setLoading(false);
       return;
     }
+
+    const cbotReference = formData.type_deal === 'prime' ? selectedNavire.reference_cbot : null;
 
     try {
       const dealData = {
@@ -225,13 +259,14 @@ export default function CreateDeal() {
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un navire" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {navires.map((navire) => (
-                      <SelectItem key={navire.id} value={navire.id}>
-                        {navire.nom} - {navire.produit} ({navire.fournisseur})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                   <SelectContent>
+                     {navires.map((navire) => (
+                       <SelectItem key={navire.id} value={navire.id}>
+                         {navire.nom} - {navire.produit} ({navire.fournisseur}) 
+                         {navire.prime_achat ? ' [Prime]' : navire.prix_achat_flat ? ' [Flat]' : ' [Non défini]'}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
               </div>
 

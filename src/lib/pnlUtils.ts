@@ -7,6 +7,7 @@ interface NavireWithPnLData {
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   quantite_totale: number;
   prime_achat: number | null;
+  prix_achat_flat: number | null;
   couvertures_achat: Array<{
     volume_couvert: number;
     prix_futures: number;
@@ -17,6 +18,7 @@ interface NavireWithPnLData {
     type_deal: 'prime' | 'flat';
     volume: number;
     prime_vente: number | null;
+    prix_flat: number | null;
     couvertures: Array<{
       volume_couvert: number;
       prix_futures: number;
@@ -46,6 +48,24 @@ export const calculatePrimePnL = (navire: NavireWithPnLData): number => {
   const primeVenteConvertie = primeVenteMoyenne * facteurConversion;
   
   return (primeVenteConvertie - primeAchatConvertie) * volumeTotal;
+};
+
+/**
+ * Calcule le P&L sur les prix flat pour un navire
+ */
+export const calculateFlatPnL = (navire: NavireWithPnLData): number => {
+  const prixAchatFlat = navire.prix_achat_flat || 0;
+  
+  // Calculer le prix de vente flat moyen pondéré par volume
+  const ventesFlat = navire.ventes.filter(v => v.type_deal === 'flat');
+  if (ventesFlat.length === 0) return 0;
+  
+  const volumeTotal = ventesFlat.reduce((sum, v) => sum + v.volume, 0);
+  const prixVenteFlatMoyen = ventesFlat.reduce((sum, v) => {
+    return sum + (v.prix_flat || 0) * v.volume;
+  }, 0) / volumeTotal;
+  
+  return (prixVenteFlatMoyen - prixAchatFlat) * volumeTotal;
 };
 
 /**
@@ -88,6 +108,7 @@ export const calculateFuturesPnL = (navire: NavireWithPnLData): number => {
  */
 export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const pnlPrime = calculatePrimePnL(navire);
+  const pnlFlat = calculateFlatPnL(navire);
   const pnlFutures = calculateFuturesPnL(navire);
   
   // Calculs additionnels pour les détails
@@ -101,27 +122,39 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const prixFuturesVenteMoyen = volumeVenteTotal > 0 ?
     couverturesVente.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeVenteTotal : 0;
   
+  // Calculs pour ventes à prime
   const ventesAvecPrime = navire.ventes.filter(v => v.type_deal === 'prime');
-  const volumeTotalVendu = ventesAvecPrime.reduce((sum, v) => sum + v.volume, 0);
-  const primeVenteMoyenne = volumeTotalVendu > 0 ?
-    ventesAvecPrime.reduce((sum, v) => sum + (v.prime_vente || 0) * v.volume, 0) / volumeTotalVendu : 0;
+  const volumeTotalVenduPrime = ventesAvecPrime.reduce((sum, v) => sum + v.volume, 0);
+  const primeVenteMoyenne = volumeTotalVenduPrime > 0 ?
+    ventesAvecPrime.reduce((sum, v) => sum + (v.prime_vente || 0) * v.volume, 0) / volumeTotalVenduPrime : 0;
+  
+  // Calculs pour ventes flat
+  const ventesFlat = navire.ventes.filter(v => v.type_deal === 'flat');
+  const volumeTotalVenduFlat = ventesFlat.reduce((sum, v) => sum + v.volume, 0);
+  const prixFlatVenteMoyen = volumeTotalVenduFlat > 0 ?
+    ventesFlat.reduce((sum, v) => sum + (v.prix_flat || 0) * v.volume, 0) / volumeTotalVenduFlat : 0;
   
   // Appliquer le facteur de conversion pour l'affichage des primes
   const facteurConversion = getConversionFactor(navire.produit);
   const primeAchatAffichage = (navire.prime_achat || 0) * facteurConversion;
   const primeVenteAffichage = primeVenteMoyenne * facteurConversion;
   
+  const volumeTotalVendu = volumeTotalVenduPrime + volumeTotalVenduFlat;
+  
   return {
     navire_id: navire.id,
     navire_nom: navire.nom,
     produit: navire.produit,
     prime_achat: primeAchatAffichage,
+    prix_achat_flat: navire.prix_achat_flat || undefined,
     prime_vente_moyenne: primeVenteAffichage,
+    prix_flat_vente_moyen: prixFlatVenteMoyen,
     pnl_prime: pnlPrime,
+    pnl_flat: pnlFlat,
     prix_futures_achat_moyen: prixFuturesAchatMoyen,
     prix_futures_vente_moyen: prixFuturesVenteMoyen,
     pnl_futures: pnlFutures,
-    pnl_total: pnlPrime + pnlFutures,
+    pnl_total: pnlPrime + pnlFlat + pnlFutures,
     volume_total_achete: navire.quantite_totale,
     volume_total_vendu: volumeTotalVendu,
     volume_couvert_achat: volumeAchatTotal,
@@ -142,6 +175,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
         produit,
         quantite_totale,
         prime_achat,
+        prix_achat_flat,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -152,6 +186,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
           type_deal,
           volume,
           prime_vente,
+          prix_flat,
           couvertures (
             volume_couvert,
             prix_futures,
@@ -272,6 +307,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
         produit,
         quantite_totale,
         prime_achat,
+        prix_achat_flat,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -283,6 +319,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           type_deal,
           volume,
           prime_vente,
+          prix_flat,
           couvertures (
             volume_couvert,
             prix_futures,

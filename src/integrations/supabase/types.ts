@@ -219,6 +219,7 @@ export type Database = {
           nom: string
           parent_navire_id: string | null
           prime_achat: number | null
+          prix_achat_flat: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
           reference_cbot: string | null
@@ -232,6 +233,7 @@ export type Database = {
           nom: string
           parent_navire_id?: string | null
           prime_achat?: number | null
+          prix_achat_flat?: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
           reference_cbot?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           nom?: string
           parent_navire_id?: string | null
           prime_achat?: number | null
+          prix_achat_flat?: number | null
           produit?: Database["public"]["Enums"]["product_type"]
           quantite_totale?: number
           reference_cbot?: string | null

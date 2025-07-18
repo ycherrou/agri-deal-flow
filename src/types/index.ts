@@ -15,6 +15,8 @@ export interface Navire {
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   quantite_totale: number;
   prime_achat?: number;
+  prix_achat_flat?: number;
+  reference_cbot?: string;
   date_arrivee: string;
   fournisseur: string;
   created_at: string;
@@ -117,8 +119,11 @@ export interface PnLData {
   navire_nom: string;
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   prime_achat: number;
+  prix_achat_flat?: number;
   prime_vente_moyenne: number;
+  prix_flat_vente_moyen?: number;
   pnl_prime: number;
+  pnl_flat: number;
   prix_futures_achat_moyen: number;
   prix_futures_vente_moyen: number;
   pnl_futures: number;

@@ -18,6 +18,7 @@ interface Navire {
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   quantite_totale: number;
   prime_achat: number | null;
+  prix_achat_flat: number | null;
   reference_cbot?: string | null;
   date_arrivee: string;
   fournisseur: string;
@@ -56,6 +57,7 @@ export default function Navires() {
     produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
     quantite_totale: '',
     prime_achat: '',
+    prix_achat_flat: '',
     reference_cbot: '',
     date_arrivee: '',
     fournisseur: '',
@@ -68,7 +70,7 @@ export default function Navires() {
     if (formData.produit === 'mais') {
       facteur = '0.3937';
     } else if (formData.produit === 'tourteau_soja') {
-      facteur = '0.4640';
+      facteur = '0.9072';
     }
     setFormData(prev => ({ ...prev, facteur_conversion: facteur }));
   }, [formData.produit]);
@@ -139,11 +141,22 @@ export default function Navires() {
     e.preventDefault();
     setLoading(true);
 
-    // Validation : si prime_achat est renseignée, reference_cbot doit l'être aussi
+    // Validation : vérifier qu'au moins une prime ou un prix flat est renseigné
+    if (!formData.prime_achat && !formData.prix_achat_flat) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Veuillez renseigner soit une prime d\'achat, soit un prix d\'achat flat.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validation : pour les primes, la référence CBOT est obligatoire
     if (formData.prime_achat && !formData.reference_cbot) {
       toast({
         title: 'Erreur de validation',
-        description: 'Une référence CBOT est obligatoire quand une prime d\'achat est spécifiée.',
+        description: 'La référence CBOT est obligatoire pour les navires à prime.',
         variant: 'destructive'
       });
       setLoading(false);
@@ -156,6 +169,7 @@ export default function Navires() {
         produit: formData.produit,
         quantite_totale: parseFloat(formData.quantite_totale),
         prime_achat: formData.prime_achat ? parseFloat(formData.prime_achat) : null,
+        prix_achat_flat: formData.prix_achat_flat ? parseFloat(formData.prix_achat_flat) : null,
         reference_cbot: formData.reference_cbot || null,
         date_arrivee: formData.date_arrivee,
         fournisseur: formData.fournisseur
@@ -205,12 +219,13 @@ export default function Navires() {
 
   const handleEdit = (navire: Navire) => {
     setEditingNavire(navire);
-    const facteur = navire.produit === 'mais' ? '0.3937' : navire.produit === 'tourteau_soja' ? '0.4640' : '';
+    const facteur = navire.produit === 'mais' ? '0.3937' : navire.produit === 'tourteau_soja' ? '0.9072' : '';
     setFormData({
       nom: navire.nom,
       produit: navire.produit,
       quantite_totale: navire.quantite_totale.toString(),
       prime_achat: navire.prime_achat?.toString() || '',
+      prix_achat_flat: navire.prix_achat_flat?.toString() || '',
       reference_cbot: navire.reference_cbot || '',
       date_arrivee: navire.date_arrivee,
       fournisseur: navire.fournisseur,
@@ -260,6 +275,7 @@ export default function Navires() {
       produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
       quantite_totale: '',
       prime_achat: '',
+      prix_achat_flat: '',
       reference_cbot: '',
       date_arrivee: '',
       fournisseur: '',
@@ -304,7 +320,7 @@ export default function Navires() {
               Nouveau Navire
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
                 {editingNavire ? 'Modifier le navire' : 'Créer un nouveau navire'}
@@ -354,15 +370,30 @@ export default function Navires() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prime_achat">Prime d'achat (cts/bu)</Label>
-                <Input
-                  id="prime_achat"
-                  type="number"
-                  step="0.01"
-                  value={formData.prime_achat}
-                  onChange={(e) => setFormData({ ...formData, prime_achat: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prime_achat">Prime d'achat (cts/bu)</Label>
+                  <Input
+                    id="prime_achat"
+                    type="number"
+                    step="0.01"
+                    placeholder="Prime d'achat en cts/bu"
+                    value={formData.prime_achat}
+                    onChange={(e) => setFormData({ ...formData, prime_achat: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="prix_achat_flat">Prix d'achat flat ($/tonne)</Label>
+                  <Input
+                    id="prix_achat_flat"
+                    type="number"
+                    step="0.01"
+                    placeholder="Prix d'achat flat en $/tonne"
+                    value={formData.prix_achat_flat}
+                    onChange={(e) => setFormData({ ...formData, prix_achat_flat: e.target.value })}
+                  />
+                </div>
               </div>
 
               {formData.prime_achat && (
@@ -385,7 +416,7 @@ export default function Navires() {
                   </Select>
                   {formData.prime_achat && !formData.reference_cbot && (
                     <p className="text-sm text-destructive">
-                      Une référence CBOT est obligatoire pour les primes
+                      La référence CBOT est obligatoire pour les navires à prime
                     </p>
                   )}
                 </div>
@@ -455,7 +486,7 @@ export default function Navires() {
                   <TableHead>Navire</TableHead>
                   <TableHead>Produit</TableHead>
                   <TableHead>Quantité</TableHead>
-                  <TableHead>Prime Achat</TableHead>
+                  <TableHead>Prix d'achat</TableHead>
                   <TableHead>Référence CBOT</TableHead>
                   <TableHead>Date Arrivée</TableHead>
                   <TableHead>Fournisseur</TableHead>
@@ -474,7 +505,12 @@ export default function Navires() {
                     </TableCell>
                     <TableCell>{navire.quantite_totale} MT</TableCell>
                     <TableCell>
-                      {navire.prime_achat ? `${navire.prime_achat} cts/bu` : '-'}
+                      {navire.prime_achat 
+                        ? `${navire.prime_achat} cts/bu (Prime)` 
+                        : navire.prix_achat_flat 
+                        ? `${navire.prix_achat_flat} $/tonne (Flat)`
+                        : 'N/A'
+                      }
                     </TableCell>
                     <TableCell>
                       {navire.reference_cbot || '-'}
@@ -511,7 +547,7 @@ export default function Navires() {
                          >
                            Couvertures d'achat
                          </Button>
-                         {navire.prime_achat && getVolumeRestant(navire) > 0 && (
+                         {navire.prime_achat && navire.reference_cbot && getVolumeRestant(navire) > 0 && (
                            <Button
                              size="sm"
                              variant="outline"
