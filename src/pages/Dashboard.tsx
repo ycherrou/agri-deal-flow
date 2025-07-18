@@ -972,79 +972,82 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Couverture Futures
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {(() => {
-                    // Contrats en futures achat (couvertures_achat)
-                    const couverturesAchat = navireActif.couvertures_achat || [];
-                    const produit = navireActif.produit as ProductType;
-                    const supportsContractsFutures = supportsContracts(produit);
-                    
-                    let contractsFuturesAchat = 0;
-                    let contractsFuturesVente = 0;
-                    
-                    if (supportsContractsFutures) {
-                      // Calculer en nombre de contrats
-                      contractsFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                  {/* Afficher la section Couverture Futures seulement pour les navires à prime */}
+                  {navireActif.prime_achat !== null && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Couverture Futures
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {(() => {
+                      // Contrats en futures achat (couvertures_achat)
+                      const couverturesAchat = navireActif.couvertures_achat || [];
+                      const produit = navireActif.produit as ProductType;
+                      const supportsContractsFutures = supportsContracts(produit);
                       
-                      // Contrats en futures vente (couvertures des ventes + orphelines)
-                      const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                      const contractsVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
-                      const contractsOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0);
-                      contractsFuturesVente = contractsVenteNormales + contractsOrphelines;
-                    } else {
-                      // Pour les produits sans contrats, afficher en volume
-                      const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
-                      const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
-                      const volumeVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
-                      const volumeOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0);
-                      const volumeFuturesVente = volumeVenteNormales + volumeOrphelines;
+                      let contractsFuturesAchat = 0;
+                      let contractsFuturesVente = 0;
                       
-                      // Convertir en "contrats virtuels" pour l'affichage
-                      contractsFuturesAchat = Math.round(volumeFuturesAchat);
-                      contractsFuturesVente = Math.round(volumeFuturesVente);
-                    }
-                    
-                    const ecartContrats = contractsFuturesAchat - contractsFuturesVente;
-                    const isEquilibre = ecartContrats === 0;
-                    const surCouvert = ecartContrats > 0;
-                    
-                    return <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures envoyés:</span>
-                              <span className="font-medium">{supportsContractsFutures ? contractsFuturesAchat : `${contractsFuturesAchat} MT`}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Futures reçus:</span>
-                              <span className="font-medium">{supportsContractsFutures ? contractsFuturesVente : `${contractsFuturesVente} MT`}</span>
-                            </div>
-                            {couverturesOrphelines.length > 0 && (
+                      if (supportsContractsFutures) {
+                        // Calculer en nombre de contrats
+                        contractsFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                        
+                        // Contrats en futures vente (couvertures des ventes + orphelines)
+                        const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                        const contractsVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                        const contractsOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0);
+                        contractsFuturesVente = contractsVenteNormales + contractsOrphelines;
+                      } else {
+                        // Pour les produits sans contrats, afficher en volume
+                        const volumeFuturesAchat = couverturesAchat.reduce((sum, c) => sum + c.volume_couvert, 0);
+                        const toutesCouverturesVente = navireActif.ventes.flatMap(v => v.couvertures);
+                        const volumeVenteNormales = toutesCouverturesVente.reduce((sum, c) => sum + c.volume_couvert, 0);
+                        const volumeOrphelines = couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0);
+                        const volumeFuturesVente = volumeVenteNormales + volumeOrphelines;
+                        
+                        // Convertir en "contrats virtuels" pour l'affichage
+                        contractsFuturesAchat = Math.round(volumeFuturesAchat);
+                        contractsFuturesVente = Math.round(volumeFuturesVente);
+                      }
+                      
+                      const ecartContrats = contractsFuturesAchat - contractsFuturesVente;
+                      const isEquilibre = ecartContrats === 0;
+                      const surCouvert = ecartContrats > 0;
+                      
+                      return <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground text-orange-600">Futures orphelins:</span>
-                                <span className="font-medium text-orange-600">
-                                  {supportsContractsFutures 
-                                    ? couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0)
-                                    : `${Math.round(couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0))} MT`
-                                  }
-                                </span>
+                                <span className="text-muted-foreground">Futures envoyés:</span>
+                                <span className="font-medium">{supportsContractsFutures ? contractsFuturesAchat : `${contractsFuturesAchat} MT`}</span>
                               </div>
-                            )}
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">Position:</span>
-                              <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
-                                {isEquilibre ? "Équilibré" : surCouvert ? `+${ecartContrats}` : `${ecartContrats}`} {supportsContractsFutures ? 'contrats' : 'MT'}
-                              </Badge>
-                            </div>
-                          </div>;
-                  })()}
-                    </CardContent>
-                  </Card>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Futures reçus:</span>
+                                <span className="font-medium">{supportsContractsFutures ? contractsFuturesVente : `${contractsFuturesVente} MT`}</span>
+                              </div>
+                              {couverturesOrphelines.length > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground text-orange-600">Futures orphelins:</span>
+                                  <span className="font-medium text-orange-600">
+                                    {supportsContractsFutures 
+                                      ? couverturesOrphelines.reduce((sum, c) => sum + c.nombre_contrats, 0)
+                                      : `${Math.round(couverturesOrphelines.reduce((sum, c) => sum + c.volume_couvert, 0))} MT`
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Position:</span>
+                                <Badge variant={isEquilibre ? "default" : surCouvert ? "secondary" : "destructive"} className="text-xs">
+                                  {isEquilibre ? "Équilibré" : surCouvert ? `+${ecartContrats}` : `${ecartContrats}`} {supportsContractsFutures ? 'contrats' : 'MT'}
+                                </Badge>
+                              </div>
+                            </div>;
+                    })()}
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 <Card>
