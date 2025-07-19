@@ -36,6 +36,9 @@ interface Deal {
 interface Couverture {
   vente_id: string;
   volume_couvert: number;
+  prix_futures: number;
+  nombre_contrats: number;
+  date_couverture: string;
 }
 
 export default function Deals() {
@@ -52,6 +55,10 @@ export default function Deals() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const getCouverturesForDeal = (dealId: string) => {
+    return couvertures.filter(c => c.vente_id === dealId);
+  };
 
   useEffect(() => {
     fetchDeals();
@@ -94,7 +101,7 @@ export default function Deals() {
     try {
       const { data, error } = await supabase
         .from('couvertures')
-        .select('vente_id, volume_couvert');
+        .select('vente_id, volume_couvert, prix_futures, nombre_contrats, date_couverture');
 
       if (error) throw error;
       setCouvertures(data || []);
@@ -379,8 +386,23 @@ export default function Deals() {
                     <div className="text-sm text-muted-foreground">Volume</div>
                     <div className="font-medium">{deal.volume} tonnes</div>
                     {getVolumeCouvert(deal.id) > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        Couvert: {getVolumeCouvert(deal.id)} tonnes
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">
+                          Couvert: {getVolumeCouvert(deal.id)} tonnes
+                        </div>
+                        {getCouverturesForDeal(deal.id).map((couverture, index) => (
+                          <div key={index} className="text-xs text-muted-foreground pl-2 border-l-2 border-primary/20">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-3 w-3" />
+                              <span>{couverture.volume_couvert}t à {formatPrice(couverture.prix_futures)}$/t</span>
+                            </div>
+                            {couverture.nombre_contrats > 0 && (
+                              <div className="text-xs opacity-70">
+                                {couverture.nombre_contrats} contrat{couverture.nombre_contrats > 1 ? 's' : ''} - {formatDate(couverture.date_couverture)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
