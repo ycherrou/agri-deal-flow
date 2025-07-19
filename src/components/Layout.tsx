@@ -23,6 +23,7 @@ export default function Layout({
   const [session, setSession] = useState<Session | null>(null);
   const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingReventes, setPendingReventes] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -76,6 +77,11 @@ export default function Layout({
       }
       setClient(data);
 
+      // Récupérer le nombre de reventes en attente si admin
+      if (data.role === 'admin') {
+        fetchPendingReventes();
+      }
+
       // Rediriger les clients vers leur portfolio si ils sont sur la page d'accueil
       if (data.role === 'client' && location.pathname === '/') {
         navigate('/portfolio');
@@ -86,6 +92,50 @@ export default function Layout({
       setLoading(false);
     }
   };
+
+  const fetchPendingReventes = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('reventes_clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('etat', 'en_attente')
+        .eq('validated_by_admin', false);
+
+      if (error) {
+        console.error('Error fetching pending reventes count:', error);
+        return;
+      }
+
+      setPendingReventes(count || 0);
+    } catch (error) {
+      console.error('Error fetching pending reventes count:', error);
+    }
+  };
+
+  // Configuration des mises à jour temps réel pour les reventes
+  useEffect(() => {
+    if (!client || client.role !== 'admin') return;
+
+    const channel = supabase
+      .channel('reventes-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reventes_clients'
+        },
+        () => {
+          // Refetch le count quand il y a un changement
+          fetchPendingReventes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [client]);
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -236,9 +286,16 @@ export default function Layout({
               {filteredNavItems.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const showBadge = item.id === 'admin-reventes' && client.role === 'admin' && pendingReventes > 0;
+              
               return <Button key={item.id} variant={isActive ? 'default' : 'ghost'} className={`w-full justify-start ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => navigate(item.path)}>
                     <Icon className="h-4 w-4 mr-2" />
-                    {item.label}
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {showBadge && (
+                      <Badge variant="destructive" className="ml-2 px-1.5 py-0.5 text-xs font-bold">
+                        {pendingReventes}
+                      </Badge>
+                    )}
                   </Button>;
             })}
             </div>
