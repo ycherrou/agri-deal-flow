@@ -24,6 +24,7 @@ export default function Layout({
   const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingReventes, setPendingReventes] = useState(0);
+  const [availableReventes, setAvailableReventes] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -82,6 +83,9 @@ export default function Layout({
         fetchPendingReventes();
       }
 
+      // Récupérer le nombre de positions disponibles sur le marché secondaire
+      fetchAvailableReventes();
+
       // Rediriger les clients vers leur portfolio si ils sont sur la page d'accueil
       if (data.role === 'client' && location.pathname === '/') {
         navigate('/portfolio');
@@ -112,9 +116,28 @@ export default function Layout({
     }
   };
 
+  const fetchAvailableReventes = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('reventes_clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('etat', 'en_attente')
+        .eq('validated_by_admin', true);
+
+      if (error) {
+        console.error('Error fetching available reventes count:', error);
+        return;
+      }
+
+      setAvailableReventes(count || 0);
+    } catch (error) {
+      console.error('Error fetching available reventes count:', error);
+    }
+  };
+
   // Configuration des mises à jour temps réel pour les reventes
   useEffect(() => {
-    if (!client || client.role !== 'admin') return;
+    if (!client) return;
 
     const channel = supabase
       .channel('reventes-updates')
@@ -126,8 +149,11 @@ export default function Layout({
           table: 'reventes_clients'
         },
         () => {
-          // Refetch le count quand il y a un changement
-          fetchPendingReventes();
+          // Refetch les counts quand il y a un changement
+          if (client.role === 'admin') {
+            fetchPendingReventes();
+          }
+          fetchAvailableReventes();
         }
       )
       .subscribe();
@@ -286,14 +312,20 @@ export default function Layout({
               {filteredNavItems.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              const showBadge = item.id === 'admin-reventes' && client.role === 'admin' && pendingReventes > 0;
+              const showAdminBadge = item.id === 'admin-reventes' && client.role === 'admin' && pendingReventes > 0;
+              const showMarketBadge = item.id === 'marche-secondaire' && availableReventes > 0;
               
               return <Button key={item.id} variant={isActive ? 'default' : 'ghost'} className={`w-full justify-start ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => navigate(item.path)}>
                     <Icon className="h-4 w-4 mr-2" />
                     <span className="flex-1 text-left">{item.label}</span>
-                    {showBadge && (
+                    {showAdminBadge && (
                       <Badge variant="destructive" className="ml-2 px-1.5 py-0.5 text-xs font-bold">
                         {pendingReventes}
+                      </Badge>
+                    )}
+                    {showMarketBadge && (
+                      <Badge variant="secondary" className="ml-2 px-1.5 py-0.5 text-xs font-bold">
+                        {availableReventes}
                       </Badge>
                     )}
                   </Button>;
