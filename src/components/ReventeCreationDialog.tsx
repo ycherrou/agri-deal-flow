@@ -111,7 +111,8 @@ export default function ReventeCreationDialog({
       reventes.push({
         vente_id: position.id,
         volume: vol,
-        prime_demandee: prime, // Changé pour prime
+        prime_demandee: prime,
+        prix_flat_demande: null, // Null car on utilise la prime
         type_position: 'non_couverte',
         etat: 'en_attente',
         date_revente: new Date().toISOString().split('T')[0],
@@ -145,6 +146,7 @@ export default function ReventeCreationDialog({
         vente_id: position.id,
         volume: vol,
         prix_flat_demande: prix,
+        prime_demandee: null, // Null car on utilise le prix flat
         type_position: 'couverte',
         etat: 'en_attente',
         date_revente: new Date().toISOString().split('T')[0],
