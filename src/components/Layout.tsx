@@ -152,6 +152,12 @@ export default function Layout({
     path: '/prix-marche',
     roles: ['admin']
   }, {
+    id: 'admin-reventes',
+    label: 'Validation Reventes',
+    icon: Shield,
+    path: '/admin-reventes',
+    roles: ['admin']
+  }, {
     id: 'marche-secondaire',
     label: 'Marché secondaire',
     icon: ShoppingCart,
