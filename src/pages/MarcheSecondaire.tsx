@@ -14,6 +14,7 @@ interface ReventeSecondaire {
   prix_flat_demande: number;
   date_revente: string;
   vente_id: string;
+  type_position: 'couverte' | 'non_couverte';
   ventes: {
     navire_id: string;
     volume: number;
@@ -98,6 +99,7 @@ export default function MarcheSecondaire() {
           prix_flat_demande,
           date_revente,
           vente_id,
+          type_position,
           ventes (
             navire_id,
             volume,
@@ -140,7 +142,7 @@ export default function MarcheSecondaire() {
       }
 
       console.log('Reventes fetched:', data);
-      setReventes(data || []);
+      setReventes((data || []) as ReventeSecondaire[]);
     } catch (err) {
       console.error('Erreur inattendue:', err);
       toast({
@@ -259,6 +261,9 @@ export default function MarcheSecondaire() {
                     <div className="flex items-center gap-2 mt-2">
                       <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
                         {revente.ventes.navires.produit.replace('_', ' ')}
+                      </Badge>
+                      <Badge variant={revente.type_position === 'couverte' ? 'default' : 'secondary'}>
+                        {revente.type_position === 'couverte' ? '🛡️ Couverte' : '📈 Non couverte'}
                       </Badge>
                     </div>
                   </div>

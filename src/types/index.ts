@@ -54,6 +54,7 @@ export interface ReventeClient {
   prix_flat_demande: number;
   date_revente: string;
   etat: 'en_attente' | 'vendu' | 'retire';
+  type_position: 'couverte' | 'non_couverte';
   commentaire?: string;
   created_at: string;
   updated_at: string;

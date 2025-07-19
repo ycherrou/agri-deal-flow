@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart } from 'lucide-react';
+import ReventeCreationDialog from '@/components/ReventeCreationDialog';
 
 interface NavirePortfolioData {
   navire_id: string;
@@ -44,9 +45,6 @@ export default function ClientPortfolio() {
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>('');
   const [reventeDialog, setReventeDialog] = useState<{open: boolean, position: any}>({open: false, position: null});
-  const [reventeVolume, setReventeVolume] = useState('');
-  const [reventePrix, setReventePrix] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -172,77 +170,6 @@ export default function ClientPortfolio() {
     return position.couvertures.reduce((total: number, couv: any) => total + couv.volume_couvert, 0);
   };
 
-  const getVolumeMaxRevente = (position: any) => {
-    const volumeCouvert = getVolumeCouvert(position);
-    return Math.min(position.volume_achete, volumeCouvert);
-  };
-
-  const handleRevente = async () => {
-    if (!reventeDialog.position) return;
-
-    const volume = parseFloat(reventeVolume);
-    const prix = parseFloat(reventePrix);
-    const volumeMaxRevente = getVolumeMaxRevente(reventeDialog.position);
-
-    if (!volume || !prix || volume <= 0 || prix <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez saisir un volume et un prix valides",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (volume > volumeMaxRevente) {
-      toast({
-        title: "Erreur",
-        description: `Vous ne pouvez remettre en vente que ${volumeMaxRevente} MT (minimum entre volume total et volume couvert)`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const expirationDate = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
-
-      const { error } = await supabase
-        .from('reventes_clients')
-        .insert({
-          vente_id: reventeDialog.position.id,
-          volume: volume,
-          prix_flat_demande: prix,
-          etat: 'en_attente_validation',
-          date_expiration_validation: expirationDate.toISOString(),
-          date_revente: new Date().toISOString().split('T')[0], // Today's date
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Succès",
-        description: "Votre demande de revente a été soumise et est en attente de validation administrateur (30 min max)",
-      });
-
-      // Reset form
-      setReventeVolume('');
-      setReventePrix('');
-      setReventeDialog({open: false, position: null});
-
-    } catch (error) {
-      console.error('Erreur lors de la création de la revente:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de soumettre votre demande de revente",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const formatPrice = (price: number) => {
     return price.toFixed(2);
@@ -591,7 +518,8 @@ export default function ClientPortfolio() {
                               size="sm"
                               onClick={() => setReventeDialog({open: true, position: pos})}
                             >
-                              Remettre en vente
+                              <ShoppingCart className="h-4 w-4 mr-2" />
+                              Mettre en vente
                             </Button>
                           </div>
                         </div>
@@ -605,65 +533,14 @@ export default function ClientPortfolio() {
         </div>
       </div>
 
-      {/* Dialog de revente */}
-      <Dialog open={reventeDialog.open} onOpenChange={(open) => setReventeDialog({open, position: null})}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remettre en vente</DialogTitle>
-          </DialogHeader>
-          {reventeDialog.position && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Volume total:</span>
-                  <div>{reventeDialog.position.volume_achete} MT</div>
-                </div>
-                <div>
-                  <span className="font-medium">Volume couvert:</span>
-                  <div className="text-green-600">{getVolumeCouvert(reventeDialog.position)} MT</div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Volume à remettre en vente (MT)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder={`Max: ${getVolumeMaxRevente(reventeDialog.position)}`}
-                    max={getVolumeMaxRevente(reventeDialog.position)}
-                    value={reventeVolume}
-                    onChange={(e) => setReventeVolume(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Prix de vente demandé (USD/MT)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 280.00"
-                    value={reventePrix}
-                    onChange={(e) => setReventePrix(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded text-sm text-blue-800">
-                <strong>Important :</strong> Votre demande sera soumise à validation administrateur. 
-                L'administrateur a 30 minutes pour valider votre demande, sinon elle sera automatiquement rejetée.
-              </div>
-              
-              <Button 
-                onClick={handleRevente}
-                disabled={submitting || !reventeVolume || !reventePrix}
-                className="w-full"
-              >
-                {submitting ? 'Soumission...' : 'Soumettre la demande'}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Dialog de revente amélioré */}
+      <ReventeCreationDialog
+        open={reventeDialog.open}
+        onClose={() => setReventeDialog({open: false, position: null})}
+        position={reventeDialog.position}
+        navireNom={navireActif?.navire_nom || ''}
+        produit={navireActif?.produit || ''}
+      />
     </div>
   );
 }

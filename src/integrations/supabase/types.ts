@@ -306,6 +306,7 @@ export type Database = {
           etat: Database["public"]["Enums"]["revente_status"]
           id: string
           prix_flat_demande: number
+          type_position: string
           updated_at: string | null
           validated_by_admin: boolean | null
           vente_id: string
@@ -321,6 +322,7 @@ export type Database = {
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prix_flat_demande: number
+          type_position?: string
           updated_at?: string | null
           validated_by_admin?: boolean | null
           vente_id: string
@@ -336,6 +338,7 @@ export type Database = {
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prix_flat_demande?: number
+          type_position?: string
           updated_at?: string | null
           validated_by_admin?: boolean | null
           vente_id?: string
