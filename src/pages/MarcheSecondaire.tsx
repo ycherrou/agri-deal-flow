@@ -11,7 +11,8 @@ import { fr } from 'date-fns/locale';
 interface ReventeSecondaire {
   id: string;
   volume: number;
-  prix_flat_demande: number;
+  prix_flat_demande: number | null;
+  prime_demandee: number | null;
   date_revente: string;
   vente_id: string;
   type_position: 'couverte' | 'non_couverte';
@@ -97,6 +98,7 @@ export default function MarcheSecondaire() {
           id,
           volume,
           prix_flat_demande,
+          prime_demandee,
           date_revente,
           vente_id,
           type_position,
@@ -211,6 +213,16 @@ export default function MarcheSecondaire() {
     return `${price.toFixed(2)} USD/MT`;
   };
 
+  const formatRevoutePrice = (revente: ReventeSecondaire) => {
+    if (revente.type_position === 'non_couverte' && revente.prime_demandee) {
+      return `${revente.prime_demandee.toFixed(2)} cts/bu (prime)`;
+    }
+    if (revente.prix_flat_demande) {
+      return `${revente.prix_flat_demande.toFixed(2)} USD/MT`;
+    }
+    return 'Prix non défini';
+  };
+
   const getProductBadgeColor = (produit: string) => {
     switch (produit) {
       case 'mais': return 'bg-yellow-100 text-yellow-800';
@@ -269,10 +281,10 @@ export default function MarcheSecondaire() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold text-primary">
-                      {formatPrice(revente.prix_flat_demande, revente.ventes.navires.produit)}
+                      {formatRevoutePrice(revente)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Prix demandé
+                      {revente.type_position === 'non_couverte' ? 'Prime demandée' : 'Prix demandé'}
                     </div>
                   </div>
                 </div>

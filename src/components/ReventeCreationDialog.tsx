@@ -43,7 +43,7 @@ export default function ReventeCreationDialog({
   produit
 }: ReventeCreationDialogProps) {
   const [volumeNonCouvert, setVolumeNonCouvert] = useState('');
-  const [prixNonCouvert, setPrixNonCouvert] = useState('');
+  const [primeNonCouvert, setPrimeNonCouvert] = useState(''); // Changé pour prime
   const [volumeCouvert, setVolumeCouvert] = useState('');
   const [prixCouvert, setPrixCouvert] = useState('');
   const [venteNonCouverteActive, setVenteNonCouverteActive] = useState(false);
@@ -72,7 +72,7 @@ export default function ReventeCreationDialog({
     if (!open) {
       // Reset form when closing
       setVolumeNonCouvert('');
-      setPrixNonCouvert('');
+      setPrimeNonCouvert(''); // Changé pour prime
       setVolumeCouvert('');
       setPrixCouvert('');
       setVenteNonCouverteActive(false);
@@ -88,12 +88,12 @@ export default function ReventeCreationDialog({
     // Validation et préparation des reventes
     if (venteNonCouverteActive) {
       const vol = parseFloat(volumeNonCouvert);
-      const prix = parseFloat(prixNonCouvert);
+      const prime = parseFloat(primeNonCouvert);
       
-      if (!vol || !prix || vol <= 0 || prix <= 0) {
+      if (!vol || !prime || vol <= 0 || prime <= 0) {
         toast({
           title: "Erreur",
-          description: "Volume et prix de la position non couverte doivent être valides",
+          description: "Volume et prime de la position non couverte doivent être valides",
           variant: "destructive",
         });
         return;
@@ -111,7 +111,7 @@ export default function ReventeCreationDialog({
       reventes.push({
         vente_id: position.id,
         volume: vol,
-        prix_flat_demande: prix,
+        prime_demandee: prime, // Changé pour prime
         type_position: 'non_couverte',
         etat: 'en_attente',
         date_revente: new Date().toISOString().split('T')[0],
@@ -261,8 +261,8 @@ export default function ReventeCreationDialog({
                         <span className="font-medium">{volumeNonCouvertDisponible} MT</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">PRU estimé:</span>
-                        <span className="font-medium">{pruNonCouvert.toFixed(2)} USD/MT</span>
+                        <span className="text-muted-foreground">Prime actuelle:</span>
+                        <span className="font-medium">{position.prime_payee.toFixed(2)} cts/bu</span>
                       </div>
                     </div>
                   </div>
@@ -282,18 +282,18 @@ export default function ReventeCreationDialog({
                         />
                       </div>
                       <div>
-                        <Label htmlFor="prix-non-couvert">Prix demandé (USD/MT)</Label>
+                        <Label htmlFor="prime-non-couvert">Prime demandée (cts/bu)</Label>
                         <Input
-                          id="prix-non-couvert"
+                          id="prime-non-couvert"
                           type="number"
                           step="0.01"
-                          value={prixNonCouvert}
-                          onChange={(e) => setPrixNonCouvert(e.target.value)}
-                          placeholder={`Suggestion: ${(pruNonCouvert * 1.02).toFixed(2)}`}
+                          value={primeNonCouvert}
+                          onChange={(e) => setPrimeNonCouvert(e.target.value)}
+                          placeholder={`Prime actuelle: ${position.prime_payee.toFixed(2)}`}
                         />
-                        {prixNonCouvert && (
+                        {primeNonCouvert && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            Marge: {((parseFloat(prixNonCouvert) - pruNonCouvert) / pruNonCouvert * 100).toFixed(1)}%
+                            Différence: {(parseFloat(primeNonCouvert) - position.prime_payee).toFixed(2)} cts/bu
                           </div>
                         )}
                       </div>
