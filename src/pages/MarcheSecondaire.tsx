@@ -223,6 +223,13 @@ export default function MarcheSecondaire() {
     return 'Prix non défini';
   };
 
+  const formatBidPrice = (price: number, revente: ReventeSecondaire) => {
+    if (revente.type_position === 'non_couverte') {
+      return `${price.toFixed(2)} cts/bu`;
+    }
+    return `${price.toFixed(2)} USD/MT`;
+  };
+
   const getProductBadgeColor = (produit: string) => {
     switch (produit) {
       case 'mais': return 'bg-yellow-100 text-yellow-800';
@@ -314,10 +321,10 @@ export default function MarcheSecondaire() {
                             .filter(bid => bid.statut === 'active')
                             .map((bid) => (
                               <div key={bid.id} className="text-xs p-2 bg-muted rounded">
-                                <div className="flex justify-between">
-                                  <span>{bid.clients?.nom || 'Client inconnu'}</span>
-                                  <span className="font-medium">{formatPrice(bid.prix_bid, revente.ventes.navires.produit)}</span>
-                                </div>
+                                 <div className="flex justify-between">
+                                   <span>{bid.clients?.nom || 'Client inconnu'}</span>
+                                   <span className="font-medium">{formatBidPrice(bid.prix_bid, revente)}</span>
+                                 </div>
                                 <div className="text-muted-foreground">
                                   {bid.volume_bid} MT • {format(new Date(bid.date_bid), 'dd/MM/yyyy HH:mm', { locale: fr })}
                                 </div>
@@ -331,17 +338,25 @@ export default function MarcheSecondaire() {
 
                   <div className="space-y-4">
                     <h4 className="font-medium">Faire une offre</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium">Prix offert (USD/MT)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Ex: 250.00"
-                          value={bidPrices[revente.id] || ''}
-                          onChange={(e) => setBidPrices(prev => ({ ...prev, [revente.id]: e.target.value }))}
-                        />
-                      </div>
+                     <div className="space-y-3">
+                       <div>
+                         <label className="text-sm font-medium">
+                           {revente.type_position === 'non_couverte' 
+                             ? 'Prime offerte (cts/bu)' 
+                             : 'Prix offert (USD/MT)'
+                           }
+                         </label>
+                         <Input
+                           type="number"
+                           step="0.01"
+                           placeholder={revente.type_position === 'non_couverte' 
+                             ? 'Ex: 50.00' 
+                             : 'Ex: 250.00'
+                           }
+                           value={bidPrices[revente.id] || ''}
+                           onChange={(e) => setBidPrices(prev => ({ ...prev, [revente.id]: e.target.value }))}
+                         />
+                       </div>
                       <div>
                         <label className="text-sm font-medium">Volume souhaité (MT)</label>
                         <Input
