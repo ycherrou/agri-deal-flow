@@ -5,8 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Eye, Calendar, Package, Users, Trash2, Edit, RotateCcw } from 'lucide-react';
+import { Plus, Eye, Calendar, Package, Users, Trash2, Edit, RotateCcw, Shield } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supportsContracts, volumeToContracts, contractsToVolume } from '@/lib/futuresUtils';
+import type { ProductType } from '@/lib/futuresUtils';
 
 interface Deal {
   id: string;
@@ -37,6 +42,14 @@ export default function Deals() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [couvertures, setCouvertures] = useState<Couverture[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [isCouvertureDialogOpen, setIsCouvertureDialogOpen] = useState(false);
+  const [couvertureForm, setCouvertureForm] = useState({
+    volume_couvert: '',
+    prix_futures: '',
+    nombre_contrats: '',
+    date_couverture: new Date().toISOString().split('T')[0]
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -141,6 +154,104 @@ export default function Deals() {
     return deal.type_deal === 'prime' && getVolumeNonCouvert(deal) > 0;
   };
 
+  const canAddCouverture = (deal: Deal) => {
+    return deal.type_deal === 'prime' && getVolumeNonCouvert(deal) > 0;
+  };
+
+  const handleOpenCouvertureDialog = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setIsCouvertureDialogOpen(true);
+    setCouvertureForm({
+      volume_couvert: '',
+      prix_futures: '',
+      nombre_contrats: '',
+      date_couverture: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const handleContractsChange = (value: string) => {
+    if (!selectedDeal) return;
+    
+    const contracts = parseFloat(value) || 0;
+    const produit = selectedDeal.navire.produit as ProductType;
+    
+    if (supportsContracts(produit)) {
+      const volume = contractsToVolume(contracts, produit);
+      setCouvertureForm(prev => ({
+        ...prev,
+        nombre_contrats: value,
+        volume_couvert: volume.toString()
+      }));
+    }
+  };
+
+  const handleVolumeChange = (value: string) => {
+    if (!selectedDeal) return;
+    
+    const volume = parseFloat(value) || 0;
+    const produit = selectedDeal.navire.produit as ProductType;
+    
+    if (supportsContracts(produit)) {
+      const contracts = volumeToContracts(volume, produit);
+      setCouvertureForm(prev => ({
+        ...prev,
+        volume_couvert: value,
+        nombre_contrats: contracts.toString()
+      }));
+    } else {
+      setCouvertureForm(prev => ({
+        ...prev,
+        volume_couvert: value
+      }));
+    }
+  };
+
+  const handleSubmitCouverture = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDeal) return;
+
+    try {
+      const volumeCouvert = parseFloat(couvertureForm.volume_couvert);
+      const volumeNonCouvert = getVolumeNonCouvert(selectedDeal);
+
+      if (volumeCouvert > volumeNonCouvert) {
+        toast({
+          title: 'Erreur',
+          description: `Volume max disponible: ${volumeNonCouvert} tonnes`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('couvertures')
+        .insert({
+          vente_id: selectedDeal.id,
+          volume_couvert: volumeCouvert,
+          prix_futures: parseFloat(couvertureForm.prix_futures),
+          nombre_contrats: parseInt(couvertureForm.nombre_contrats) || 0,
+          date_couverture: couvertureForm.date_couverture
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Couverture ajoutée avec succès'
+      });
+
+      setIsCouvertureDialogOpen(false);
+      fetchCouvertures();
+    } catch (error) {
+      console.error('Error adding couverture:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la couverture',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -221,6 +332,11 @@ export default function Deals() {
                     <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/edit/${deal.id}`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
+                    {canAddCouverture(deal) && (
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenCouvertureDialog(deal)} title="Ajouter une couverture">
+                        <Shield className="h-4 w-4" />
+                      </Button>
+                    )}
                     {canRoll(deal) && (
                       <Button variant="ghost" size="sm" onClick={() => navigate(`/deals/roll/${deal.id}`)} title="Changer de référence">
                         <RotateCcw className="h-4 w-4" />
@@ -290,6 +406,88 @@ export default function Deals() {
           ))
         )}
       </div>
+
+      {/* Dialog de couverture */}
+      <Dialog open={isCouvertureDialogOpen} onOpenChange={setIsCouvertureDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter une couverture</DialogTitle>
+            <DialogDescription>
+              Deal: {selectedDeal?.navire.nom} - {selectedDeal?.navire.produit}
+              <br />
+              Volume disponible: {selectedDeal ? getVolumeNonCouvert(selectedDeal) : 0} tonnes
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitCouverture} className="space-y-4">
+            {selectedDeal && supportsContracts(selectedDeal.navire.produit as ProductType) ? (
+              <div className="space-y-2">
+                <Label htmlFor="nombre_contrats">Nombre de contrats</Label>
+                <Input
+                  id="nombre_contrats"
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={couvertureForm.nombre_contrats}
+                  onChange={(e) => handleContractsChange(e.target.value)}
+                  placeholder="Nombre de contrats"
+                />
+                <div className="text-sm text-muted-foreground">
+                  Volume équivalent: {couvertureForm.volume_couvert} tonnes
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="volume_couvert">Volume à couvrir (tonnes)</Label>
+                <Input
+                  id="volume_couvert"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={selectedDeal ? getVolumeNonCouvert(selectedDeal) : undefined}
+                  value={couvertureForm.volume_couvert}
+                  onChange={(e) => handleVolumeChange(e.target.value)}
+                  placeholder="Volume en tonnes"
+                  required
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="prix_futures">Prix futures ($/tonne)</Label>
+              <Input
+                id="prix_futures"
+                type="number"
+                step="0.01"
+                min="0"
+                value={couvertureForm.prix_futures}
+                onChange={(e) => setCouvertureForm(prev => ({ ...prev, prix_futures: e.target.value }))}
+                placeholder="Prix futures"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="date_couverture">Date de couverture</Label>
+              <Input
+                id="date_couverture"
+                type="date"
+                value={couvertureForm.date_couverture}
+                onChange={(e) => setCouvertureForm(prev => ({ ...prev, date_couverture: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsCouvertureDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">
+                Ajouter la couverture
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
