@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Euro, Users, BarChart3, CheckCircle, Circle } from 'lucide-react';
+import { TrendingUp, Euro, Users, BarChart3, CheckCircle, Circle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
@@ -33,6 +33,7 @@ interface Transaction {
     nom: string;
     produit: string;
   };
+  type_position: string;
 }
 
 interface Bid {
@@ -49,6 +50,7 @@ interface Bid {
     nom: string;
   } | null;
   revente: {
+    type_position: string;
     vente: {
       navire: {
         nom: string;
@@ -135,13 +137,14 @@ export default function TransactionsSecondaires() {
 
     if (error) throw error;
 
-    // Enrichir avec les infos navire et clients
+    // Enrichir avec les infos navire, clients et type_position
     const enrichedTransactions = await Promise.all(
       (data || []).map(async (transaction) => {
         const [reventeResult, vendeurResult, acheteurResult] = await Promise.all([
           supabase
             .from('reventes_clients')
             .select(`
+              type_position,
               vente:ventes(
                 navire:navires(nom, produit)
               )
@@ -165,6 +168,7 @@ export default function TransactionsSecondaires() {
           navire: reventeResult.data?.vente?.navire || { nom: 'N/A', produit: 'N/A' },
           vendeur: vendeurResult.data || null,
           acheteur: acheteurResult.data || null,
+          type_position: reventeResult.data?.type_position || 'non_couverte',
         };
       })
     );
@@ -179,6 +183,7 @@ export default function TransactionsSecondaires() {
         *,
         client:clients(nom),
         revente:reventes_clients(
+          type_position,
           vente:ventes(
             navire:navires(nom, produit)
           )
@@ -241,6 +246,7 @@ export default function TransactionsSecondaires() {
           *,
           client:clients(nom),
           revente:reventes_clients(
+            type_position,
             vente:ventes(
               navire:navires(nom, produit)
             )
@@ -309,6 +315,31 @@ export default function TransactionsSecondaires() {
     }
   };
 
+  const rejectBid = async (bidId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bids_marche_secondaire')
+        .update({ statut: 'rejetee' })
+        .eq('id', bidId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Offre refusée !",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Erreur lors du refus:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de refuser l'offre.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const markPnlPaid = async (transactionId: string) => {
     try {
       const { error } = await supabase
@@ -338,9 +369,11 @@ export default function TransactionsSecondaires() {
     }
   };
 
-  const formatPrice = (price: number, produit: string) => {
-    const currency = produit === 'mais' ? '€/T' : '€/T';
-    return `${price.toFixed(2)} ${currency}`;
+  const formatPrice = (price: number, produit: string, typePosition: string) => {
+    if (typePosition === 'non_couverte') {
+      return `${price.toFixed(2)} cts/bu`;
+    }
+    return `${price.toFixed(2)} USD/MT`;
   };
 
   const formatGain = (gain: number) => {
@@ -421,6 +454,9 @@ export default function TransactionsSecondaires() {
                          <div className="flex items-center space-x-2">
                            <h3 className="font-semibold">{transaction.navire.nom}</h3>
                            <Badge variant="outline">{transaction.navire.produit}</Badge>
+                           <Badge variant={transaction.type_position === 'non_couverte' ? 'secondary' : 'default'}>
+                             {transaction.type_position === 'non_couverte' ? 'Prime' : 'Flat'}
+                           </Badge>
                            <Badge variant="default">{transaction.statut}</Badge>
                            {transaction.pnl_paye && (
                              <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -443,7 +479,7 @@ export default function TransactionsSecondaires() {
                        <div className="flex items-center space-x-4">
                          <div className="text-right space-y-1">
                            <div className="text-sm text-muted-foreground">
-                             Prix: {formatPrice(transaction.prix_vente_final, transaction.navire.produit)}
+                             Prix: {formatPrice(transaction.prix_vente_final, transaction.navire.produit, transaction.type_position)}
                            </div>
                            <div className="font-semibold">
                              Gain: {formatGain(transaction.gain_vendeur)}
@@ -487,6 +523,9 @@ export default function TransactionsSecondaires() {
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold">{bid.revente?.vente?.navire?.nom || 'N/A'}</h3>
                           <Badge variant="outline">{bid.revente?.vente?.navire?.produit || 'N/A'}</Badge>
+                          <Badge variant={bid.revente?.type_position === 'non_couverte' ? 'secondary' : 'default'}>
+                            {bid.revente?.type_position === 'non_couverte' ? 'Prime' : 'Flat'}
+                          </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Offre de: {bid.client?.nom || 'N/A'}
@@ -497,7 +536,7 @@ export default function TransactionsSecondaires() {
                       </div>
                       <div className="text-right space-y-2">
                         <div className="font-semibold">
-                          {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais')}
+                          {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais', bid.revente?.type_position || 'non_couverte')}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {new Date(bid.date_bid).toLocaleDateString('fr-FR')}
@@ -530,6 +569,9 @@ export default function TransactionsSecondaires() {
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold">{bid.revente?.vente?.navire?.nom || 'N/A'}</h3>
                     <Badge variant="outline">{bid.revente?.vente?.navire?.produit || 'N/A'}</Badge>
+                    <Badge variant={bid.revente?.type_position === 'non_couverte' ? 'secondary' : 'default'}>
+                      {bid.revente?.type_position === 'non_couverte' ? 'Prime' : 'Flat'}
+                    </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Offre de: {bid.client?.nom || 'N/A'}
@@ -541,18 +583,31 @@ export default function TransactionsSecondaires() {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="font-semibold">
-                      {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais')}
+                      {formatPrice(bid.prix_bid, bid.revente?.vente?.navire?.produit || 'mais', bid.revente?.type_position || 'non_couverte')}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {new Date(bid.date_bid).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
-                  <Button 
-                    onClick={() => acceptBid(bid.id)}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Accepter
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => rejectBid(bid.id)}
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Refuser
+                    </Button>
+                    <Button 
+                      onClick={() => acceptBid(bid.id)}
+                      className="bg-green-600 hover:bg-green-700"
+                      size="sm"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Accepter
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
