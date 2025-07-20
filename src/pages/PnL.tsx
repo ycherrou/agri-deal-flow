@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, PieChart } from 'lucide-react';
 import { calculatePortfolioPnL, formatPnL, getPnLColor, calculatePnLByClient, NavirePnLByClient } from '@/lib/pnlUtils';
+import { formatPriceDisplay, ProductType, PriceType } from '@/lib/priceUtils';
 import { PortfolioPnL, PnLData } from '@/types/index';
 import { supabase } from '@/integrations/supabase/client';
 import PnLPieCharts from '@/components/PnLPieCharts';
@@ -94,6 +95,14 @@ export default function PnL() {
         {labels[produit as keyof typeof labels] || produit}
       </Badge>
     );
+  };
+
+  // Helper function to format price display in table
+  const formatTablePrice = (price: number, product: string, priceType: PriceType, isFlat: boolean = false) => {
+    if (isFlat) {
+      return formatPriceDisplay(price, product as ProductType, 'flat');
+    }
+    return formatPriceDisplay(price, product as ProductType, priceType);
   };
 
   if (loading) {
@@ -229,19 +238,19 @@ export default function PnL() {
                         <TableCell className="font-medium">{navire.navire_nom}</TableCell>
                         <TableCell>{getProductBadge(navire.produit)}</TableCell>
                         <TableCell className="text-right">
-                          {navire.prime_achat.toFixed(2)} $/MT
+                          {formatTablePrice(navire.prime_achat, navire.produit, 'prime')}
                         </TableCell>
                         <TableCell className="text-right">
-                          {navire.prime_vente_moyenne.toFixed(2)} $/MT
+                          {formatTablePrice(navire.prime_vente_moyenne, navire.produit, 'prime')}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
                           {formatPnL(navire.pnl_prime)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {navire.prix_futures_achat_moyen.toFixed(2)}
+                          {formatTablePrice(navire.prix_futures_achat_moyen, navire.produit, 'futures')}
                         </TableCell>
                         <TableCell className="text-right">
-                          {navire.prix_futures_vente_moyen.toFixed(2)}
+                          {formatTablePrice(navire.prix_futures_vente_moyen, navire.produit, 'futures')}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_futures)}`}>
                           {formatPnL(navire.pnl_futures)}

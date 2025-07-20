@@ -1,16 +1,45 @@
+
 // Utility functions for handling prices by product type
 
 export type ProductType = 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+export type PriceType = 'prime' | 'flat' | 'futures' | 'market';
 
 /**
- * Get the price unit for a given product
+ * Get the price unit for a given product and price type
  */
-export const getPriceUnit = (product: ProductType): string => {
-  return ''; // Plus d'unités affichées
+export const getPriceUnit = (product: ProductType, priceType: PriceType): string => {
+  // Prix flat toujours en USD/MT
+  if (priceType === 'flat') {
+    return 'USD/MT';
+  }
+  
+  // Primes et futures : Cts/Bu pour maïs et tourteau, USD/MT pour blé et orge
+  if (priceType === 'prime' || priceType === 'futures') {
+    return (product === 'mais' || product === 'tourteau_soja') ? 'Cts/Bu' : 'USD/MT';
+  }
+  
+  return 'USD/MT';
 };
 
 /**
- * Format price according to product type
+ * Convert price for display based on product and price type
+ * No conversion needed as prices are already stored in the correct units
+ */
+export const convertPriceForDisplay = (price: number, product: ProductType, priceType: PriceType): number => {
+  return price; // Prices are already stored in correct units
+};
+
+/**
+ * Format price with appropriate unit for display
+ */
+export const formatPriceDisplay = (price: number, product: ProductType, priceType: PriceType): string => {
+  const convertedPrice = convertPriceForDisplay(price, product, priceType);
+  const unit = getPriceUnit(product, priceType);
+  return `${convertedPrice.toFixed(2)} ${unit}`;
+};
+
+/**
+ * Format price according to product type (legacy function)
  */
 export const formatPriceByProduct = (price: number, product: ProductType): string => {
   return price.toFixed(2);
