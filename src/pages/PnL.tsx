@@ -226,7 +226,7 @@ export default function PnL() {
                       <TableHead>Produit</TableHead>
                       <TableHead className="text-right">Achat</TableHead>
                       <TableHead className="text-right">Vente Moy.</TableHead>
-                      <TableHead className="text-right">P&L Prime</TableHead>
+                      <TableHead className="text-right">P&L Physique</TableHead>
                       <TableHead className="text-right">Futures Achat Moy.</TableHead>
                       <TableHead className="text-right">Futures Vente Moy.</TableHead>
                       <TableHead className="text-right">P&L Futures</TableHead>
