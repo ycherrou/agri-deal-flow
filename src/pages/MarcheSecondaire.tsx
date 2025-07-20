@@ -249,7 +249,7 @@ export default function MarcheSecondaire() {
       const { error } = await supabase
         .from('reventes_clients')
         .update({ 
-          etat: 'retire',
+          etat: 'retire' as any, // Force le type pour éviter les erreurs de TypeScript
           validated_by_admin: false,
           updated_at: new Date().toISOString()
         })
