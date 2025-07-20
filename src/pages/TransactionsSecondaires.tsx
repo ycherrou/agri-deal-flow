@@ -324,12 +324,13 @@ export default function TransactionsSecondaires() {
 
       if (error) throw error;
 
+      // Immédiatement retirer l'offre de la liste locale
+      setPendingBids(prev => prev.filter(bid => bid.id !== bidId));
+
       toast({
         title: "Succès",
-        description: "Offre refusée !",
+        description: "Offre refusée avec succès !",
       });
-
-      fetchData();
     } catch (error) {
       console.error('Erreur lors du refus:', error);
       toast({

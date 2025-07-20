@@ -21,6 +21,7 @@ interface ReventeSecondaire {
     volume: number;
     prime_vente: number;
     prix_reference: string;
+    client_id: string;
     navires: {
       nom: string;
       produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
@@ -58,8 +59,13 @@ export default function MarcheSecondaire() {
 
   useEffect(() => {
     fetchCurrentClient();
-    fetchReventes();
   }, []);
+
+  useEffect(() => {
+    if (currentClient) {
+      fetchReventes();
+    }
+  }, [currentClient]);
 
   const fetchCurrentClient = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,15 +88,6 @@ export default function MarcheSecondaire() {
   const fetchReventes = async () => {
     try {
       console.log('Fetching reventes...');
-      
-      // Première requête pour debug : récupérer les reventes simples
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('reventes_clients')
-        .select('id, volume, prix_flat_demande, date_revente, vente_id, etat, validated_by_admin')
-        .eq('etat', 'en_attente')
-        .eq('validated_by_admin', true);
-      
-      console.log('Simple reventes query result:', simpleData, simpleError);
       
       const { data, error } = await supabase
         .from('reventes_clients')
@@ -144,7 +141,14 @@ export default function MarcheSecondaire() {
       }
 
       console.log('Reventes fetched:', data);
-      setReventes((data || []) as ReventeSecondaire[]);
+      
+      // Filtrer les reventes pour exclure celles appartenant au client connecté
+      const filteredReventes = (data || []).filter(revente => {
+        if (!currentClient) return true;
+        return revente.ventes?.client_id !== currentClient.id;
+      });
+      
+      setReventes(filteredReventes as ReventeSecondaire[]);
     } catch (err) {
       console.error('Erreur inattendue:', err);
       toast({
@@ -162,6 +166,17 @@ export default function MarcheSecondaire() {
       toast({
         title: "Erreur",
         description: "Vous devez être connecté pour faire une offre",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Vérifier que le client n'est pas le propriétaire de la position
+    const revente = reventes.find(r => r.id === reventeId);
+    if (revente && revente.ventes?.client_id === currentClient.id) {
+      toast({
+        title: "Erreur",
+        description: "Vous ne pouvez pas faire une offre sur votre propre position",
         variant: "destructive",
       });
       return;
@@ -190,11 +205,21 @@ export default function MarcheSecondaire() {
 
     if (error) {
       console.error('Erreur lors de la création de l\'offre:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer votre offre",
-        variant: "destructive",
-      });
+      
+      // Gestion d'erreur spécifique pour l'auto-achat
+      if (error.message?.includes('row-level security policy')) {
+        toast({
+          title: "Erreur",
+          description: "Vous ne pouvez pas faire une offre sur votre propre position",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer votre offre",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -263,7 +288,10 @@ export default function MarcheSecondaire() {
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">
-              Aucune position n'est actuellement disponible sur le marché secondaire.
+              {currentClient ? 
+                "Aucune position n'est actuellement disponible sur le marché secondaire." :
+                "Connectez-vous pour voir les positions disponibles."
+              }
             </p>
           </CardContent>
         </Card>
