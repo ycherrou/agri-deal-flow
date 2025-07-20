@@ -222,36 +222,35 @@ const getParentVentes = async (parentNavireId: string, referenceCbot: string | n
  */
 export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admin'): Promise<PortfolioPnL> => {
   try {
-    let query = supabase
-      .from('navires')
-      .select(`
+  let query = supabase
+    .from('navires')
+    .select(`
+      id,
+      nom,
+      produit,
+      quantite_totale,
+      prime_achat,
+      prix_achat_flat,
+      couvertures_achat (
+        volume_couvert,
+        prix_futures,
+        nombre_contrats
+      ),
+      ventes (
         id,
-        nom,
-        produit,
-        quantite_totale,
-        prime_achat,
-        prix_achat_flat,
-        parent_navire_id,
-        reference_cbot,
-        couvertures_achat (
+        type_deal,
+        volume,
+        prime_vente,
+        prix_flat,
+        prix_reference,
+        couvertures (
           volume_couvert,
           prix_futures,
           nombre_contrats
-        ),
-        ventes (
-          id,
-          type_deal,
-          volume,
-          prime_vente,
-          prix_flat,
-          prix_reference,
-          couvertures (
-            volume_couvert,
-            prix_futures,
-            nombre_contrats
-          )
         )
-      `);
+      )
+    `)
+    .is('parent_navire_id', null);
 
     // Si c'est un client, filtrer par ses ventes uniquement
     if (userRole === 'client') {
@@ -274,16 +273,6 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
     if (error) throw error;
 
     const naviresData = navires as NavireWithPnLData[] || [];
-    
-    // Traiter les navires rollés pour récupérer les ventes du parent
-    for (const navire of naviresData) {
-      if (navire.parent_navire_id && navire.reference_cbot) {
-        console.log(`Processing rolled vessel: ${navire.nom} with reference ${navire.reference_cbot}`);
-        const parentVentes = await getParentVentes(navire.parent_navire_id, navire.reference_cbot);
-        console.log(`Found ${parentVentes.length} matching sales for rolled vessel ${navire.nom}`);
-        navire.ventes = parentVentes;
-      }
-    }
     
     const pnlNavires = naviresData.map(calculateTotalPnL);
     
@@ -377,8 +366,6 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
         quantite_totale,
         prime_achat,
         prix_achat_flat,
-        parent_navire_id,
-        reference_cbot,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -402,7 +389,8 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
             nom
           )
         )
-      `);
+      `)
+      .is('parent_navire_id', null);
 
     // Si c'est un client, filtrer par ses ventes uniquement
     if (userRole === 'client') {
@@ -425,38 +413,6 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
     if (error) throw error;
 
     const naviresData = navires as any[] || [];
-    
-    // Traiter les navires rollés pour récupérer les ventes du parent
-    for (const navire of naviresData) {
-      if (navire.parent_navire_id && navire.reference_cbot && (!navire.ventes || navire.ventes.length === 0)) {
-        const { data: parentVentes, error: parentError } = await supabase
-          .from('ventes')
-          .select(`
-            id,
-            client_id,
-            type_deal,
-            volume,
-            prime_vente,
-            prix_flat,
-            prix_reference,
-            couvertures (
-              volume_couvert,
-              prix_futures,
-              nombre_contrats
-            ),
-            clients (
-              id,
-              nom
-            )
-          `)
-          .eq('navire_id', navire.parent_navire_id)
-          .eq('prix_reference', navire.reference_cbot);
-
-        if (!parentError && parentVentes) {
-          navire.ventes = parentVentes;
-        }
-      }
-    }
     
     const result: NavirePnLByClient[] = [];
 
