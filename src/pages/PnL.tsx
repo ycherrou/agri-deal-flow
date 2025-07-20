@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, PieChart } from 'lucide-react';
 import { calculatePortfolioPnL, formatPnL, getPnLColor, calculatePnLByClient, NavirePnLByClient } from '@/lib/pnlUtils';
 import { formatPriceDisplay, ProductType, PriceType } from '@/lib/priceUtils';
+import { volumeToContracts, supportsContracts } from '@/lib/futuresUtils';
 import { PortfolioPnL, PnLData } from '@/types/index';
 import { supabase } from '@/integrations/supabase/client';
 import PnLPieCharts from '@/components/PnLPieCharts';
@@ -105,6 +106,34 @@ export default function PnL() {
     // Pour les primes : Cts/Bu pour maïs/tourteau, USD/MT pour blé/orge
     const unit = (product === 'mais' || product === 'tourteau_soja') ? 'Cts/Bu' : 'USD/MT';
     return `${price.toFixed(2)} ${unit}`;
+  };
+
+  // Helper function to format volume display in contracts or tonnes
+  const formatVolumeDisplay = (volumeCouvert: number, volumeTotal: number, produit: string) => {
+    const productType = produit as ProductType;
+    
+    if (supportsContracts(productType)) {
+      const contratsCouverts = volumeToContracts(volumeCouvert, productType);
+      const contratsTotal = volumeToContracts(volumeTotal, productType);
+      
+      return (
+        <div className="text-sm">
+          <div>{contratsCouverts.toLocaleString('fr-FR')} contrats</div>
+          <div className="text-muted-foreground text-xs">
+            / {contratsTotal.toLocaleString('fr-FR')} contrats
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="text-sm">
+          <div>{volumeCouvert.toLocaleString('fr-FR')}t</div>
+          <div className="text-muted-foreground text-xs">
+            / {volumeTotal.toLocaleString('fr-FR')}t (N/A contrats)
+          </div>
+        </div>
+      );
+    }
   };
 
   if (loading) {
@@ -231,7 +260,7 @@ export default function PnL() {
                       <TableHead className="text-right">Futures Vente Moy.</TableHead>
                       <TableHead className="text-right">P&L Futures</TableHead>
                       <TableHead className="text-right">P&L Total</TableHead>
-                      <TableHead className="text-right">Volume</TableHead>
+                      <TableHead className="text-right">Contrats</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -261,12 +290,7 @@ export default function PnL() {
                           {formatPnL(navire.pnl_total)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="text-sm">
-                            <div>{navire.volume_couvert_achat.toLocaleString('fr-FR')}t</div>
-                            <div className="text-muted-foreground text-xs">
-                              / {navire.volume_total_achete.toLocaleString('fr-FR')}t
-                            </div>
-                          </div>
+                          {formatVolumeDisplay(navire.volume_couvert_achat, navire.volume_total_achete, navire.produit)}
                         </TableCell>
                       </TableRow>
                     ))}
