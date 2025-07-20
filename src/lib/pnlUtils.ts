@@ -68,6 +68,14 @@ export const calculateFlatPnL = (navire: NavireWithPnLData): number => {
     return sum + (v.prix_flat || 0) * v.volume;
   }, 0) / volumeTotal;
   
+  console.log(`DEBUG Flat P&L for ${navire.nom}:`, {
+    prixAchatFlat,
+    ventesFlat: ventesFlat.length,
+    volumeTotal,
+    prixVenteFlatMoyen,
+    pnl: (prixVenteFlatMoyen - prixAchatFlat) * volumeTotal
+  });
+  
   return (prixVenteFlatMoyen - prixAchatFlat) * volumeTotal;
 };
 
