@@ -142,9 +142,10 @@ export default function MarcheSecondaire() {
 
       console.log('Reventes fetched:', data);
       
-      // Filtrer les reventes pour exclure celles appartenant au client connecté
+      // Filtrer les reventes pour exclure celles appartenant au client connecté (sauf pour les admins qui voient tout)
       const filteredReventes = (data || []).filter(revente => {
         if (!currentClient) return true;
+        if (currentClient.role === 'admin') return true; // Les admins voient tout pour pouvoir annuler
         return revente.ventes?.client_id !== currentClient.id;
       });
       
@@ -248,7 +249,7 @@ export default function MarcheSecondaire() {
       const { error } = await supabase
         .from('reventes_clients')
         .update({ 
-          etat: 'annulee',
+          etat: 'retire',
           validated_by_admin: false,
           updated_at: new Date().toISOString()
         })
@@ -368,6 +369,16 @@ export default function MarcheSecondaire() {
                     <div className="text-sm text-muted-foreground">
                       {revente.type_position === 'non_couverte' ? 'Prime demandée' : 'Prix demandé'}
                     </div>
+                    {currentClient?.role === 'admin' && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleCancelRevente(revente.id)}
+                        className="mt-2"
+                      >
+                        Annuler
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -411,47 +422,50 @@ export default function MarcheSecondaire() {
                     )}
                   </div>
 
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Faire une offre</h4>
-                     <div className="space-y-3">
-                       <div>
-                         <label className="text-sm font-medium">
-                           {revente.type_position === 'non_couverte' 
-                             ? 'Prime offerte (cts/bu)' 
-                             : 'Prix offert (USD/MT)'
-                           }
-                         </label>
-                         <Input
-                           type="number"
-                           step="0.01"
-                           placeholder={revente.type_position === 'non_couverte' 
-                             ? 'Ex: 50.00' 
-                             : 'Ex: 250.00'
-                           }
-                           value={bidPrices[revente.id] || ''}
-                           onChange={(e) => setBidPrices(prev => ({ ...prev, [revente.id]: e.target.value }))}
-                         />
-                       </div>
-                      <div>
-                        <label className="text-sm font-medium">Volume souhaité (MT)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder={`Max: ${revente.volume}`}
-                          max={revente.volume}
-                          value={bidVolumes[revente.id] || ''}
-                          onChange={(e) => setBidVolumes(prev => ({ ...prev, [revente.id]: e.target.value }))}
-                        />
+                  {/* Masquer l'option d'offre pour les admins sur leurs propres positions ou les propriétaires normaux */}
+                  {currentClient && !(currentClient.role === 'client' && revente.ventes?.client_id === currentClient.id) && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Faire une offre</h4>
+                       <div className="space-y-3">
+                         <div>
+                           <label className="text-sm font-medium">
+                             {revente.type_position === 'non_couverte' 
+                               ? 'Prime offerte (cts/bu)' 
+                               : 'Prix offert (USD/MT)'
+                             }
+                           </label>
+                           <Input
+                             type="number"
+                             step="0.01"
+                             placeholder={revente.type_position === 'non_couverte' 
+                               ? 'Ex: 50.00' 
+                               : 'Ex: 250.00'
+                             }
+                             value={bidPrices[revente.id] || ''}
+                             onChange={(e) => setBidPrices(prev => ({ ...prev, [revente.id]: e.target.value }))}
+                           />
+                         </div>
+                        <div>
+                          <label className="text-sm font-medium">Volume souhaité (MT)</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder={`Max: ${revente.volume}`}
+                            max={revente.volume}
+                            value={bidVolumes[revente.id] || ''}
+                            onChange={(e) => setBidVolumes(prev => ({ ...prev, [revente.id]: e.target.value }))}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleBid(revente.id)}
+                          className="w-full"
+                          disabled={!bidPrices[revente.id] || !bidVolumes[revente.id]}
+                        >
+                          Envoyer l'offre
+                        </Button>
                       </div>
-                      <Button 
-                        onClick={() => handleBid(revente.id)}
-                        className="w-full"
-                        disabled={!bidPrices[revente.id] || !bidVolumes[revente.id]}
-                      >
-                        Envoyer l'offre
-                      </Button>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -529,6 +529,7 @@ export type Database = {
         | "vendu"
         | "retire"
         | "en_attente_validation"
+        | "annulee"
       user_role: "admin" | "client"
     }
     CompositeTypes: {
@@ -664,6 +665,7 @@ export const Constants = {
         "vendu",
         "retire",
         "en_attente_validation",
+        "annulee",
       ],
       user_role: ["admin", "client"],
     },
