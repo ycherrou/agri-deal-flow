@@ -68,14 +68,6 @@ export const calculateFlatPnL = (navire: NavireWithPnLData): number => {
     return sum + (v.prix_flat || 0) * v.volume;
   }, 0) / volumeTotal;
   
-  console.log(`DEBUG Flat P&L for ${navire.nom}:`, {
-    prixAchatFlat,
-    ventesFlat: ventesFlat.length,
-    volumeTotal,
-    prixVenteFlatMoyen,
-    pnl: (prixVenteFlatMoyen - prixAchatFlat) * volumeTotal
-  });
-  
   return (prixVenteFlatMoyen - prixAchatFlat) * volumeTotal;
 };
 
@@ -348,6 +340,7 @@ interface ClientPnLData {
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   pnl_total: number;
   pnl_prime: number;
+  pnl_flat: number;
   pnl_futures: number;
   volume_total: number;
   volume_couvert: number;
@@ -451,6 +444,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
             produit: navire.produit,
             pnl_total: 0,
             pnl_prime: 0,
+            pnl_flat: 0,
             pnl_futures: 0,
             volume_total: 0,
             volume_couvert: 0
@@ -469,6 +463,14 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           clientData.pnl_prime += pnlPrime;
         }
 
+        // Calculer P&L flat pour cette vente
+        if (vente.type_deal === 'flat') {
+          const prixAchatFlat = navire.prix_achat_flat || 0;
+          const prixVenteFlat = vente.prix_flat || 0;
+          const pnlFlat = (prixVenteFlat - prixAchatFlat) * vente.volume;
+          clientData.pnl_flat += pnlFlat;
+        }
+
         // Calculer P&L sur futures pour cette vente
         if (vente.couvertures && vente.couvertures.length > 0) {
           const volumeVenteCouverte = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
@@ -481,7 +483,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           clientData.volume_couvert += volumeVenteCouverte;
         }
 
-        clientData.pnl_total = clientData.pnl_prime + clientData.pnl_futures;
+        clientData.pnl_total = clientData.pnl_prime + clientData.pnl_flat + clientData.pnl_futures;
       }
 
       const clients = Array.from(clientsMap.values());
