@@ -234,6 +234,53 @@ export default function MarcheSecondaire() {
     fetchReventes();
   };
 
+  const handleCancelRevente = async (reventeId: string) => {
+    if (!currentClient || currentClient.role !== 'admin') {
+      toast({
+        title: "Erreur",
+        description: "Seuls les administrateurs peuvent annuler des reventes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('reventes_clients')
+        .update({ 
+          etat: 'annulee',
+          validated_by_admin: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reventeId);
+
+      if (error) {
+        console.error('Erreur lors de l\'annulation:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'annuler cette revente",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Revente annulée avec succès",
+      });
+
+      // Refresh data
+      fetchReventes();
+    } catch (err) {
+      console.error('Erreur inattendue lors de l\'annulation:', err);
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatPrice = (price: number, produit: string) => {
     return `${price.toFixed(2)} USD/MT`;
   };
