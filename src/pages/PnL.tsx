@@ -98,11 +98,13 @@ export default function PnL() {
   };
 
   // Helper function to format price display in table
-  const formatTablePrice = (price: number, product: string, priceType: PriceType, isFlat: boolean = false) => {
+  const formatTablePrice = (price: number, product: string, isFlat: boolean = false) => {
     if (isFlat) {
-      return formatPriceDisplay(price, product as ProductType, 'flat');
+      return `${price.toFixed(2)} USD/MT`;
     }
-    return formatPriceDisplay(price, product as ProductType, priceType);
+    // Pour les primes : Cts/Bu pour maïs/tourteau, USD/MT pour blé/orge
+    const unit = (product === 'mais' || product === 'tourteau_soja') ? 'Cts/Bu' : 'USD/MT';
+    return `${price.toFixed(2)} ${unit}`;
   };
 
   if (loading) {
@@ -222,8 +224,8 @@ export default function PnL() {
                     <TableRow>
                       <TableHead>Navire</TableHead>
                       <TableHead>Produit</TableHead>
-                      <TableHead className="text-right">Prime Achat</TableHead>
-                      <TableHead className="text-right">Prime Vente Moy.</TableHead>
+                      <TableHead className="text-right">Achat</TableHead>
+                      <TableHead className="text-right">Vente Moy.</TableHead>
                       <TableHead className="text-right">P&L Prime</TableHead>
                       <TableHead className="text-right">Futures Achat Moy.</TableHead>
                       <TableHead className="text-right">Futures Vente Moy.</TableHead>
@@ -238,19 +240,19 @@ export default function PnL() {
                         <TableCell className="font-medium">{navire.navire_nom}</TableCell>
                         <TableCell>{getProductBadge(navire.produit)}</TableCell>
                         <TableCell className="text-right">
-                          {formatTablePrice(navire.prime_achat, navire.produit, 'prime')}
+                          {formatTablePrice(navire.prime_achat, navire.produit, navire.prix_achat_flat !== undefined)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatTablePrice(navire.prime_vente_moyenne, navire.produit, 'prime')}
+                          {formatTablePrice(navire.prime_vente_moyenne, navire.produit, true)}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
                           {formatPnL(navire.pnl_prime)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatTablePrice(navire.prix_futures_achat_moyen, navire.produit, 'futures')}
+                          {formatTablePrice(navire.prix_futures_achat_moyen, navire.produit)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatTablePrice(navire.prix_futures_vente_moyen, navire.produit, 'futures')}
+                          {formatTablePrice(navire.prix_futures_vente_moyen, navire.produit)}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_futures)}`}>
                           {formatPnL(navire.pnl_futures)}

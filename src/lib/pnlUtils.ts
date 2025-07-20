@@ -122,6 +122,10 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const prixFuturesVenteMoyen = volumeVenteTotal > 0 ?
     couverturesVente.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeVenteTotal : 0;
   
+  // Calculs pour prix d'achat combiné (prime ou flat selon le navire)
+  const prixAchat = navire.prime_achat || navire.prix_achat_flat || 0;
+  const isNavireFlat = navire.prix_achat_flat !== null && navire.prime_achat === null;
+  
   // Calculs pour ventes à prime
   const ventesAvecPrime = navire.ventes.filter(v => v.type_deal === 'prime');
   const volumeTotalVenduPrime = ventesAvecPrime.reduce((sum, v) => sum + v.volume, 0);
@@ -134,20 +138,34 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const prixFlatVenteMoyen = volumeTotalVenduFlat > 0 ?
     ventesFlat.reduce((sum, v) => sum + (v.prix_flat || 0) * v.volume, 0) / volumeTotalVenduFlat : 0;
   
-  // Appliquer le facteur de conversion pour l'affichage des primes
-  const facteurConversion = getConversionFactor(navire.produit);
-  const primeAchatAffichage = (navire.prime_achat || 0) * facteurConversion;
-  const primeVenteAffichage = primeVenteMoyenne * facteurConversion;
-  
+  // Calculer la moyenne pondérée globale des prix de vente
   const volumeTotalVendu = volumeTotalVenduPrime + volumeTotalVenduFlat;
+  const facteurConversion = getConversionFactor(navire.produit);
+  
+  let prixVenteMoyenGlobal = 0;
+  let prixAchatAffichage = 0;
+  
+  if (volumeTotalVendu > 0) {
+    // Convertir les primes en $/tonne si nécessaire
+    const primeVenteConvertie = primeVenteMoyenne * facteurConversion;
+    const prixVentePondere = (primeVenteConvertie * volumeTotalVenduPrime + prixFlatVenteMoyen * volumeTotalVenduFlat) / volumeTotalVendu;
+    prixVenteMoyenGlobal = prixVentePondere;
+  }
+  
+  // Prix d'achat pour affichage : convertir prime si nécessaire, garder flat tel quel
+  if (isNavireFlat) {
+    prixAchatAffichage = prixAchat; // Déjà en $/tonne
+  } else {
+    prixAchatAffichage = prixAchat * facteurConversion; // Convertir prime en $/tonne
+  }
   
   return {
     navire_id: navire.id,
     navire_nom: navire.nom,
     produit: navire.produit,
-    prime_achat: primeAchatAffichage,
+    prime_achat: prixAchatAffichage,
     prix_achat_flat: navire.prix_achat_flat || undefined,
-    prime_vente_moyenne: primeVenteAffichage,
+    prime_vente_moyenne: prixVenteMoyenGlobal,
     prix_flat_vente_moyen: prixFlatVenteMoyen,
     pnl_prime: pnlPrime,
     pnl_flat: pnlFlat,
