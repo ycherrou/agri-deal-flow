@@ -118,11 +118,28 @@ export default function Layout({
 
   const fetchAvailableReventes = async () => {
     try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Récupérer les données du client connecté
+      const { data: currentClient } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!currentClient) return;
+
       const { count, error } = await supabase
         .from('reventes_clients')
-        .select('*', { count: 'exact', head: true })
+        .select(`
+          id,
+          ventes!inner(client_id)
+        `, { count: 'exact', head: true })
         .eq('etat', 'en_attente')
-        .eq('validated_by_admin', true);
+        .eq('validated_by_admin', true)
+        .neq('ventes.client_id', currentClient.id);
 
       if (error) {
         console.error('Error fetching available reventes count:', error);
