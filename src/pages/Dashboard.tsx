@@ -33,6 +33,7 @@ interface NavireWithVentes {
   produit: string;
   quantite_totale: number;
   prime_achat: number | null;
+  prix_achat_flat: number | null;
   reference_cbot: string | null;
   date_arrivee: string;
   fournisseur: string;
@@ -173,6 +174,7 @@ export default function Dashboard() {
               produit,
               quantite_totale,
               prime_achat,
+              prix_achat_flat,
               reference_cbot,
               date_arrivee,
               fournisseur,
@@ -229,6 +231,7 @@ export default function Dashboard() {
             produit,
             quantite_totale,
             prime_achat,
+            prix_achat_flat,
             reference_cbot,
             date_arrivee,
             fournisseur,
@@ -657,12 +660,15 @@ export default function Dashboard() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        Prime d'achat
+                        {navireActif.prix_achat_flat ? 'Prix d\'achat flat' : 'Prime d\'achat'}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {navireActif.prime_achat ? navireActif.prime_achat : 'N/A'}
+                        {navireActif.prix_achat_flat ? 
+                          `${navireActif.prix_achat_flat} $/tonne` : 
+                          (navireActif.prime_achat ? navireActif.prime_achat : 'N/A')
+                        }
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {navireActif.reference_cbot && (
