@@ -274,8 +274,8 @@ export default function PnL() {
                         <TableCell className="text-right">
                           {formatTablePrice(navire.prime_vente_moyenne, navire.produit, true)}
                         </TableCell>
-                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
-                          {formatPnL(navire.pnl_prime)}
+                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime + navire.pnl_flat)}`}>
+                          {formatPnL(navire.pnl_prime + navire.pnl_flat)}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatTablePrice(navire.prix_futures_achat_moyen, navire.produit)}
