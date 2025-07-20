@@ -8,6 +8,8 @@ interface NavireWithPnLData {
   quantite_totale: number;
   prime_achat: number | null;
   prix_achat_flat: number | null;
+  parent_navire_id: string | null;
+  reference_cbot: string | null;
   couvertures_achat: Array<{
     volume_couvert: number;
     prix_futures: number;
@@ -19,6 +21,7 @@ interface NavireWithPnLData {
     volume: number;
     prime_vente: number | null;
     prix_flat: number | null;
+    prix_reference: string | null;
     couvertures: Array<{
       volume_couvert: number;
       prix_futures: number;
@@ -181,6 +184,40 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
 };
 
 /**
+ * Récupère les ventes d'un navire parent pour un navire rollé
+ */
+const getParentVentes = async (parentNavireId: string, referenceCbot: string | null) => {
+  const { data: parentVentes, error } = await supabase
+    .from('ventes')
+    .select(`
+      id,
+      type_deal,
+      volume,
+      prime_vente,
+      prix_flat,
+      prix_reference,
+      couvertures (
+        volume_couvert,
+        prix_futures,
+        nombre_contrats
+      )
+    `)
+    .eq('navire_id', parentNavireId);
+
+  if (error) {
+    console.error('Error fetching parent ventes:', error);
+    return [];
+  }
+
+  // Si le navire rollé a une référence CBOT, filtrer les ventes du parent
+  if (referenceCbot) {
+    return (parentVentes || []).filter(vente => vente.prix_reference === referenceCbot);
+  }
+
+  return parentVentes || [];
+};
+
+/**
  * Calcule le P&L du portefeuille complet
  */
 export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admin'): Promise<PortfolioPnL> => {
@@ -194,6 +231,8 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
         quantite_totale,
         prime_achat,
         prix_achat_flat,
+        parent_navire_id,
+        reference_cbot,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -205,6 +244,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
           volume,
           prime_vente,
           prix_flat,
+          prix_reference,
           couvertures (
             volume_couvert,
             prix_futures,
@@ -234,6 +274,17 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
     if (error) throw error;
 
     const naviresData = navires as NavireWithPnLData[] || [];
+    
+    // Traiter les navires rollés pour récupérer les ventes du parent
+    for (const navire of naviresData) {
+      if (navire.parent_navire_id && navire.reference_cbot) {
+        console.log(`Processing rolled vessel: ${navire.nom} with reference ${navire.reference_cbot}`);
+        const parentVentes = await getParentVentes(navire.parent_navire_id, navire.reference_cbot);
+        console.log(`Found ${parentVentes.length} matching sales for rolled vessel ${navire.nom}`);
+        navire.ventes = parentVentes;
+      }
+    }
+    
     const pnlNavires = naviresData.map(calculateTotalPnL);
     
     const portfolioPnL: PortfolioPnL = {
@@ -326,6 +377,8 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
         quantite_totale,
         prime_achat,
         prix_achat_flat,
+        parent_navire_id,
+        reference_cbot,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -338,6 +391,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           volume,
           prime_vente,
           prix_flat,
+          prix_reference,
           couvertures (
             volume_couvert,
             prix_futures,
@@ -371,6 +425,39 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
     if (error) throw error;
 
     const naviresData = navires as any[] || [];
+    
+    // Traiter les navires rollés pour récupérer les ventes du parent
+    for (const navire of naviresData) {
+      if (navire.parent_navire_id && navire.reference_cbot && (!navire.ventes || navire.ventes.length === 0)) {
+        const { data: parentVentes, error: parentError } = await supabase
+          .from('ventes')
+          .select(`
+            id,
+            client_id,
+            type_deal,
+            volume,
+            prime_vente,
+            prix_flat,
+            prix_reference,
+            couvertures (
+              volume_couvert,
+              prix_futures,
+              nombre_contrats
+            ),
+            clients (
+              id,
+              nom
+            )
+          `)
+          .eq('navire_id', navire.parent_navire_id)
+          .eq('prix_reference', navire.reference_cbot);
+
+        if (!parentError && parentVentes) {
+          navire.ventes = parentVentes;
+        }
+      }
+    }
+    
     const result: NavirePnLByClient[] = [];
 
     for (const navire of naviresData) {
