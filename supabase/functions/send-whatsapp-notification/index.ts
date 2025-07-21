@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        From: `whatsapp:${twilioWhatsAppFrom}`,
+        From: twilioWhatsAppFrom.startsWith('whatsapp:') ? twilioWhatsAppFrom : `whatsapp:${twilioWhatsAppFrom}`,
         To: `whatsapp:${formattedPhone}`,
         Body: message,
       }),
