@@ -161,9 +161,10 @@ export default function ClientPortfolio() {
     }
   };
 
-  const getPositionsWithCouverture = () => {
+  const getPositionsAvailableForResale = () => {
     if (!navireActif) return [];
-    return navireActif.positions.filter(pos => getVolumeCouvert(pos) > 0);
+    // Toutes les positions peuvent être revendues (couvertes ET non couvertes)
+    return navireActif.positions;
   };
 
   const getVolumeCouvert = (position: any) => {
@@ -491,39 +492,49 @@ export default function ClientPortfolio() {
                     Revente de positions
                   </CardTitle>
                   <CardDescription>
-                    Remettez en vente vos positions couvertes sur le marché secondaire
+                    Remettez en vente vos positions (couvertes et non couvertes) sur le marché secondaire
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {getPositionsWithCouverture().length === 0 ? (
+                  {getPositionsAvailableForResale().length === 0 ? (
                     <p className="text-muted-foreground text-center py-4">
-                      Aucune position couverte disponible pour la revente.
+                      Aucune position disponible pour la revente.
                     </p>
                   ) : (
                     <div className="space-y-4">
-                      {getPositionsWithCouverture().map((pos, idx) => (
-                        <div key={pos.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-medium">Position #{idx + 1}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
+                      {getPositionsAvailableForResale().map((pos, idx) => {
+                        const volumeCouvert = getVolumeCouvert(pos);
+                        const volumeNonCouvert = pos.volume_achete - volumeCouvert;
+                        
+                        return (
+                          <div key={pos.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium">Position #{idx + 1}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
+                                </div>
+                                <div className="text-sm space-y-1">
+                                  {volumeCouvert > 0 && (
+                                    <div>Volume couvert: <span className="font-medium text-green-600">{volumeCouvert} tonnes</span></div>
+                                  )}
+                                  {volumeNonCouvert > 0 && (
+                                    <div>Volume non couvert: <span className="font-medium text-orange-600">{volumeNonCouvert} tonnes</span></div>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-sm">
-                                Volume couvert: <span className="font-medium text-green-600">{getVolumeCouvert(pos)} tonnes</span>
-                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setReventeDialog({open: true, position: pos})}
+                              >
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Mettre en vente
+                              </Button>
                             </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setReventeDialog({open: true, position: pos})}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-2" />
-                              Mettre en vente
-                            </Button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
