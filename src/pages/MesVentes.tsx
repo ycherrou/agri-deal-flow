@@ -243,9 +243,6 @@ export default function MesVentes() {
                       <div className="text-sm text-muted-foreground">
                         {transaction.revente.vente.navire.produit.toUpperCase()} • {transaction.volume_transige} MT
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Vendu à: {transaction.acheteur.nom}
-                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold text-green-600">
