@@ -463,7 +463,7 @@ export default function ClientPortfolio() {
                               } else if (position.type_deal === 'prime') {
                                 // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
                                 const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                                  : navireActif.produit === 'tourteau_soja' ? 0.4640 
+                                  : navireActif.produit === 'tourteau_soja' ? 0.9072 
                                   : 1;
                                 
                                 let pruMoyen = 0;
