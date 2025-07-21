@@ -25,6 +25,7 @@ export default function Layout({
   const [loading, setLoading] = useState(true);
   const [pendingReventes, setPendingReventes] = useState(0);
   const [availableReventes, setAvailableReventes] = useState(0);
+  const [pendingOffers, setPendingOffers] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -85,6 +86,11 @@ export default function Layout({
 
       // Récupérer le nombre de positions disponibles sur le marché secondaire
       fetchAvailableReventes();
+
+      // Récupérer le nombre d'offres reçues pour les clients
+      if (data.role === 'client') {
+        fetchPendingOffers(data.id);
+      }
 
       // Rediriger les clients vers leur portfolio si ils sont sur la page d'accueil
       if (data.role === 'client' && location.pathname === '/') {
@@ -152,6 +158,32 @@ export default function Layout({
     }
   };
 
+  const fetchPendingOffers = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('reventes_clients')
+        .select(`
+          id,
+          ventes!inner(client_id),
+          bids_marche_secondaire(id)
+        `)
+        .eq('ventes.client_id', clientId)
+        .eq('etat', 'en_attente')
+        .eq('validated_by_admin', true);
+
+      if (error) {
+        console.error('Error fetching pending offers:', error);
+        return;
+      }
+
+      // Compter le nombre total d'offres
+      const totalOffers = data?.reduce((sum, revente) => sum + (revente.bids_marche_secondaire?.length || 0), 0) || 0;
+      setPendingOffers(totalOffers);
+    } catch (error) {
+      console.error('Error fetching pending offers:', error);
+    }
+  };
+
   // Configuration des mises à jour temps réel pour les reventes
   useEffect(() => {
     if (!client) return;
@@ -171,6 +203,23 @@ export default function Layout({
             fetchPendingReventes();
           }
           fetchAvailableReventes();
+          if (client.role === 'client') {
+            fetchPendingOffers(client.id);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bids_marche_secondaire'
+        },
+        () => {
+          // Refetch aussi lors des changements d'offres
+          if (client.role === 'client') {
+            fetchPendingOffers(client.id);
+          }
         }
       )
       .subscribe();
@@ -337,6 +386,7 @@ export default function Layout({
               const isActive = location.pathname === item.path;
               const showAdminBadge = item.id === 'admin-reventes' && client.role === 'admin' && pendingReventes > 0;
               const showMarketBadge = item.id === 'marche-secondaire' && availableReventes > 0;
+              const showOffersBadge = item.id === 'transactions-secondaires' && client.role === 'client' && pendingOffers > 0;
               
               return <Button key={item.id} variant={isActive ? 'default' : 'ghost'} className={`w-full justify-start ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => navigate(item.path)}>
                     <Icon className="h-4 w-4 mr-2" />
@@ -349,6 +399,11 @@ export default function Layout({
                     {showMarketBadge && (
                       <Badge variant="secondary" className="ml-2 px-1.5 py-0.5 text-xs font-bold">
                         {availableReventes}
+                      </Badge>
+                    )}
+                    {showOffersBadge && (
+                      <Badge variant="destructive" className="ml-2 px-1.5 py-0.5 text-xs font-bold">
+                        {pendingOffers}
                       </Badge>
                     )}
                   </Button>;
