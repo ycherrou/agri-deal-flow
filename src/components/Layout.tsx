@@ -323,6 +323,12 @@ export default function Layout({
     path: '/marche-secondaire',
     roles: ['client', 'admin']
   }, {
+    id: 'mes-ventes',
+    label: 'Mes ventes',
+    icon: DollarSign,
+    path: '/mes-ventes',
+    roles: ['client']
+  }, {
     id: 'transactions-secondaires',
     label: 'Transactions Secondaires',
     icon: TrendingUp,

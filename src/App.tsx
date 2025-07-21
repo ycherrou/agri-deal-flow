@@ -22,6 +22,7 @@ import MarcheSecondaire from "./pages/MarcheSecondaire";
 import TransactionsSecondaires from "./pages/TransactionsSecondaires";
 import FuturesAdmin from "./pages/FuturesAdmin";
 import AdminReventes from "./pages/AdminReventes";
+import MesVentes from "./pages/MesVentes";
 import WhatsAppNotifications from "./pages/WhatsAppNotifications";
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/prix-marche" element={<Layout><PrixMarche /></Layout>} />
             <Route path="/pnl" element={<Layout><PnL /></Layout>} />
             <Route path="/marche-secondaire" element={<Layout><MarcheSecondaire /></Layout>} />
+            <Route path="/mes-ventes" element={<Layout><MesVentes /></Layout>} />
             <Route path="/admin-reventes" element={<Layout><AdminReventes /></Layout>} />
             <Route path="/transactions-secondaires" element={<Layout><TransactionsSecondaires /></Layout>} />
             <Route path="/futures-admin" element={<Layout><FuturesAdmin /></Layout>} />
