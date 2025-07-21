@@ -193,9 +193,20 @@ export default function WhatsAppNotifications() {
       });
     },
     onError: (error: any) => {
+      let errorMessage = error.message;
+      
+      // Handle specific error messages from the edge function
+      if (error.message?.includes('No phone number available')) {
+        errorMessage = "Le client sélectionné n'a pas de numéro de téléphone configuré. Veuillez saisir un numéro dans le champ 'Téléphone' ou choisir un autre client.";
+      } else if (error.message?.includes('Template not found')) {
+        errorMessage = "Le template sélectionné n'a pas été trouvé ou n'est pas actif.";
+      } else if (error.message?.includes('Client not found')) {
+        errorMessage = "Le client sélectionné n'a pas été trouvé.";
+      }
+      
       toast({
         title: "Erreur d'envoi",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -369,8 +380,12 @@ export default function WhatsAppNotifications() {
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.nom} {client.telephone && `(${client.telephone})`}
+                    <SelectItem 
+                      key={client.id} 
+                      value={client.id}
+                      disabled={!client.telephone}
+                    >
+                      {client.nom} {client.telephone ? `(${client.telephone})` : '(Pas de téléphone)'}
                     </SelectItem>
                   ))}
                 </SelectContent>
