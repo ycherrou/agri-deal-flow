@@ -45,11 +45,36 @@ export default function ClientPortfolio() {
   const [activeNavire, setActiveNavire] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>('');
   const [reventeDialog, setReventeDialog] = useState<{open: boolean, position: any}>({open: false, position: null});
+  const [prixMarche, setPrixMarche] = useState<Array<{
+    echeance_id: string;
+    prix: number;
+    created_at: string;
+    echeance?: {
+      nom: string;
+      active: boolean;
+    };
+  }>>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchClientPortfolio();
+    fetchPrixMarche();
   }, []);
+
+  const fetchPrixMarche = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prix_marche')
+        .select('echeance_id, prix, created_at, echeance:echeances!inner(nom, active)')
+        .eq('echeance.active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setPrixMarche(data || []);
+    } catch (error) {
+      console.error('Error fetching prix marché:', error);
+    }
+  };
 
   const fetchClientPortfolio = async () => {
     try {
@@ -431,25 +456,54 @@ export default function ClientPortfolio() {
                           <div>
                             <div className="text-sm text-muted-foreground">PRU</div>
                             <div className="font-medium">${(() => {
-                              // Calcul du PRU selon le type de deal
+                              // Calcul du PRU complet en USD/MT
                               if (position.type_deal === 'flat') {
-                                // Pour un deal flat, le PRU est simplement le prix flat
+                                // Pour un deal flat, le PRU est simplement le prix flat (déjà en USD/MT)
                                 return formatPrice(position.prix_flat || 0);
                               } else if (position.type_deal === 'prime') {
-                                // Pour un deal prime, calculer selon les couvertures
-                                if (position.couvertures.length > 0) {
-                                  // Facteur de conversion selon le produit
-                                  const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                                    : navireActif.produit === 'tourteau_soja' ? 0.4640 
-                                    : 1;
+                                // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
+                                const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
+                                  : navireActif.produit === 'tourteau_soja' ? 0.4640 
+                                  : 1;
+                                
+                                let pruMoyen = 0;
+                                
+                                const volumeCouvert = position.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
+                                
+                                if (volumeCouvert > 0 && position.couvertures.length > 0) {
+                                  // Pour la partie couverte : utiliser les prix de couverture
+                                  const prixCouvertureMoyen = position.couvertures.reduce((sum: number, c: any) => 
+                                    sum + (c.prix_futures * c.volume_couvert), 0) / volumeCouvert;
+                                  const pruCouvert = (position.prime_payee + prixCouvertureMoyen) * facteurConversion;
                                   
-                                  const prixFuturesMoyen = position.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / position.couvertures.length;
-                                  const pru = (position.prime_payee + prixFuturesMoyen) * facteurConversion;
-                                  return formatPrice(pru);
-                                } else {
-                                  // Position non couverte : afficher la prime payée comme PRU partiel
-                                  return `${formatPrice(position.prime_payee)} (prime seule)`;
+                                  if (position.volume_non_couvert > 0) {
+                                    // Pour la partie non couverte : utiliser le dernier cours du contrat de référence
+                                    // Récupérer le dernier prix de marché pour ce contrat
+                                    const dernierCoursMarche = prixMarche.find(p => 
+                                      p.echeance?.nom === position.prix_reference
+                                    )?.prix || 0;
+                                    
+                                    const pruNonCouvert = (position.prime_payee + dernierCoursMarche) * facteurConversion;
+                                    
+                                    // Moyenne pondérée des deux parties
+                                    pruMoyen = (pruCouvert * volumeCouvert + pruNonCouvert * position.volume_non_couvert) / position.volume_achete;
+                                  } else {
+                                    pruMoyen = pruCouvert;
+                                  }
+                                } else if (position.volume_non_couvert > 0) {
+                                  // Entièrement non couvert : utiliser le dernier cours du marché
+                                  const dernierCoursMarche = prixMarche.find(p => 
+                                    p.echeance?.nom === position.prix_reference
+                                  )?.prix || 0;
+                                  
+                                  if (dernierCoursMarche > 0) {
+                                    pruMoyen = (position.prime_payee + dernierCoursMarche) * facteurConversion;
+                                  } else {
+                                    return `${formatPrice(position.prime_payee * facteurConversion)} (prime seule)`;
+                                  }
                                 }
+                                
+                                return formatPrice(pruMoyen);
                               }
                               return "N/A";
                             })()}</div>
