@@ -851,6 +851,20 @@ export default function Dashboard() {
                               <span className="text-muted-foreground">PRU:</span>
                               <div className="font-medium">{formatPrice(calculerPRU(vente, navireActif), navireActif.produit)}</div>
                             </div>
+                            {vente.type_deal === 'prime' && vente.prime_vente && (
+                              <div>
+                                <span className="text-muted-foreground">Prime:</span>
+                                <div className="font-medium">
+                                  {vente.prime_vente.toFixed(2)} {navireActif.produit === 'mais' || navireActif.produit === 'tourteau_soja' ? 'Cts/Bu' : 'USD/MT'}
+                                </div>
+                              </div>
+                            )}
+                            {vente.type_deal === 'flat' && vente.prix_flat && (
+                              <div>
+                                <span className="text-muted-foreground">Prix flat:</span>
+                                <div className="font-medium">{vente.prix_flat.toFixed(2)} USD/MT</div>
+                              </div>
+                            )}
                             {vente.type_deal === 'prime' && (
                               <div>
                                 <span className="text-muted-foreground">Couverture:</span>
