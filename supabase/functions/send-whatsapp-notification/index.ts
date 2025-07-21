@@ -88,13 +88,16 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Final message:', message);
 
     // Format phone number for WhatsApp (ensure it starts with + and country code)
-    let formattedPhone = targetPhone.replace(/\D/g, ''); // Remove non-digits
-    if (!formattedPhone.startsWith('33') && !formattedPhone.startsWith('+33')) {
-      // Assume French number if no country code
-      formattedPhone = '33' + formattedPhone.replace(/^0/, '');
-    }
+    let formattedPhone = targetPhone;
+    
+    // If the number doesn't start with +, add it
     if (!formattedPhone.startsWith('+')) {
-      formattedPhone = '+' + formattedPhone;
+      // If it's a raw number without country code, assume French
+      if (formattedPhone.match(/^[0-9]+$/)) {
+        formattedPhone = '+33' + formattedPhone.replace(/^0/, '');
+      } else {
+        formattedPhone = '+' + formattedPhone;
+      }
     }
 
     // Send WhatsApp message via Twilio
