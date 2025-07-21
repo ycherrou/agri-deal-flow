@@ -431,17 +431,25 @@ export default function ClientPortfolio() {
                           <div>
                             <div className="text-sm text-muted-foreground">PRU</div>
                             <div className="font-medium">${(() => {
-                              // Facteur de conversion selon le produit
-                              const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                                : navireActif.produit === 'tourteau_soja' ? 0.4640 
-                                : 1;
-                              
-                              // Calcul du PRU si des couvertures existent
-                              if (position.couvertures.length > 0) {
-                                const prixFuturesMoyen = position.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / position.couvertures.length;
-                                const valeurTotale = (position.prime_payee + prixFuturesMoyen) * position.volume_achete * facteurConversion;
-                                const pru = valeurTotale / position.volume_achete;
-                                return formatPrice(pru);
+                              // Calcul du PRU selon le type de deal
+                              if (position.type_deal === 'flat') {
+                                // Pour un deal flat, le PRU est simplement le prix flat
+                                return formatPrice(position.prix_flat || 0);
+                              } else if (position.type_deal === 'prime') {
+                                // Pour un deal prime, calculer selon les couvertures
+                                if (position.couvertures.length > 0) {
+                                  // Facteur de conversion selon le produit
+                                  const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
+                                    : navireActif.produit === 'tourteau_soja' ? 0.4640 
+                                    : 1;
+                                  
+                                  const prixFuturesMoyen = position.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / position.couvertures.length;
+                                  const pru = (position.prime_payee + prixFuturesMoyen) * facteurConversion;
+                                  return formatPrice(pru);
+                                } else {
+                                  // Position non couverte : afficher la prime payée comme PRU partiel
+                                  return `${formatPrice(position.prime_payee)} (prime seule)`;
+                                }
                               }
                               return "N/A";
                             })()}</div>

@@ -160,24 +160,41 @@ export default function Layout({
 
   const fetchPendingOffers = async (clientId: string) => {
     try {
-      const { data, error } = await supabase
+      // Requête en deux étapes pour éviter l'erreur de relation
+      const { data: ventes, error: ventesError } = await supabase
+        .from('ventes')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (ventesError) {
+        console.error('Error fetching client ventes:', ventesError);
+        return;
+      }
+
+      if (!ventes || ventes.length === 0) {
+        setPendingOffers(0);
+        return;
+      }
+
+      const venteIds = ventes.map(v => v.id);
+
+      const { data: reventes, error: reventesError } = await supabase
         .from('reventes_clients')
         .select(`
           id,
-          ventes!inner(client_id),
           bids_marche_secondaire(id)
         `)
-        .eq('ventes.client_id', clientId)
+        .in('vente_id', venteIds)
         .eq('etat', 'en_attente')
         .eq('validated_by_admin', true);
 
-      if (error) {
-        console.error('Error fetching pending offers:', error);
+      if (reventesError) {
+        console.error('Error fetching reventes with bids:', reventesError);
         return;
       }
 
       // Compter le nombre total d'offres
-      const totalOffers = data?.reduce((sum, revente) => sum + (revente.bids_marche_secondaire?.length || 0), 0) || 0;
+      const totalOffers = reventes?.reduce((sum, revente) => sum + (revente.bids_marche_secondaire?.length || 0), 0) || 0;
       setPendingOffers(totalOffers);
     } catch (error) {
       console.error('Error fetching pending offers:', error);
