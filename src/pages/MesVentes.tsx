@@ -259,17 +259,17 @@ export default function MesVentes() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Prix achat:</span>
-                      <div className="font-medium">{formatPrice(transaction.prix_achat_original)}</div>
+                      <span className="text-muted-foreground">Prime achat:</span>
+                      <div className="font-medium">{transaction.prix_achat_original} cts/bu</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Prix vente:</span>
-                      <div className="font-medium">{formatPrice(transaction.prix_vente_final)}</div>
+                      <span className="text-muted-foreground">Prime vente:</span>
+                      <div className="font-medium">{transaction.prix_vente_final} cts/bu</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Marge/MT:</span>
+                      <span className="text-muted-foreground">Marge:</span>
                       <div className="font-medium">
-                        {formatPrice((transaction.prix_vente_final - transaction.prix_achat_original))}
+                        {(transaction.prix_vente_final - transaction.prix_achat_original)} cts/bu
                       </div>
                     </div>
                     <div>
