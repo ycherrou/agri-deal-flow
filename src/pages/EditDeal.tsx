@@ -134,7 +134,7 @@ export default function EditDeal() {
     try {
       const { data, error } = await supabase
         .from('navires')
-        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee')
+        .select('id, nom, produit, fournisseur, quantite_totale, date_arrivee, reference_cbot')
         .order('nom');
       
       if (error) throw error;
