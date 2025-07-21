@@ -263,6 +263,48 @@ export type Database = {
           },
         ]
       }
+      notifications_history: {
+        Row: {
+          client_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message_content: string
+          message_type: string
+          phone_number: string
+          sent_at: string | null
+          status: string
+          twilio_sid: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_content: string
+          message_type: string
+          phone_number: string
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_content?: string
+          message_type?: string
+          phone_number?: string
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prix_marche: {
         Row: {
           created_at: string | null
@@ -490,6 +532,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          event_type: string
+          id: string
+          message_template: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          event_type: string
+          id?: string
+          message_template: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          event_type?: string
+          id?: string
+          message_template?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
