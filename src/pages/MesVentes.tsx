@@ -269,7 +269,7 @@ export default function MesVentes() {
                     <div>
                       <span className="text-muted-foreground">Marge/MT:</span>
                       <div className="font-medium">
-                        {formatPrice(transaction.prix_vente_final - transaction.prix_achat_original)}
+                        {formatPrice((transaction.prix_vente_final - transaction.prix_achat_original))}
                       </div>
                     </div>
                     <div>
