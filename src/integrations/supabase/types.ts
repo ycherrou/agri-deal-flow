@@ -572,6 +572,10 @@ export type Database = {
         Args: { bid_id_param: string; seller_client_id: string }
         Returns: string
       }
+      accept_bid_and_create_transaction_with_notifications: {
+        Args: { bid_id_param: string; seller_client_id: string }
+        Returns: string
+      }
       calculate_pru_vente: {
         Args: { vente_id_param: string }
         Returns: number
