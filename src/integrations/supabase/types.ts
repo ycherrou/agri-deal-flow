@@ -263,6 +263,42 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          client_id: string
+          created_at: string
+          enabled: boolean
+          event_type: string
+          id: string
+          produit_filter: string[] | null
+          updated_at: string
+          volume_max: number | null
+          volume_min: number | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          id?: string
+          produit_filter?: string[] | null
+          updated_at?: string
+          volume_max?: number | null
+          volume_min?: number | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          id?: string
+          produit_filter?: string[] | null
+          updated_at?: string
+          volume_max?: number | null
+          volume_min?: number | null
+        }
+        Relationships: []
+      }
       notifications_history: {
         Row: {
           client_id: string

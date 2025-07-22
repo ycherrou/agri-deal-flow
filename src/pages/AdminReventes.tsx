@@ -20,6 +20,7 @@ interface ReventeEnAttente {
   validated_by_admin: boolean | null;
   date_expiration_validation: string | null;
   ventes: {
+    client_id: string;
     navire_id: string;
     volume: number;
     prime_vente: number;
@@ -60,6 +61,7 @@ export default function AdminReventes() {
           validated_by_admin,
           date_expiration_validation,
           ventes (
+            client_id,
             navire_id,
             volume,
             prime_vente,
@@ -134,7 +136,7 @@ export default function AdminReventes() {
             const { data: allClients, error: clientsError } = await supabase
               .from('clients')
               .select('id, nom, telephone')
-              .neq('id', revente.ventes.clients?.id || ''); // Exclure le vendeur
+              .neq('id', revente.ventes.client_id || ''); // Exclure le vendeur
 
             if (clientsError) {
               console.error('Erreur lors de la récupération des clients:', clientsError);
