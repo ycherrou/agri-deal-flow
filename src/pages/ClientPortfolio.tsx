@@ -390,32 +390,6 @@ export default function ClientPortfolio() {
                 </Card>
               </div>
 
-              {/* Informations générales de couverture */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Résumé de Couverture
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Taux de couverture global</span>
-                    <span className="font-medium">{calculerTauxCouverture(navireActif).toFixed(1)}%</span>
-                  </div>
-                  <Progress value={calculerTauxCouverture(navireActif)} className="h-2" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Volume total couvert:</span>
-                      <span className="font-medium">{navireActif.volume_couvert_total.toFixed(1)} tonnes</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Volume total non couvert:</span>
-                      <span className="font-medium">{navireActif.volume_non_couvert_total.toFixed(1)} tonnes</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Détail des positions */}
               <Card>
