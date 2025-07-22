@@ -18,9 +18,12 @@ interface Transaction {
     id: string;
     vente: {
       id: string;
+      type_deal: string;
+      prime_vente: number | null;
       navire: {
         nom: string;
         produit: string;
+        prime_achat: number | null;
       };
     };
   };
@@ -86,9 +89,12 @@ export default function MesVentes() {
               vente_id,
               ventes!inner(
                 id,
+                type_deal,
+                prime_vente,
                 navires!inner(
                   nom,
-                  produit
+                  produit,
+                  prime_achat
                 )
               )
             `)
@@ -102,20 +108,23 @@ export default function MesVentes() {
             .eq('id', transaction.acheteur_id)
             .single();
 
-          return {
+           return {
             ...transaction,
             revente: {
               id: reventeData?.id || '',
               vente: {
                 id: reventeData?.ventes?.id || '',
+                type_deal: reventeData?.ventes?.type_deal || '',
+                prime_vente: reventeData?.ventes?.prime_vente || null,
                 navire: {
                   nom: reventeData?.ventes?.navires?.nom || '',
-                  produit: reventeData?.ventes?.navires?.produit || ''
+                  produit: reventeData?.ventes?.navires?.produit || '',
+                  prime_achat: reventeData?.ventes?.navires?.prime_achat || null
                 }
               }
             },
             acheteur: acheteurData || { nom: '' }
-          };
+           };
         })
       );
 
@@ -260,16 +269,29 @@ export default function MesVentes() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Prime achat:</span>
-                      <div className="font-medium">{transaction.prix_achat_original} cts/bu</div>
+                      <div className="font-medium">
+                        {transaction.revente.vente.type_deal === 'prime' 
+                          ? `${transaction.revente.vente.navire.prime_achat || 0} cts/bu`
+                          : `${transaction.prix_achat_original.toFixed(2)} $/MT`
+                        }
+                      </div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Prime vente:</span>
-                      <div className="font-medium">{transaction.prix_vente_final} cts/bu</div>
+                      <div className="font-medium">
+                        {transaction.revente.vente.type_deal === 'prime' 
+                          ? `${transaction.revente.vente.prime_vente || 0} cts/bu`
+                          : `${transaction.prix_vente_final.toFixed(2)} $/MT`
+                        }
+                      </div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Marge:</span>
                       <div className="font-medium">
-                        {(transaction.prix_vente_final - transaction.prix_achat_original)} cts/bu
+                        {transaction.revente.vente.type_deal === 'prime' 
+                          ? `${((transaction.revente.vente.prime_vente || 0) - (transaction.revente.vente.navire.prime_achat || 0))} cts/bu`
+                          : `${(transaction.prix_vente_final - transaction.prix_achat_original).toFixed(2)} $/MT`
+                        }
                       </div>
                     </div>
                     <div>
