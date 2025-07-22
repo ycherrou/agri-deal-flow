@@ -269,7 +269,7 @@ export default function PnL() {
                         <TableCell className="font-medium">{navire.navire_nom}</TableCell>
                         <TableCell>{getProductBadge(navire.produit)}</TableCell>
                         <TableCell className="text-right">
-                          {formatTablePrice(navire.prime_achat, navire.produit, navire.prix_achat_flat !== undefined)}
+                          {formatTablePrice(navire.prime_achat, navire.produit, true)}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatTablePrice(navire.prime_vente_moyenne, navire.produit, true)}
