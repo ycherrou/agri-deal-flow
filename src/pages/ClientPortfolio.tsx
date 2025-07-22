@@ -572,14 +572,14 @@ export default function ClientPortfolio() {
                                 <div className="text-sm text-muted-foreground">
                                   {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
                                 </div>
-                                <div className="text-sm space-y-1">
-                                  {volumeCouvert > 0 && (
-                                    <div>Volume couvert: <span className="font-medium text-green-600">{volumeCouvert} tonnes</span></div>
-                                  )}
-                                  {volumeNonCouvert > 0 && (
-                                    <div>Volume non couvert: <span className="font-medium text-orange-600">{volumeNonCouvert} tonnes</span></div>
-                                  )}
-                                </div>
+                                 <div className="text-sm space-y-1">
+                                   {volumeCouvert > 0 && (
+                                     <div>Volume couvert: <span className="font-medium text-green-600">{volumeCouvert} tonnes</span></div>
+                                   )}
+                                   {volumeNonCouvert > 0 && (
+                                     <div>Volume non couvert: <span className="font-medium text-orange-600">{volumeNonCouvert} tonnes</span></div>
+                                   )}
+                                 </div>
                               </div>
                               <Button 
                                 variant="outline" 
