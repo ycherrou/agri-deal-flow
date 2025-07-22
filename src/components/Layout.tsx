@@ -293,23 +293,34 @@ export default function Layout({
     path: '/deals',
     roles: ['admin']
   }, {
-    id: 'clients',
-    label: 'Clients',
-    icon: Users,
-    path: '/clients',
-    roles: ['admin']
-  }, {
     id: 'settings',
     label: 'Paramètres',
     icon: Settings,
     path: '/settings',
-    roles: ['admin']
-  }, {
-    id: 'prix-marche',
-    label: 'Prix marché',
-    icon: TrendingUp,
-    path: '/prix-marche',
-    roles: ['admin']
+    roles: ['admin'],
+    submenu: [
+      {
+        id: 'whatsapp-notifications',
+        label: 'Notifications WhatsApp',
+        icon: MessageSquare,
+        path: '/whatsapp-notifications',
+        roles: ['admin']
+      },
+      {
+        id: 'clients',
+        label: 'Clients',
+        icon: Users,
+        path: '/clients',
+        roles: ['admin']
+      },
+      {
+        id: 'prix-marche',
+        label: 'Prix marché',
+        icon: TrendingUp,
+        path: '/prix-marche',
+        roles: ['admin']
+      }
+    ]
   }, {
     id: 'admin-reventes',
     label: 'Validation Reventes',
@@ -339,12 +350,6 @@ export default function Layout({
     label: 'Administration Futures',
     icon: Activity,
     path: '/futures-admin',
-    roles: ['admin']
-  }, {
-    id: 'whatsapp-notifications',
-    label: 'Notifications WhatsApp',
-    icon: MessageSquare,
-    path: '/whatsapp-notifications',
     roles: ['admin']
   }];
   if (loading) {
@@ -407,11 +412,18 @@ export default function Layout({
               {filteredNavItems.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const isSubmenuActive = item.submenu?.some(subItem => location.pathname === subItem.path);
               const showAdminBadge = item.id === 'admin-reventes' && client.role === 'admin' && pendingReventes > 0;
               const showMarketBadge = item.id === 'marche-secondaire' && availableReventes > 0;
               const showOffersBadge = item.id === 'transactions-secondaires' && client.role === 'client' && pendingOffers > 0;
               
-              return <Button key={item.id} variant={isActive ? 'default' : 'ghost'} className={`w-full justify-start ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => navigate(item.path)}>
+              return (
+                <div key={item.id}>
+                  <Button 
+                    variant={isActive || isSubmenuActive ? 'default' : 'ghost'} 
+                    className={`w-full justify-start ${isActive || isSubmenuActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`} 
+                    onClick={() => navigate(item.path)}
+                  >
                     <Icon className="h-4 w-4 mr-2" />
                     <span className="flex-1 text-left">{item.label}</span>
                     {showAdminBadge && (
@@ -429,7 +441,32 @@ export default function Layout({
                         {pendingOffers}
                       </Badge>
                     )}
-                  </Button>;
+                  </Button>
+                  
+                  {/* Submenu */}
+                  {item.submenu && (isActive || isSubmenuActive) && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.submenu.filter(subItem => subItem.roles.includes(client.role)).map(subItem => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = location.pathname === subItem.path;
+                        
+                        return (
+                          <Button
+                            key={subItem.id}
+                            variant={isSubActive ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className={`w-full justify-start ${isSubActive ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                            onClick={() => navigate(subItem.path)}
+                          >
+                            <SubIcon className="h-3 w-3 mr-2" />
+                            <span className="text-sm">{subItem.label}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
             })}
             </div>
           </nav>
