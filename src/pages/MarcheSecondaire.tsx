@@ -422,8 +422,8 @@ export default function MarcheSecondaire() {
                     )}
                   </div>
 
-                  {/* Masquer l'option d'offre pour les admins sur leurs propres positions ou les propriétaires normaux */}
-                  {currentClient && !(currentClient.role === 'client' && revente.ventes?.client_id === currentClient.id) && (
+                  {/* Masquer l'option d'offre seulement si c'est la propre position du client */}
+                  {currentClient && revente.ventes?.client_id !== currentClient.id && (
                     <div className="space-y-4">
                       <h4 className="font-medium">Faire une offre</h4>
                        <div className="space-y-3">
