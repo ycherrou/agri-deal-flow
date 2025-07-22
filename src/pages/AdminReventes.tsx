@@ -124,10 +124,57 @@ export default function AdminReventes() {
 
       if (error) throw error;
 
+      // Si approuvé, envoyer les notifications WhatsApp
+      if (action === 'approve') {
+        try {
+          // Récupérer les détails de la revente pour les notifications
+          const revente = reventes.find(r => r.id === reventeId);
+          if (revente) {
+            // Récupérer tous les clients (sauf le vendeur) pour les notifier
+            const { data: allClients, error: clientsError } = await supabase
+              .from('clients')
+              .select('id, nom, telephone')
+              .neq('id', revente.ventes.clients?.id || ''); // Exclure le vendeur
+
+            if (clientsError) {
+              console.error('Erreur lors de la récupération des clients:', clientsError);
+            } else if (allClients) {
+              // Envoyer une notification à chaque client
+              const notificationPromises = allClients
+                .filter(client => client.telephone) // Seulement ceux avec téléphone
+                .map(client => 
+                  supabase.functions.invoke('send-whatsapp-notification', {
+                    body: {
+                      client_id: client.id,
+                      template_name: 'nouvelle_offre_marche',
+                      variables: {
+                        volume: revente.volume.toString(),
+                        produit: revente.ventes.navires.produit.replace('_', ' '),
+                        prix: revente.type_position === 'non_couverte' 
+                          ? `${revente.prime_demandee} cts/bu`
+                          : `${revente.prix_flat_demande} USD/MT`,
+                        navire: revente.ventes.navires.nom,
+                        type_position: revente.type_position === 'couverte' ? 'couverte' : 'non couverte'
+                      }
+                    }
+                  })
+                );
+
+              // Attendre que toutes les notifications soient envoyées
+              await Promise.allSettled(notificationPromises);
+              console.log(`Notifications envoyées à ${notificationPromises.length} clients`);
+            }
+          }
+        } catch (notifError) {
+          console.error('Erreur lors de l\'envoi des notifications:', notifError);
+          // Ne pas faire échouer toute la validation à cause des notifications
+        }
+      }
+
       toast({
         title: "Succès",
         description: action === 'approve' 
-          ? "Demande de revente approuvée et mise sur le marché" 
+          ? "Demande de revente approuvée et mise sur le marché. Notifications envoyées aux clients." 
           : "Demande de revente rejetée",
       });
 
