@@ -151,8 +151,12 @@ export default function ClientPortfolio() {
         const volumeCouvertTotal = positions.reduce((sum, p) => sum + (p.volume_achete - p.volume_non_couvert), 0);
         const volumeNonCouvertTotal = volumeTotal - volumeCouvertTotal;
         
-        // Prime moyenne pondérée
-        const primeMoyenne = positions.reduce((sum, p) => sum + (p.prime_payee * p.volume_achete), 0) / volumeTotal;
+        // Prime moyenne pondérée (seulement pour les deals à prime)
+        const dealsAPrime = positions.filter(p => p.type_deal === 'prime');
+        const volumeTotalPrime = dealsAPrime.reduce((sum, p) => sum + p.volume_achete, 0);
+        const primeMoyenne = volumeTotalPrime > 0 
+          ? dealsAPrime.reduce((sum, p) => sum + (p.prime_payee * p.volume_achete), 0) / volumeTotalPrime
+          : 0;
 
         return {
           navire_id: navire.id,
