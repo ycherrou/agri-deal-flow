@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart } from 'lucide-react';
+import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart, ShieldAlert, AlertTriangle } from 'lucide-react';
 import ReventeCreationDialog from '@/components/ReventeCreationDialog';
 
 interface NavirePortfolioData {
@@ -582,6 +582,25 @@ export default function ClientPortfolio() {
                                   {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
                                 </div>
                                  <div className="text-sm space-y-1">
+                                   <div className="flex items-center gap-2">
+                                     <span>Statut:</span>
+                                     {volumeCouvert === pos.volume_achete ? (
+                                       <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
+                                         <Shield className="h-3 w-3 mr-1" />
+                                         Couverte
+                                       </Badge>
+                                     ) : volumeCouvert > 0 ? (
+                                       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                         <ShieldAlert className="h-3 w-3 mr-1" />
+                                         Partiellement couverte
+                                       </Badge>
+                                     ) : (
+                                       <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
+                                         <AlertTriangle className="h-3 w-3 mr-1" />
+                                         Non couverte
+                                       </Badge>
+                                     )}
+                                   </div>
                                    {volumeCouvert > 0 && (
                                      <div>Volume couvert: <span className="font-medium text-green-600">{volumeCouvert} tonnes</span></div>
                                    )}
