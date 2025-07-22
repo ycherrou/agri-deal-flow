@@ -193,6 +193,11 @@ export default function ClientPortfolio() {
   };
 
   const getVolumeCouvert = (position: any) => {
+    // Les ventes flat sont considérées comme 100% couvertes
+    if (position.type_deal === 'flat') {
+      return position.volume_achete;
+    }
+    // Pour les ventes prime, on compte les couvertures réelles
     return position.couvertures.reduce((total: number, couv: any) => total + couv.volume_couvert, 0);
   };
 
