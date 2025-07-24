@@ -13,9 +13,11 @@ export const getPriceUnit = (product: ProductType, priceType: PriceType): string
     return 'USD/MT';
   }
   
-  // Primes et futures : Cts/Bu pour maïs et tourteau, USD/MT pour blé et orge
+  // Primes et futures : Cts/Bu pour maïs, USD/Short Ton pour tourteau, USD/MT pour blé et orge
   if (priceType === 'prime' || priceType === 'futures') {
-    return (product === 'mais' || product === 'tourteau_soja') ? 'Cts/Bu' : 'USD/MT';
+    if (product === 'mais') return 'Cts/Bu';
+    if (product === 'tourteau_soja') return 'USD/Short Ton';
+    return 'USD/MT'; // blé et orge
   }
   
   return 'USD/MT';
