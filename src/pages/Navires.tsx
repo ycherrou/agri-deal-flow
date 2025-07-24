@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Ship, Edit, Trash2, Calendar, Package, User, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CouverturesAchat from '@/components/CouverturesAchat';
+import { getPriceUnit, getPriceLabel } from '@/lib/priceUtils';
 
 interface Navire {
   id: string;
@@ -372,12 +373,12 @@ export default function Navires() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="prime_achat">Prime d'achat (cts/bu)</Label>
+                  <Label htmlFor="prime_achat">Prime d'achat ({getPriceUnit(formData.produit, 'prime')})</Label>
                   <Input
                     id="prime_achat"
                     type="number"
                     step="0.01"
-                    placeholder="Prime d'achat en cts/bu"
+                    placeholder={`Prime d'achat en ${getPriceUnit(formData.produit, 'prime')}`}
                     value={formData.prime_achat}
                     onChange={(e) => setFormData({ ...formData, prime_achat: e.target.value })}
                   />
@@ -406,13 +407,13 @@ export default function Navires() {
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un contrat CBOT" />
                     </SelectTrigger>
-                    <SelectContent>
-                       {prixMarche.map((prix) => (
-                         <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
-                           {prix.echeance?.nom} - {prix.prix} cts/bu
-                         </SelectItem>
-                       ))}
-                    </SelectContent>
+                     <SelectContent>
+                        {prixMarche.map((prix) => (
+                          <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
+                            {prix.echeance?.nom} - {prix.prix} {getPriceUnit(formData.produit, 'futures')}
+                          </SelectItem>
+                        ))}
+                     </SelectContent>
                   </Select>
                   {formData.prime_achat && !formData.reference_cbot && (
                     <p className="text-sm text-destructive">
@@ -506,9 +507,9 @@ export default function Navires() {
                     <TableCell>{navire.quantite_totale} MT</TableCell>
                     <TableCell>
                       {navire.prime_achat 
-                        ? `${navire.prime_achat} cts/bu (Prime)` 
+                        ? `${navire.prime_achat} ${getPriceUnit(navire.produit, 'prime')} (Prime)` 
                         : navire.prix_achat_flat 
-                        ? `${navire.prix_achat_flat} $/tonne (Flat)`
+                        ? `${navire.prix_achat_flat} ${getPriceUnit(navire.produit, 'flat')} (Flat)`
                         : 'N/A'
                       }
                     </TableCell>

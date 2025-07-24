@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CouverturesAchat from '@/components/CouverturesAchat';
-import { getLatestPricesForMaturities } from '@/lib/priceUtils';
+import { getLatestPricesForMaturities, formatPriceDisplay } from '@/lib/priceUtils';
 import { 
   getContractSize, 
   supportsContracts, 
