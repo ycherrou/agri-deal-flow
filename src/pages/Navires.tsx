@@ -371,7 +371,7 @@ export default function Navires() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {(formData.produit === 'mais' || formData.produit === 'tourteau_soja') ? (
                 <div className="space-y-2">
                   <Label htmlFor="prime_achat">Prime d'achat ({getPriceUnit(formData.produit, 'prime')})</Label>
                   <Input
@@ -383,19 +383,19 @@ export default function Navires() {
                     onChange={(e) => setFormData({ ...formData, prime_achat: e.target.value })}
                   />
                 </div>
-
+              ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="prix_achat_flat">Prix d'achat flat ($/tonne)</Label>
+                  <Label htmlFor="prix_achat_flat">Prix d'achat flat ({getPriceUnit(formData.produit, 'flat')})</Label>
                   <Input
                     id="prix_achat_flat"
                     type="number"
                     step="0.01"
-                    placeholder="Prix d'achat flat en $/tonne"
+                    placeholder={`Prix d'achat flat en ${getPriceUnit(formData.produit, 'flat')}`}
                     value={formData.prix_achat_flat}
                     onChange={(e) => setFormData({ ...formData, prix_achat_flat: e.target.value })}
                   />
                 </div>
-              </div>
+              )}
 
               {formData.prime_achat && (
                 <div className="space-y-2">
