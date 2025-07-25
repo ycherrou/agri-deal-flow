@@ -8,6 +8,8 @@ interface NavireWithPnLData {
   quantite_totale: number;
   prime_achat: number | null;
   prix_achat_flat: number | null;
+  terme_commercial: 'FOB' | 'CFR';
+  taux_fret: number | null;
   parent_navire_id: string | null;
   reference_cbot: string | null;
   couvertures_achat: Array<{
@@ -34,7 +36,15 @@ interface NavireWithPnLData {
  * Calcule le P&L sur les primes pour un navire
  */
 export const calculatePrimePnL = (navire: NavireWithPnLData): number => {
-  const primeAchat = navire.prime_achat || 0;
+  let primeAchat = navire.prime_achat || 0;
+  
+  // Ajouter le fret aux primes pour les navires FOB (conversion fret $/MT -> cts/bu)
+  if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+    const facteurConversion = getConversionFactor(navire.produit);
+    if (facteurConversion > 0) {
+      primeAchat += navire.taux_fret / facteurConversion;
+    }
+  }
   
   // Calculer la prime de vente moyenne pondérée par volume
   const ventesAvecPrime = navire.ventes.filter(v => v.type_deal === 'prime');
@@ -57,7 +67,12 @@ export const calculatePrimePnL = (navire: NavireWithPnLData): number => {
  * Calcule le P&L sur les prix flat pour un navire
  */
 export const calculateFlatPnL = (navire: NavireWithPnLData): number => {
-  const prixAchatFlat = navire.prix_achat_flat || 0;
+  let prixAchatFlat = navire.prix_achat_flat || 0;
+  
+  // Ajouter le fret directement pour les navires FOB (déjà en $/MT)
+  if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+    prixAchatFlat += navire.taux_fret;
+  }
   
   // Calculer le prix de vente flat moyen pondéré par volume
   const ventesFlat = navire.ventes.filter(v => v.type_deal === 'flat');
@@ -125,9 +140,23 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const prixFuturesVenteMoyen = volumeVenteTotal > 0 ?
     couverturesVente.reduce((sum, c) => sum + c.prix_futures * c.volume_couvert, 0) / volumeVenteTotal : 0;
   
-  // Calculs pour prix d'achat combiné (prime ou flat selon le navire)
-  const prixAchat = navire.prime_achat || navire.prix_achat_flat || 0;
+  // Calculs pour prix d'achat combiné avec fret inclus
+  let prixAchatAvecFret = navire.prime_achat || navire.prix_achat_flat || 0;
   const isNavireFlat = navire.prix_achat_flat !== null && navire.prime_achat === null;
+  
+  // Ajouter le fret selon le type de prix et le terme commercial
+  if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+    if (isNavireFlat) {
+      // Pour les prix flat : addition directe du fret
+      prixAchatAvecFret += navire.taux_fret;
+    } else {
+      // Pour les primes : convertir le fret de $/MT vers cts/bu
+      const facteurConversion = getConversionFactor(navire.produit);
+      if (facteurConversion > 0) {
+        prixAchatAvecFret += navire.taux_fret / facteurConversion;
+      }
+    }
+  }
   
   // Calculs pour ventes à prime
   const ventesAvecPrime = navire.ventes.filter(v => v.type_deal === 'prime');
@@ -157,9 +186,9 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   
   // Prix d'achat pour affichage : convertir prime si nécessaire, garder flat tel quel
   if (isNavireFlat) {
-    prixAchatAffichage = prixAchat; // Déjà en $/tonne
+    prixAchatAffichage = prixAchatAvecFret; // Déjà en $/tonne avec fret inclus
   } else {
-    prixAchatAffichage = prixAchat * facteurConversion; // Convertir prime en $/tonne
+    prixAchatAffichage = prixAchatAvecFret * facteurConversion; // Convertir prime en $/tonne avec fret inclus
   }
   
   return {
@@ -231,6 +260,8 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
       quantite_totale,
       prime_achat,
       prix_achat_flat,
+      terme_commercial,
+      taux_fret,
       parent_navire_id,
       reference_cbot,
       couvertures_achat (
@@ -369,6 +400,8 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
         quantite_totale,
         prime_achat,
         prix_achat_flat,
+        terme_commercial,
+        taux_fret,
         couvertures_achat (
           volume_couvert,
           prix_futures,
@@ -456,7 +489,16 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
 
         // Calculer P&L sur primes pour cette vente
         if (vente.type_deal === 'prime') {
-          const primeAchat = navire.prime_achat || 0;
+          let primeAchat = navire.prime_achat || 0;
+          
+          // Ajouter le fret aux primes pour les navires FOB
+          if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+            const facteurConversion = getConversionFactor(navire.produit);
+            if (facteurConversion > 0) {
+              primeAchat += navire.taux_fret / facteurConversion;
+            }
+          }
+          
           const primeVente = vente.prime_vente || 0;
           const facteurConversion = getConversionFactor(navire.produit);
           const pnlPrime = (primeVente - primeAchat) * facteurConversion * vente.volume;
@@ -465,7 +507,13 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
 
         // Calculer P&L flat pour cette vente
         if (vente.type_deal === 'flat') {
-          const prixAchatFlat = navire.prix_achat_flat || 0;
+          let prixAchatFlat = navire.prix_achat_flat || 0;
+          
+          // Ajouter le fret directement pour les navires FOB
+          if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+            prixAchatFlat += navire.taux_fret;
+          }
+          
           const prixVenteFlat = vente.prix_flat || 0;
           const pnlFlat = (prixVenteFlat - prixAchatFlat) * vente.volume;
           clientData.pnl_flat += pnlFlat;
