@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RefreshCw, TrendingUp, Play, Pause } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp, Play, Pause, Clock } from 'lucide-react';
 
 interface CBOTUpdateResult {
   success: boolean;
@@ -32,13 +32,18 @@ export const CBOTPriceUpdater = () => {
   const [lastUpdate, setLastUpdate] = useState<CBOTUpdateResult | null>(null);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
   const [updateInterval, setUpdateInterval] = useState<number>(30); // minutes
+  const [timeRemaining, setTimeRemaining] = useState<number>(0); // seconds
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
   }, []);
@@ -79,14 +84,42 @@ export const CBOTPriceUpdater = () => {
     }
   };
 
+  const startTimer = () => {
+    setTimeRemaining(updateInterval * 60); // Convert minutes to seconds
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          return updateInterval * 60; // Reset timer
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimeRemaining(0);
+  };
+
   const startAutoUpdate = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
     
     setIsAutoUpdating(true);
+    startTimer(); // Start the countdown timer
+    
     intervalRef.current = setInterval(() => {
       handleUpdatePrices();
+      startTimer(); // Restart timer after each update
     }, updateInterval * 60 * 1000); // Convert minutes to milliseconds
     
     toast({
@@ -101,11 +134,18 @@ export const CBOTPriceUpdater = () => {
       intervalRef.current = null;
     }
     setIsAutoUpdating(false);
+    stopTimer(); // Stop the countdown timer
     
     toast({
       title: "Mise à jour automatique désactivée",
       description: "Les prix ne seront plus mis à jour automatiquement",
     });
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -170,8 +210,14 @@ export const CBOTPriceUpdater = () => {
           </div>
           
           {isAutoUpdating && (
-            <div className="text-sm text-muted-foreground">
-              ✅ Mise à jour automatique active - Intervalle: {updateInterval} minutes
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                ✅ Mise à jour automatique active - Intervalle: {updateInterval} minutes
+              </div>
+              <div className="flex items-center gap-2 text-sm font-mono bg-muted p-2 rounded">
+                <Clock className="h-4 w-4" />
+                Prochaine mise à jour dans: {formatTime(timeRemaining)}
+              </div>
             </div>
           )}
         </div>
