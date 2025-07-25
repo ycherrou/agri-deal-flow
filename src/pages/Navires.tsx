@@ -28,13 +28,10 @@ interface Navire {
   nombreClients?: number;
 }
 
-interface PrixMarche {
-  echeance_id: string;
-  prix: number;
-  echeance?: {
-    nom: string;
-    active: boolean;
-  };
+interface Echeance {
+  id: string;
+  nom: string;
+  active: boolean;
 }
 
 const PRODUCTS = [
@@ -46,7 +43,7 @@ const PRODUCTS = [
 
 export default function Navires() {
   const [navires, setNavires] = useState<Navire[]>([]);
-  const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
+  const [echeances, setEcheances] = useState<Echeance[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNavire, setEditingNavire] = useState<Navire | null>(null);
@@ -78,7 +75,7 @@ export default function Navires() {
 
   useEffect(() => {
     fetchNavires();
-    fetchPrixMarche();
+    fetchEcheances();
   }, []);
 
   const fetchNavires = async () => {
@@ -124,17 +121,18 @@ export default function Navires() {
     }
   };
 
-  const fetchPrixMarche = async () => {
+  const fetchEcheances = async () => {
     try {
       const { data, error } = await supabase
-        .from('prix_marche')
-        .select('echeance_id, prix, echeance:echeances!inner(nom, active)')
-        .eq('echeance.active', true);
+        .from('echeances')
+        .select('id, nom, active')
+        .eq('active', true)
+        .order('nom');
 
       if (error) throw error;
-      setPrixMarche(data || []);
+      setEcheances(data || []);
     } catch (error) {
-      console.error('Error fetching prix marché:', error);
+      console.error('Error fetching echeances:', error);
     }
   };
 
@@ -408,9 +406,9 @@ export default function Navires() {
                       <SelectValue placeholder="Sélectionner un contrat CBOT" />
                     </SelectTrigger>
                      <SelectContent>
-                        {prixMarche.map((prix) => (
-                          <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
-                            {prix.echeance?.nom}
+                        {echeances.map((echeance) => (
+                          <SelectItem key={echeance.id} value={echeance.nom}>
+                            {echeance.nom}
                           </SelectItem>
                         ))}
                      </SelectContent>
