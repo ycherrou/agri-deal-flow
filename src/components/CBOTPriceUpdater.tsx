@@ -38,6 +38,49 @@ export const CBOTPriceUpdater = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Restaurer l'état depuis localStorage au montage
+    const savedAutoUpdate = localStorage.getItem('cbot-auto-update');
+    const savedInterval = localStorage.getItem('cbot-update-interval');
+    const savedLastUpdate = localStorage.getItem('cbot-last-update-time');
+    
+    if (savedAutoUpdate === 'true' && savedInterval) {
+      const interval = parseInt(savedInterval);
+      setUpdateInterval(interval);
+      setIsAutoUpdating(true);
+      
+      // Calculer le temps écoulé depuis la dernière mise à jour
+      if (savedLastUpdate) {
+        const lastUpdateTime = parseInt(savedLastUpdate);
+        const now = Date.now();
+        const elapsed = Math.floor((now - lastUpdateTime) / 1000); // en secondes
+        const intervalInSeconds = interval * 60;
+        
+        if (elapsed >= intervalInSeconds) {
+          // Il est temps de faire une mise à jour
+          handleUpdatePrices();
+          startTimer();
+        } else {
+          // Démarrer le timer avec le temps restant
+          const remaining = intervalInSeconds - elapsed;
+          setTimeRemaining(remaining);
+          startTimerWithRemaining(remaining);
+        }
+        
+        // Démarrer l'intervalle normal
+        intervalRef.current = setInterval(() => {
+          handleUpdatePrices();
+          startTimer();
+        }, interval * 60 * 1000);
+      } else {
+        // Pas de dernière mise à jour enregistrée, démarrer normalement
+        startTimer();
+        intervalRef.current = setInterval(() => {
+          handleUpdatePrices();
+          startTimer();
+        }, interval * 60 * 1000);
+      }
+    }
+    
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -50,6 +93,10 @@ export const CBOTPriceUpdater = () => {
 
   const handleUpdatePrices = async () => {
     setIsUpdating(true);
+    
+    // Enregistrer le timestamp de la mise à jour
+    localStorage.setItem('cbot-last-update-time', Date.now().toString());
+    
     try {
       const { data, error } = await supabase.functions.invoke('fetch-cbot-prices');
       
@@ -101,6 +148,23 @@ export const CBOTPriceUpdater = () => {
     }, 1000);
   };
 
+  const startTimerWithRemaining = (remaining: number) => {
+    setTimeRemaining(remaining);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          return updateInterval * 60; // Reset timer
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const stopTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -116,6 +180,11 @@ export const CBOTPriceUpdater = () => {
     
     setIsAutoUpdating(true);
     startTimer(); // Start the countdown timer
+    
+    // Sauvegarder l'état dans localStorage
+    localStorage.setItem('cbot-auto-update', 'true');
+    localStorage.setItem('cbot-update-interval', updateInterval.toString());
+    localStorage.setItem('cbot-last-update-time', Date.now().toString());
     
     intervalRef.current = setInterval(() => {
       handleUpdatePrices();
@@ -135,6 +204,11 @@ export const CBOTPriceUpdater = () => {
     }
     setIsAutoUpdating(false);
     stopTimer(); // Stop the countdown timer
+    
+    // Supprimer l'état de localStorage
+    localStorage.removeItem('cbot-auto-update');
+    localStorage.removeItem('cbot-update-interval');
+    localStorage.removeItem('cbot-last-update-time');
     
     toast({
       title: "Mise à jour automatique désactivée",
