@@ -34,6 +34,8 @@ interface NavireWithVentes {
   quantite_totale: number;
   prime_achat: number | null;
   prix_achat_flat: number | null;
+  terme_commercial: 'FOB' | 'CFR';
+  taux_fret: number | null;
   reference_cbot: string | null;
   date_arrivee: string;
   fournisseur: string;
@@ -175,6 +177,8 @@ export default function Dashboard() {
               quantite_totale,
               prime_achat,
               prix_achat_flat,
+              terme_commercial,
+              taux_fret,
               reference_cbot,
               date_arrivee,
               fournisseur,
@@ -232,6 +236,8 @@ export default function Dashboard() {
             quantite_totale,
             prime_achat,
             prix_achat_flat,
+            terme_commercial,
+            taux_fret,
             reference_cbot,
             date_arrivee,
             fournisseur,
@@ -364,9 +370,9 @@ export default function Dashboard() {
         pru = prixMoyenPondere + (vente.prime_vente || 0);
       }
       
-      // Appliquer le facteur de conversion seulement pour les ventes prime (prix futures en cts/bu -> $/tonne)
+      // Appliquer le facteur de conversion pour les ventes prime (prix futures en cts/bu -> $/tonne)
       const facteurConversion = navire.produit === 'mais' ? 0.3937 : 
-                               navire.produit === 'tourteau_soja' ? 0.4640 : 1;
+                               navire.produit === 'tourteau_soja' ? 0.9072 : 1;
       pru = pru * facteurConversion;
     }
     
