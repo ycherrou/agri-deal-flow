@@ -23,6 +23,8 @@ interface Navire {
   reference_cbot?: string | null;
   date_arrivee: string;
   fournisseur: string;
+  terme_commercial: 'FOB' | 'CFR';
+  taux_fret?: number | null;
   created_at: string;
   volumeVendu?: number;
   nombreClients?: number;
@@ -59,6 +61,8 @@ export default function Navires() {
     reference_cbot: '',
     date_arrivee: '',
     fournisseur: '',
+    terme_commercial: 'CFR' as 'FOB' | 'CFR',
+    taux_fret: '',
     facteur_conversion: ''
   });
 
@@ -104,6 +108,7 @@ export default function Navires() {
 
       const naviresWithStats = data.map(navire => ({
         ...navire,
+        terme_commercial: navire.terme_commercial as 'FOB' | 'CFR',
         volumeVendu: navire.ventes.reduce((sum: number, vente: any) => sum + vente.volume, 0),
         nombreClients: new Set(navire.ventes.map((vente: any) => vente.client_id)).size
       }));
@@ -162,6 +167,17 @@ export default function Navires() {
       return;
     }
 
+    // Validation : pour FOB, le taux de fret est obligatoire
+    if (formData.terme_commercial === 'FOB' && !formData.taux_fret) {
+      toast({
+        title: 'Erreur de validation',
+        description: 'Le taux de fret est obligatoire pour les navires FOB.',
+        variant: 'destructive'
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const navireData = {
         nom: formData.nom,
@@ -171,7 +187,9 @@ export default function Navires() {
         prix_achat_flat: formData.prix_achat_flat ? parseFloat(formData.prix_achat_flat) : null,
         reference_cbot: formData.reference_cbot || null,
         date_arrivee: formData.date_arrivee,
-        fournisseur: formData.fournisseur
+        fournisseur: formData.fournisseur,
+        terme_commercial: formData.terme_commercial,
+        taux_fret: formData.taux_fret ? parseFloat(formData.taux_fret) : null
       };
 
       let result;
@@ -228,6 +246,8 @@ export default function Navires() {
       reference_cbot: navire.reference_cbot || '',
       date_arrivee: navire.date_arrivee,
       fournisseur: navire.fournisseur,
+      terme_commercial: navire.terme_commercial,
+      taux_fret: navire.taux_fret?.toString() || '',
       facteur_conversion: facteur
     });
     setIsDialogOpen(true);
@@ -278,6 +298,8 @@ export default function Navires() {
       reference_cbot: '',
       date_arrivee: '',
       fournisseur: '',
+      terme_commercial: 'CFR' as 'FOB' | 'CFR',
+      taux_fret: '',
       facteur_conversion: ''
     });
     setEditingNavire(null);
@@ -443,6 +465,44 @@ export default function Navires() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="terme_commercial">Terme commercial</Label>
+                <Select
+                  value={formData.terme_commercial}
+                  onValueChange={(value: 'FOB' | 'CFR') =>
+                    setFormData({ ...formData, terme_commercial: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un terme commercial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CFR">CFR (Fret inclus)</SelectItem>
+                    <SelectItem value="FOB">FOB (Fret à ajouter)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.terme_commercial === 'FOB' && (
+                <div className="space-y-2">
+                  <Label htmlFor="taux_fret">Taux de fret ($/MT) *</Label>
+                  <Input
+                    id="taux_fret"
+                    type="number"
+                    step="0.01"
+                    placeholder="Taux de fret en $/MT"
+                    value={formData.taux_fret}
+                    onChange={(e) => setFormData({ ...formData, taux_fret: e.target.value })}
+                    required
+                  />
+                  {formData.terme_commercial === 'FOB' && !formData.taux_fret && (
+                    <p className="text-sm text-destructive">
+                      Le taux de fret est obligatoire pour les navires FOB
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
                 <Label htmlFor="facteur_conversion">Facteur de conversion</Label>
                 <Input
                   id="facteur_conversion"
@@ -486,6 +546,7 @@ export default function Navires() {
                   <TableHead>Produit</TableHead>
                   <TableHead>Quantité</TableHead>
                   <TableHead>Prix d'achat</TableHead>
+                  <TableHead>Terme commercial</TableHead>
                   <TableHead>Référence CBOT</TableHead>
                   <TableHead>Date Arrivée</TableHead>
                   <TableHead>Fournisseur</TableHead>
@@ -510,6 +571,12 @@ export default function Navires() {
                         ? `${navire.prix_achat_flat} ${getPriceUnit(navire.produit, 'flat')} (Flat)`
                         : 'N/A'
                       }
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={navire.terme_commercial === 'FOB' ? 'destructive' : 'secondary'}>
+                        {navire.terme_commercial}
+                        {navire.terme_commercial === 'FOB' && navire.taux_fret && ` (+${navire.taux_fret}$/MT)`}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {navire.reference_cbot || '-'}

@@ -19,6 +19,8 @@ export interface Navire {
   reference_cbot?: string;
   date_arrivee: string;
   fournisseur: string;
+  terme_commercial: 'FOB' | 'CFR';
+  taux_fret?: number;
   created_at: string;
   updated_at: string;
 }
