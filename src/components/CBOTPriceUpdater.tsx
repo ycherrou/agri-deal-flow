@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from './ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RefreshCw, TrendingUp } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp, Play, Pause } from 'lucide-react';
 
 interface CBOTUpdateResult {
   success: boolean;
@@ -29,7 +30,18 @@ interface CBOTUpdateResult {
 export const CBOTPriceUpdater = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<CBOTUpdateResult | null>(null);
+  const [isAutoUpdating, setIsAutoUpdating] = useState(false);
+  const [updateInterval, setUpdateInterval] = useState<number>(30); // minutes
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const handleUpdatePrices = async () => {
     setIsUpdating(true);
@@ -67,6 +79,35 @@ export const CBOTPriceUpdater = () => {
     }
   };
 
+  const startAutoUpdate = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    setIsAutoUpdating(true);
+    intervalRef.current = setInterval(() => {
+      handleUpdatePrices();
+    }, updateInterval * 60 * 1000); // Convert minutes to milliseconds
+    
+    toast({
+      title: "Mise à jour automatique activée",
+      description: `Les prix seront mis à jour toutes les ${updateInterval} minutes`,
+    });
+  };
+
+  const stopAutoUpdate = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsAutoUpdating(false);
+    
+    toast({
+      title: "Mise à jour automatique désactivée",
+      description: "Les prix ne seront plus mis à jour automatiquement",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -96,6 +137,44 @@ export const CBOTPriceUpdater = () => {
             </>
           )}
         </Button>
+
+        <div className="space-y-3 border-t pt-4">
+          <div className="font-semibold text-sm">Mise à jour automatique</div>
+          
+          <div className="flex items-center gap-3">
+            <Select value={updateInterval.toString()} onValueChange={(value) => setUpdateInterval(Number(value))}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 heure</SelectItem>
+                <SelectItem value="120">2 heures</SelectItem>
+                <SelectItem value="360">6 heures</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {!isAutoUpdating ? (
+              <Button onClick={startAutoUpdate} variant="outline" size="sm">
+                <Play className="mr-2 h-4 w-4" />
+                Démarrer
+              </Button>
+            ) : (
+              <Button onClick={stopAutoUpdate} variant="outline" size="sm">
+                <Pause className="mr-2 h-4 w-4" />
+                Arrêter
+              </Button>
+            )}
+          </div>
+          
+          {isAutoUpdating && (
+            <div className="text-sm text-muted-foreground">
+              ✅ Mise à jour automatique active - Intervalle: {updateInterval} minutes
+            </div>
+          )}
+        </div>
 
         {lastUpdate && (
           <div className="space-y-3">
