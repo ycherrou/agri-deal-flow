@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, PieChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, PieChart, Calculator } from 'lucide-react';
 import { calculatePortfolioPnL, formatPnL, getPnLColor, calculatePnLByClient, NavirePnLByClient } from '@/lib/pnlUtils';
 import { formatPriceDisplay, ProductType, PriceType } from '@/lib/priceUtils';
 import { volumeToContracts, supportsContracts } from '@/lib/futuresUtils';
@@ -168,7 +168,7 @@ export default function PnL() {
       </div>
 
       {/* Résumé P&L */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">P&L Total</CardTitle>
@@ -186,7 +186,7 @@ export default function PnL() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">P&L Primes</CardTitle>
+            <CardTitle className="text-sm font-medium">P&L Prime</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -194,7 +194,22 @@ export default function PnL() {
               {formatPnL(portfolioPnL.pnl_prime_total)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Différentiel d'achat/vente
+              Différentiel prime
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">P&L Flat</CardTitle>
+            <Calculator className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getPnLColor(portfolioPnL.pnl_flat_total)}`}>
+              {formatPnL(portfolioPnL.pnl_flat_total)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Différentiel flat
             </p>
           </CardContent>
         </Card>
@@ -255,7 +270,8 @@ export default function PnL() {
                       <TableHead>Produit</TableHead>
                       <TableHead className="text-right">Achat CFR</TableHead>
                       <TableHead className="text-right">Vente Moy.</TableHead>
-                      <TableHead className="text-right">P&L Physique</TableHead>
+                      <TableHead className="text-right">P&L Prime</TableHead>
+                      <TableHead className="text-right">P&L Flat</TableHead>
                       <TableHead className="text-right">Futures Achat Moy.</TableHead>
                       <TableHead className="text-right">Futures Vente Moy.</TableHead>
                       <TableHead className="text-right">P&L Futures</TableHead>
@@ -274,8 +290,11 @@ export default function PnL() {
                         <TableCell className="text-right">
                           {formatTablePrice(navire.prime_vente_moyenne, navire.produit, true)}
                         </TableCell>
-                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime + navire.pnl_flat)}`}>
-                          {formatPnL(navire.pnl_prime + navire.pnl_flat)}
+                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_prime)}`}>
+                          {formatPnL(navire.pnl_prime)}
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${getPnLColor(navire.pnl_flat)}`}>
+                          {formatPnL(navire.pnl_flat)}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatTablePrice(navire.prix_futures_achat_moyen, navire.produit)}
@@ -309,13 +328,24 @@ export default function PnL() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">P&L Primes</span>
+                    <span className="text-sm font-medium">P&L Prime</span>
                     <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_prime_total)}`}>
                       {formatPnL(portfolioPnL.pnl_prime_total)}
                     </span>
                   </div>
                   <Progress 
                     value={Math.abs(portfolioPnL.pnl_prime_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
+                    className="h-2" 
+                  />
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">P&L Flat</span>
+                    <span className={`text-sm font-bold ${getPnLColor(portfolioPnL.pnl_flat_total)}`}>
+                      {formatPnL(portfolioPnL.pnl_flat_total)}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={Math.abs(portfolioPnL.pnl_flat_total) / Math.abs(portfolioPnL.pnl_total) * 100} 
                     className="h-2" 
                   />
                   

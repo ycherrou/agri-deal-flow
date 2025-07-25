@@ -315,6 +315,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
     const portfolioPnL: PortfolioPnL = {
       pnl_total: pnlNavires.reduce((sum, n) => sum + n.pnl_total, 0),
       pnl_prime_total: pnlNavires.reduce((sum, n) => sum + n.pnl_prime, 0),
+      pnl_flat_total: pnlNavires.reduce((sum, n) => sum + n.pnl_flat, 0),
       pnl_futures_total: pnlNavires.reduce((sum, n) => sum + n.pnl_futures, 0),
       nombre_navires: pnlNavires.length,
       volume_total: pnlNavires.reduce((sum, n) => sum + n.volume_total_achete, 0),

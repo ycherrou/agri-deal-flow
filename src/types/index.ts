@@ -140,6 +140,7 @@ export interface PnLData {
 export interface PortfolioPnL {
   pnl_total: number;
   pnl_prime_total: number;
+  pnl_flat_total: number;
   pnl_futures_total: number;
   nombre_navires: number;
   volume_total: number;
