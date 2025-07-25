@@ -323,7 +323,7 @@ export const CBOTPriceUpdater = () => {
                 {lastUpdate.results.map((result, index) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span>{result.echeance}</span>
-                    <span className="font-mono">{result.price.toFixed(2)} cts/bu</span>
+                    <span className="font-mono">{result.price.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
