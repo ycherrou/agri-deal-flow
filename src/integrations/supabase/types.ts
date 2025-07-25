@@ -641,7 +641,13 @@ export type Database = {
     }
     Enums: {
       deal_type: "prime" | "flat"
-      product_type: "mais" | "tourteau_soja" | "ble" | "orge"
+      product_type:
+        | "mais"
+        | "tourteau_soja"
+        | "ble"
+        | "orge"
+        | "ddgs"
+        | "ferrailles"
       revente_status:
         | "en_attente"
         | "vendu"
@@ -777,7 +783,14 @@ export const Constants = {
   public: {
     Enums: {
       deal_type: ["prime", "flat"],
-      product_type: ["mais", "tourteau_soja", "ble", "orge"],
+      product_type: [
+        "mais",
+        "tourteau_soja",
+        "ble",
+        "orge",
+        "ddgs",
+        "ferrailles",
+      ],
       revente_status: [
         "en_attente",
         "vendu",
