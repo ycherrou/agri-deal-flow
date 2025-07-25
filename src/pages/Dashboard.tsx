@@ -667,6 +667,12 @@ export default function Dashboard() {
                       <CardTitle className="text-base flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
                         {navireActif.prix_achat_flat ? 'Prix d\'achat flat' : 'Prime d\'achat'}
+                        {navireActif.terme_commercial === 'FOB' && (
+                          <Badge variant="destructive" className="text-xs">FOB</Badge>
+                        )}
+                        {navireActif.terme_commercial === 'CFR' && (
+                          <Badge variant="secondary" className="text-xs">CFR</Badge>
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -676,6 +682,22 @@ export default function Dashboard() {
                           (navireActif.prime_achat ? navireActif.prime_achat : 'N/A')
                         }
                       </div>
+                      {navireActif.terme_commercial === 'FOB' && navireActif.taux_fret && (
+                        <>
+                          <div className="text-lg font-semibold text-orange-600 mt-2">
+                            + {navireActif.taux_fret} $/MT (fret)
+                          </div>
+                          <div className="text-lg font-bold text-gray-700 mt-1 pt-2 border-t">
+                            = {navireActif.prix_achat_flat 
+                              ? (navireActif.prix_achat_flat + navireActif.taux_fret).toFixed(2)
+                              : navireActif.prime_achat 
+                                ? `${navireActif.prime_achat} + ${(navireActif.taux_fret / (navireActif.produit === 'mais' ? 0.3937 : navireActif.produit === 'tourteau_soja' ? 0.9072 : 1)).toFixed(2)}`
+                                : 'N/A'
+                            } 
+                            {navireActif.prix_achat_flat ? ' $/MT' : ' cts/bu'} (total avec fret)
+                          </div>
+                        </>
+                      )}
                       <div className="text-sm text-muted-foreground">
                         {navireActif.reference_cbot && (
                           <div>Contrat: {navireActif.reference_cbot}</div>
