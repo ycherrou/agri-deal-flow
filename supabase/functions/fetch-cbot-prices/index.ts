@@ -10,6 +10,7 @@ const corsHeaders = {
 // Mapping des échéances vers les symboles Yahoo Finance
 const SYMBOL_MAPPING: Record<string, string> = {
   'ZCH25': 'ZCH25.CBT', // Corn March 2025
+  'ZCU25': 'ZCU25.CBT', // Corn September 2025
   'ZCZ25': 'ZCZ25.CBT', // Corn December 2025
   'ZMH25': 'ZMH25.CBT', // Soybean Meal March 2025
   'ZMZ25': 'ZMZ25.CBT', // Soybean Meal December 2025
