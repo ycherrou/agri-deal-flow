@@ -184,18 +184,21 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
     prixVenteMoyenGlobal = prixVentePondere;
   }
   
-  // Prix d'achat pour affichage : convertir prime si nécessaire, garder flat tel quel
+  // Prix d'achat pour affichage : toujours afficher la prime CFR (sans fret)
+  let prixAchatCFR = 0;
   if (isNavireFlat) {
-    prixAchatAffichage = prixAchatAvecFret; // Déjà en $/tonne avec fret inclus
+    // Pour les navires flat : afficher le prix flat original (CFR)
+    prixAchatCFR = navire.prix_achat_flat || 0;
   } else {
-    prixAchatAffichage = prixAchatAvecFret * facteurConversion; // Convertir prime en $/tonne avec fret inclus
+    // Pour les navires à prime : afficher la prime originale (CFR) convertie en $/tonne
+    prixAchatCFR = (navire.prime_achat || 0) * facteurConversion;
   }
   
   return {
     navire_id: navire.id,
     navire_nom: navire.nom,
     produit: navire.produit,
-    prime_achat: prixAchatAffichage,
+    prime_achat: prixAchatCFR,
     prix_achat_flat: navire.prix_achat_flat || undefined,
     prime_vente_moyenne: prixVenteMoyenGlobal,
     prix_flat_vente_moyen: prixFlatVenteMoyen,
