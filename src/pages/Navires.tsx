@@ -16,7 +16,7 @@ import { getPriceUnit, getPriceLabel } from '@/lib/priceUtils';
 interface Navire {
   id: string;
   nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   quantite_totale: number;
   prime_achat: number | null;
   prix_achat_flat: number | null;
@@ -40,7 +40,9 @@ const PRODUCTS = [
   { value: 'mais', label: 'Maïs' },
   { value: 'tourteau_soja', label: 'Tourteau de soja' },
   { value: 'ble', label: 'Blé' },
-  { value: 'orge', label: 'Orge' }
+  { value: 'orge', label: 'Orge' },
+  { value: 'ddgs', label: 'DDGS' },
+  { value: 'ferrailles', label: 'Ferrailles' }
 ];
 
 export default function Navires() {
@@ -54,7 +56,7 @@ export default function Navires() {
 
   const [formData, setFormData] = useState({
     nom: '',
-    produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
+    produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles',
     quantite_totale: '',
     prime_achat: '',
     prix_achat_flat: '',
@@ -73,6 +75,8 @@ export default function Navires() {
       facteur = '0.3937';
     } else if (formData.produit === 'tourteau_soja') {
       facteur = '0.9072';
+    } else if (formData.produit === 'ddgs' || formData.produit === 'ferrailles') {
+      facteur = ''; // Pas de facteur de conversion pour DDGS et Ferrailles
     }
     setFormData(prev => ({ ...prev, facteur_conversion: facteur }));
   }, [formData.produit]);
@@ -291,7 +295,7 @@ export default function Navires() {
   const resetForm = () => {
     setFormData({
       nom: '',
-      produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge',
+      produit: '' as 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles',
       quantite_totale: '',
       prime_achat: '',
       prix_achat_flat: '',
@@ -316,6 +320,8 @@ export default function Navires() {
       case 'tourteau_soja': return 'bg-green-100 text-green-800';
       case 'ble': return 'bg-orange-100 text-orange-800';
       case 'orge': return 'bg-purple-100 text-purple-800';
+      case 'ddgs': return 'bg-blue-100 text-blue-800';
+      case 'ferrailles': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -328,7 +334,7 @@ export default function Navires() {
     if (navire.prime_achat) {
       // Pour les primes : convertir le fret de $/MT vers cts/bu
       const facteur = navire.produit === 'mais' ? 0.3937 : navire.produit === 'tourteau_soja' ? 0.9072 : 1;
-      const fretEnCents = navire.terme_commercial === 'FOB' && navire.taux_fret ? navire.taux_fret / facteur : 0;
+      const fretEnCents = navire.terme_commercial === 'FOB' && navire.taux_fret && facteur !== 1 ? navire.taux_fret / facteur : 0;
       const primeAvecFret = navire.prime_achat + fretEnCents;
       return `${primeAvecFret.toFixed(2)} ${getPriceUnit(navire.produit, 'prime')} (Prime${navire.terme_commercial === 'FOB' ? ' + fret' : ''})`;
     } else if (navire.prix_achat_flat) {
@@ -377,7 +383,7 @@ export default function Navires() {
                 <Label htmlFor="produit">Produit</Label>
                 <Select
                   value={formData.produit}
-                  onValueChange={(value: 'mais' | 'tourteau_soja' | 'ble' | 'orge') =>
+                  onValueChange={(value: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles') =>
                     setFormData({ ...formData, produit: value })
                   }
                 >

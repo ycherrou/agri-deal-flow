@@ -27,7 +27,7 @@ interface ReventeEnAttente {
     prix_reference: string;
     navires: {
       nom: string;
-      produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+      produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
       date_arrivee: string;
     };
     clients: {
@@ -210,6 +210,8 @@ export default function AdminReventes() {
       case 'tourteau_soja': return 'bg-green-100 text-green-800';
       case 'ble': return 'bg-orange-100 text-orange-800';
       case 'orge': return 'bg-blue-100 text-blue-800';
+      case 'ddgs': return 'bg-purple-100 text-purple-800';
+      case 'ferrailles': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

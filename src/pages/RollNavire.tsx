@@ -12,7 +12,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 interface Navire {
   id: string;
   nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   fournisseur: string;
   quantite_totale: number;
   prime_achat: number | null;

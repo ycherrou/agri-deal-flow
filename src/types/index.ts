@@ -12,7 +12,7 @@ export interface Client {
 export interface Navire {
   id: string;
   nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   quantite_totale: number;
   prime_achat?: number;
   prix_achat_flat?: number;
@@ -120,7 +120,7 @@ export interface CouvertureAchat {
 export interface PnLData {
   navire_id: string;
   navire_nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   prime_achat: number;
   prix_achat_flat?: number;
   prime_vente_moyenne: number;

@@ -4,7 +4,7 @@ import { PnLData, PortfolioPnL } from '@/types/index';
 interface NavireWithPnLData {
   id: string;
   nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   quantite_totale: number;
   prime_achat: number | null;
   prix_achat_flat: number | null;
@@ -337,6 +337,9 @@ export const getConversionFactor = (produit: string): number => {
       return 0.3937; // cts/bu -> $/tonne
     case 'tourteau_soja':
       return 0.9072; // cts/bu -> $/tonne
+    case 'ddgs':
+    case 'ferrailles':
+      return 1; // Déjà en $/tonne, pas de primes ni futures
     case 'ble':
     case 'orge':
     default:
@@ -371,7 +374,7 @@ interface ClientPnLData {
   client_nom: string;
   navire_id: string;
   navire_nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   pnl_total: number;
   pnl_prime: number;
   pnl_flat: number;
@@ -383,7 +386,7 @@ interface ClientPnLData {
 export interface NavirePnLByClient {
   navire_id: string;
   navire_nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   clients: ClientPnLData[];
   total_pnl: number;
   total_volume: number;

@@ -1,13 +1,18 @@
 
 // Utility functions for handling prices by product type
 
-export type ProductType = 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+export type ProductType = 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
 export type PriceType = 'prime' | 'flat' | 'futures' | 'market';
 
 /**
  * Get the price unit for a given product and price type
  */
 export const getPriceUnit = (product: ProductType, priceType: PriceType): string => {
+  // DDGS et Ferrailles sont toujours en flat (USD/MT) - pas de primes ni futures
+  if (product === 'ddgs' || product === 'ferrailles') {
+    return 'USD/MT';
+  }
+  
   // Prix flat toujours en USD/MT
   if (priceType === 'flat') {
     return 'USD/MT';
