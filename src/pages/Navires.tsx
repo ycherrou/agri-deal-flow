@@ -410,7 +410,7 @@ export default function Navires() {
                      <SelectContent>
                         {prixMarche.map((prix) => (
                           <SelectItem key={prix.echeance_id} value={prix.echeance?.nom || ''}>
-                            {prix.echeance?.nom} - {prix.prix} {getPriceUnit(formData.produit, 'futures')}
+                            {prix.echeance?.nom}
                           </SelectItem>
                         ))}
                      </SelectContent>
