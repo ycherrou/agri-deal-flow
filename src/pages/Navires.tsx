@@ -324,6 +324,21 @@ export default function Navires() {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
+  const getPrixAchatAvecFret = (navire: Navire) => {
+    if (navire.prime_achat) {
+      // Pour les primes : convertir le fret de $/MT vers cts/bu
+      const facteur = navire.produit === 'mais' ? 0.3937 : navire.produit === 'tourteau_soja' ? 0.9072 : 1;
+      const fretEnCents = navire.terme_commercial === 'FOB' && navire.taux_fret ? navire.taux_fret / facteur : 0;
+      const primeAvecFret = navire.prime_achat + fretEnCents;
+      return `${primeAvecFret.toFixed(2)} ${getPriceUnit(navire.produit, 'prime')} (Prime${navire.terme_commercial === 'FOB' ? ' + fret' : ''})`;
+    } else if (navire.prix_achat_flat) {
+      // Pour les prix flat : addition directe du fret
+      const prixAvecFret = navire.prix_achat_flat + (navire.terme_commercial === 'FOB' && navire.taux_fret ? navire.taux_fret : 0);
+      return `${prixAvecFret.toFixed(2)} ${getPriceUnit(navire.produit, 'flat')} (Flat${navire.terme_commercial === 'FOB' ? ' + fret' : ''})`;
+    }
+    return 'N/A';
+  };
+
   const getVolumeRestant = (navire: Navire) => {
     return navire.quantite_totale - (navire.volumeVendu || 0);
   };
@@ -565,12 +580,7 @@ export default function Navires() {
                     </TableCell>
                     <TableCell>{navire.quantite_totale} MT</TableCell>
                     <TableCell>
-                      {navire.prime_achat 
-                        ? `${navire.prime_achat} ${getPriceUnit(navire.produit, 'prime')} (Prime)` 
-                        : navire.prix_achat_flat 
-                        ? `${navire.prix_achat_flat} ${getPriceUnit(navire.produit, 'flat')} (Flat)`
-                        : 'N/A'
-                      }
+                      {getPrixAchatAvecFret(navire)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={navire.terme_commercial === 'FOB' ? 'destructive' : 'secondary'}>
