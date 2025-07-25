@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Trash2, Edit, Plus, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import { Echeance, PrixMarche } from '@/types';
+import { CBOTPriceUpdater } from '@/components/CBOTPriceUpdater';
 
 export default function PrixMarchePage() {
   const { toast } = useToast();
@@ -429,6 +430,8 @@ export default function PrixMarchePage() {
         </TabsContent>
 
         <TabsContent value="prix" className="space-y-4">
+          <CBOTPriceUpdater />
+          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
