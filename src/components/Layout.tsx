@@ -341,7 +341,7 @@ export default function Layout({
     roles: ['client']
   }, {
     id: 'transactions-secondaires',
-    label: 'Transactions Secondaires',
+    label: 'Offres reçues',
     icon: TrendingUp,
     path: '/transactions-secondaires',
     roles: ['admin', 'client']
