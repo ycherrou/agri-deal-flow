@@ -7,16 +7,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Mapping des échéances vers les symboles Yahoo Finance
-const SYMBOL_MAPPING: Record<string, string> = {
-  'ZCH25': 'ZCH25.CBT', // Corn March 2025
-  'ZCU25': 'ZCU25.CBT', // Corn September 2025
-  'ZCZ25': 'ZCZ25.CBT', // Corn December 2025
-  'ZMH25': 'ZMH25.CBT', // Soybean Meal March 2025
-  'ZMZ25': 'ZMZ25.CBT', // Soybean Meal December 2025
-  'ZWH25': 'ZWH25.CBT', // Wheat March 2025
-  'ZWZ25': 'ZWZ25.CBT', // Wheat December 2025
-};
+// Fonction pour générer automatiquement le symbole Yahoo Finance
+function generateYahooSymbol(echeanceName: string): string | null {
+  // Les contrats CBOT suivent le format: [Produit][Mois][Année]
+  // Exemple: ZCU25 = Corn September 2025
+  
+  // Vérifier si c'est un contrat CBOT valide (commence par ZC, ZM, ZW, etc.)
+  const cbotProducts = ['ZC', 'ZM', 'ZW', 'ZL', 'ZS'];
+  const productCode = echeanceName.substring(0, 2);
+  
+  if (!cbotProducts.includes(productCode)) {
+    return null; // Pas un contrat CBOT reconnu
+  }
+  
+  // Vérifier que le format est correct (longueur 5: XX + lettre + 2 chiffres)
+  if (echeanceName.length !== 5) {
+    return null;
+  }
+  
+  return `${echeanceName}.CBT`;
+}
 
 interface YahooFinanceData {
   symbol: string;
@@ -91,7 +101,7 @@ serve(async (req) => {
     
     // Pour chaque échéance, essayer de récupérer le prix
     for (const echeance of echeances || []) {
-      const symbol = SYMBOL_MAPPING[echeance.nom];
+      const symbol = generateYahooSymbol(echeance.nom);
       
       if (!symbol) {
         console.log(`No symbol mapping found for echeance: ${echeance.nom}`);
