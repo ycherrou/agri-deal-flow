@@ -58,23 +58,6 @@ interface NavireWithVentes {
     clients: {
       nom: string;
     };
-    parent_vente?: Array<{
-      id: string;
-      clients: {
-        nom: string;
-      };
-      prime_vente: number | null;
-      prix_flat: number | null;
-      date_deal: string;
-    }>;
-    transaction_secondaire?: Array<{
-      id: string;
-      prix_vente_final: number;
-      date_transaction: string;
-      vendeur: {
-        nom: string;
-      };
-    }>;
     couvertures: Array<{
       id: string;
       volume_couvert: number;
@@ -220,19 +203,6 @@ export default function Dashboard() {
                 clients (
                   nom
                 ),
-                parent_vente:ventes!parent_deal_id (
-                  id,
-                  clients (nom),
-                  prime_vente,
-                  prix_flat,
-                  date_deal
-                ),
-                transaction_secondaire:transactions_marche_secondaire!acheteur_id (
-                  id,
-                  prix_vente_final,
-                  date_transaction,
-                  vendeur:clients!vendeur_id (nom)
-                ),
                 couvertures (
                   id,
                   volume_couvert,
@@ -292,19 +262,6 @@ export default function Dashboard() {
               parent_deal_id,
               clients (
                 nom
-              ),
-              parent_vente:ventes!parent_deal_id (
-                id,
-                clients (nom),
-                prime_vente,
-                prix_flat,
-                date_deal
-              ),
-              transaction_secondaire:transactions_marche_secondaire!acheteur_id (
-                id,
-                prix_vente_final,
-                date_transaction,
-                vendeur:clients!vendeur_id (nom)
               ),
               couvertures (
                 id,
@@ -1056,43 +1013,16 @@ export default function Dashboard() {
                                </div>
                              </div>
                              
-                             {/* Section informations marché secondaire */}
-                             {vente.parent_deal_id && vente.transaction_secondaire && vente.transaction_secondaire.length > 0 && (
+                             {/* Section informations marché secondaire - simplifié pour le moment */}
+                             {vente.parent_deal_id && (
                                <div className="mt-4 pt-4 border-t border-orange-200 bg-orange-50/50 rounded-lg p-3">
-                                 <h4 className="text-sm font-medium text-orange-800 mb-3 flex items-center gap-2">
+                                 <h4 className="text-sm font-medium text-orange-800 mb-2 flex items-center gap-2">
                                    <TrendingUp className="h-4 w-4" />
-                                   Détails acquisition marché secondaire
+                                   Position acquise via marché secondaire
                                  </h4>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                   <div className="space-y-2">
-                                     <div className="flex justify-between">
-                                       <span className="text-orange-600">Vendeur original:</span>
-                                       <span className="font-medium text-orange-800">{vente.transaction_secondaire[0].vendeur.nom}</span>
-                                     </div>
-                                     <div className="flex justify-between">
-                                       <span className="text-orange-600">Prix acquisition:</span>
-                                       <span className="font-medium text-orange-800">
-                                         {formatPrice(vente.transaction_secondaire[0].prix_vente_final, navireActif.produit)}
-                                       </span>
-                                     </div>
-                                   </div>
-                                   <div className="space-y-2">
-                                     <div className="flex justify-between">
-                                       <span className="text-orange-600">Date transaction:</span>
-                                       <span className="text-orange-800">{formatDate(vente.transaction_secondaire[0].date_transaction)}</span>
-                                     </div>
-                                     {vente.parent_vente && vente.parent_vente.length > 0 && (
-                                       <div className="flex justify-between">
-                                         <span className="text-orange-600">Prix original:</span>
-                                         <span className="text-orange-800">
-                                           {vente.type_deal === 'flat' 
-                                             ? formatPrice(vente.parent_vente[0].prix_flat || 0, navireActif.produit)
-                                             : formatPrice(vente.parent_vente[0].prime_vente || 0, navireActif.produit)}
-                                         </span>
-                                       </div>
-                                     )}
-                                   </div>
-                                 </div>
+                                 <p className="text-sm text-orange-600">
+                                   Cette position a été acquise par transaction sur le marché secondaire.
+                                 </p>
                                </div>
                              )}
                            </div>)}
