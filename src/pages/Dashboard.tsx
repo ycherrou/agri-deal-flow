@@ -224,31 +224,6 @@ export default function Dashboard() {
           if (error) throw error;
           let naviresData = data || [];
           
-          // Enrichir les données avec les informations du marché secondaire pour les clients
-          for (const navire of naviresData) {
-            for (const vente of navire.ventes) {
-              const venteVendue = vente.reventes_clients.find(r => r.etat === 'vendu');
-              if (venteVendue) {
-                const { data: transactionData } = await supabase
-                  .from('transactions_marche_secondaire')
-                  .select('acheteur_id')
-                  .eq('revente_id', venteVendue.id)
-                  .single();
-                
-                if (transactionData) {
-                  const { data: clientData } = await supabase
-                    .from('clients')
-                    .select('nom')
-                    .eq('id', transactionData.acheteur_id)
-                    .single();
-                  
-                  (vente as any).vendu_sur_secondaire = true;
-                  (vente as any).acheteur_secondaire = clientData?.nom;
-                }
-              }
-            }
-          }
-          
           setNavires(naviresData as any);
           if (naviresData.length > 0 && !activeNavire) {
             setActiveNavire(naviresData[0].id);
@@ -309,33 +284,6 @@ export default function Dashboard() {
           `);
         if (error) throw error;
         let naviresData = data || [];
-        
-        // Enrichir les données avec les informations du marché secondaire
-        for (const navire of naviresData) {
-          for (const vente of navire.ventes) {
-            // Vérifier si cette vente a été vendue sur le marché secondaire
-            const venteVendue = vente.reventes_clients.find(r => r.etat === 'vendu');
-            if (venteVendue) {
-              const { data: transactionData } = await supabase
-                .from('transactions_marche_secondaire')
-                .select('acheteur_id')
-                .eq('revente_id', venteVendue.id)
-                .single();
-              
-              if (transactionData) {
-                // Récupérer le nom de l'acheteur
-                const { data: clientData } = await supabase
-                  .from('clients')
-                  .select('nom')
-                  .eq('id', transactionData.acheteur_id)
-                  .single();
-                
-                (vente as any).vendu_sur_secondaire = true;
-                (vente as any).acheteur_secondaire = clientData?.nom;
-              }
-            }
-          }
-        }
         
         setNavires(naviresData as any);
         if (naviresData.length > 0 && !activeNavire) {
@@ -1038,18 +986,9 @@ export default function Dashboard() {
                                      )}
                                    </div>
                                  </div>
-                                 {/* Affichage du statut de vente sur marché secondaire */}
-                                 {vente.vendu_sur_secondaire && (
-                                   <div className="flex justify-between">
-                                     <span className="text-sm text-muted-foreground">Statut:</span>
-                                     <span className="text-xs text-red-600 font-medium">
-                                       Vendu par {vente.acheteur_secondaire} sur secondaire
-                                     </span>
-                                   </div>
-                                 )}
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">Volume:</span>
-                                  <span className="text-sm font-medium">{vente.volume}</span>
+                                 <div className="flex justify-between">
+                                   <span className="text-sm text-muted-foreground">Volume:</span>
+                                   <span className="text-sm font-medium">{vente.volume}</span>
                                  </div>
                                </div>
                                <div className="space-y-2">
