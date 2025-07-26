@@ -57,6 +57,15 @@ interface NavireWithVentes {
     parent_deal_id: string | null;
     vendu_sur_secondaire?: boolean;
     acheteur_secondaire?: string;
+    historique_transaction?: {
+      vendeur_original?: string;
+      acheteur?: string;
+      prix_achat_original: number;
+      prix_vente_final: number;
+      volume_transige: number;
+      gain_vendeur: number;
+      date_transaction: string;
+    };
     clients: {
       nom: string;
     };
@@ -164,6 +173,7 @@ export default function Dashboard() {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
+      
       if (userRole === 'client') {
         // Pour les clients, récupérer seulement les navires avec leurs ventes
         const {
@@ -222,7 +232,9 @@ export default function Dashboard() {
               )
             `).eq('ventes.client_id', clientData.id);
           if (error) throw error;
-          let naviresData = data || [];
+          
+          // Enrichir avec les données de traçabilité pour les positions du marché secondaire
+          const naviresData = await enrichirAvecTracabilite(data || []);
           
           setNavires(naviresData as any);
           if (naviresData.length > 0 && !activeNavire) {
@@ -283,7 +295,9 @@ export default function Dashboard() {
             )
           `);
         if (error) throw error;
-        let naviresData = data || [];
+        
+        // Enrichir avec les données de traçabilité pour les positions du marché secondaire
+        const naviresData = await enrichirAvecTracabilite(data || []);
         
         setNavires(naviresData as any);
         if (naviresData.length > 0 && !activeNavire) {
@@ -299,6 +313,77 @@ export default function Dashboard() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fonction pour enrichir les données avec la traçabilité
+  const enrichirAvecTracabilite = async (navires: any[]) => {
+    try {
+      // Récupérer toutes les transactions du marché secondaire avec les données de revente
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions_marche_secondaire')
+        .select(`
+          id,
+          revente_id,
+          vendeur_id,
+          acheteur_id,
+          prix_achat_original,
+          prix_vente_final,
+          volume_transige,
+          gain_vendeur,
+          date_transaction
+        `);
+
+      if (transactionsError) throw transactionsError;
+
+      // Récupérer les reventes pour faire le lien avec les ventes
+      const { data: reventes, error: reventesError } = await supabase
+        .from('reventes_clients')
+        .select('id, vente_id');
+
+      if (reventesError) throw reventesError;
+
+      // Récupérer les informations des clients
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('id, nom');
+
+      if (clientsError) throw clientsError;
+
+      // Créer des maps pour un accès rapide
+      const clientsMap = new Map(clientsData.map(c => [c.id, c.nom]));
+      const reventesMap = new Map(reventes?.map(r => [r.id, r.vente_id]));
+
+      // Enrichir chaque navire
+      for (const navire of navires) {
+        for (const vente of navire.ventes) {
+          // Si c'est une vente du marché secondaire (a un parent_deal_id)
+          if (vente.parent_deal_id) {
+            // Trouver la transaction correspondante via la revente
+            const transaction = transactions?.find(t => {
+              const venteOriginale = reventesMap.get(t.revente_id);
+              return venteOriginale === vente.parent_deal_id;
+            });
+
+            if (transaction) {
+              vente.historique_transaction = {
+                vendeur_original: clientsMap.get(transaction.vendeur_id),
+                acheteur: clientsMap.get(transaction.acheteur_id),
+                prix_achat_original: transaction.prix_achat_original,
+                prix_vente_final: transaction.prix_vente_final,
+                volume_transige: transaction.volume_transige,
+                gain_vendeur: transaction.gain_vendeur,
+                date_transaction: transaction.date_transaction
+              };
+            }
+          }
+        }
+      }
+
+      return navires;
+    } catch (error) {
+      console.error('Erreur lors de l\'enrichissement avec traçabilité:', error);
+      return navires; // Retourner les données originales en cas d'erreur
     }
   };
 
@@ -1017,18 +1102,47 @@ export default function Dashboard() {
                                </div>
                              </div>
                              
-                             {/* Section informations marché secondaire - simplifié pour le moment */}
-                             {vente.parent_deal_id && (
-                               <div className="mt-4 pt-4 border-t border-orange-200 bg-orange-50/50 rounded-lg p-3">
-                                 <h4 className="text-sm font-medium text-orange-800 mb-2 flex items-center gap-2">
-                                   <TrendingUp className="h-4 w-4" />
-                                   Position acquise via marché secondaire
-                                 </h4>
-                                 <p className="text-sm text-orange-600">
-                                   Cette position a été acquise par transaction sur le marché secondaire.
-                                 </p>
-                               </div>
-                             )}
+                              {/* Section traçabilité marché secondaire */}
+                              {vente.parent_deal_id && (
+                                <div className="mt-4 pt-4 border-t border-orange-200 bg-orange-50/50 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-orange-800 mb-3 flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Historique de la transaction
+                                  </h4>
+                                  
+                                  {vente.historique_transaction ? (
+                                    <div className="space-y-2">
+                                      <div className="grid grid-cols-2 gap-4 text-xs">
+                                        <div>
+                                          <span className="text-orange-600 font-medium">Vendeur original:</span>
+                                          <div className="text-orange-800">{vente.historique_transaction.vendeur_original}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-orange-600 font-medium">Prix de revente:</span>
+                                          <div className="text-orange-800">{vente.historique_transaction.prix_vente_final.toFixed(2)} USD/MT</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-orange-600 font-medium">Volume transigé:</span>
+                                          <div className="text-orange-800">{vente.historique_transaction.volume_transige} MT</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-orange-600 font-medium">Gain vendeur:</span>
+                                          <div className={`font-medium ${vente.historique_transaction.gain_vendeur >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {vente.historique_transaction.gain_vendeur >= 0 ? '+' : ''}{vente.historique_transaction.gain_vendeur.toFixed(2)} USD
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-orange-600 mt-2">
+                                        Transaction effectuée le {new Date(vente.historique_transaction.date_transaction).toLocaleDateString('fr-FR')}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-orange-600">
+                                      Position acquise via marché secondaire - Informations de transaction en cours de chargement.
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                            </div>)}
                       </div>}
                   </CardContent>
