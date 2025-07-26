@@ -380,7 +380,7 @@ export default function TransactionsSecondaires() {
   const formatGain = (gain: number) => {
     const color = gain >= 0 ? 'text-green-600' : 'text-red-600';
     const symbol = gain >= 0 ? '+' : '';
-    return <span className={color}>{symbol}{gain.toFixed(2)} €</span>;
+    return <span className={color}>{symbol}{gain.toFixed(2)} USD</span>;
   };
 
   if (loading) {
