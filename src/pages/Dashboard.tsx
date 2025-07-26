@@ -170,6 +170,20 @@ export default function Dashboard() {
           data: clientData
         } = await supabase.from('clients').select('id').eq('user_id', user.id).single();
         if (clientData) {
+          // Récupérer d'abord toutes les transactions secondaires
+          const { data: transactionsData } = await supabase
+            .from('transactions_marche_secondaire')
+            .select(`
+              revente_id,
+              vendeur_id,
+              acheteur_id
+            `);
+
+          // Récupérer tous les clients pour avoir leurs noms
+          const { data: clientsData } = await supabase
+            .from('clients')
+            .select('id, nom');
+
           const {
             data,
             error
@@ -221,12 +235,32 @@ export default function Dashboard() {
                 )
               )
             `).eq('ventes.client_id', clientData.id);
+
+          if (error) throw error;
+          let naviresDataClient = data || [];
+          
+          // Enrichir avec les données du marché secondaire
+          if (transactionsData && clientsData) {
+            for (const navire of naviresDataClient) {
+              for (const vente of navire.ventes) {
+                const reventeVendue = vente.reventes_clients.find(r => r.etat === 'vendu');
+                if (reventeVendue) {
+                  const transaction = transactionsData.find(t => t.revente_id === reventeVendue.id);
+                  if (transaction) {
+                    const acheteur = clientsData.find(c => c.id === transaction.acheteur_id);
+                    (vente as any).vendu_sur_secondaire = true;
+                    (vente as any).acheteur_secondaire = acheteur?.nom;
+                  }
+                }
+              }
+            }
+          }
           if (error) throw error;
           let naviresData = data || [];
           
-          setNavires(naviresData as any);
-          if (naviresData.length > 0 && !activeNavire) {
-            setActiveNavire(naviresData[0].id);
+          setNavires(naviresDataClient as any);
+          if (naviresDataClient.length > 0 && !activeNavire) {
+            setActiveNavire(naviresDataClient[0].id);
           }
         }
       } else {
@@ -990,6 +1024,15 @@ export default function Dashboard() {
                                    <span className="text-sm text-muted-foreground">Volume:</span>
                                    <span className="text-sm font-medium">{vente.volume}</span>
                                  </div>
+                                 {/* Affichage du statut de vente sur marché secondaire */}
+                                 {(vente as any).vendu_sur_secondaire && (
+                                   <div className="flex justify-between">
+                                     <span className="text-sm text-muted-foreground">Statut:</span>
+                                     <span className="text-xs text-red-600 font-medium">
+                                       Vendu par {(vente as any).acheteur_secondaire} sur secondaire
+                                     </span>
+                                   </div>
+                                 )}
                                </div>
                                <div className="space-y-2">
                                  <div className="flex justify-between">
