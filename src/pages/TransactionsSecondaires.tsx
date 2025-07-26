@@ -413,7 +413,7 @@ export default function TransactionsSecondaires() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {stats.totalGains.toFixed(2)} €
+                {stats.totalGains.toFixed(2)} USD
               </div>
             </CardContent>
           </Card>
@@ -424,7 +424,7 @@ export default function TransactionsSecondaires() {
               <Euro className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalCommissions.toFixed(2)} €</div>
+              <div className="text-2xl font-bold">{stats.totalCommissions.toFixed(2)} USD</div>
             </CardContent>
           </Card>
 
