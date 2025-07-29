@@ -267,7 +267,7 @@ export type Database = {
           banque: string
           created_at: string
           date_echeance: string | null
-          date_ouverture: string
+          date_ouverture: string | null
           id: string
           montant_disponible: number | null
           montant_total: number
@@ -281,7 +281,7 @@ export type Database = {
           banque: string
           created_at?: string
           date_echeance?: string | null
-          date_ouverture: string
+          date_ouverture?: string | null
           id?: string
           montant_disponible?: number | null
           montant_total: number
@@ -295,7 +295,7 @@ export type Database = {
           banque?: string
           created_at?: string
           date_echeance?: string | null
-          date_ouverture?: string
+          date_ouverture?: string | null
           id?: string
           montant_disponible?: number | null
           montant_total?: number

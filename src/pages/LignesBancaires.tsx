@@ -47,7 +47,8 @@ export default function LignesBancaires() {
         .from('lignes_bancaires')
         .insert([{
           ...data,
-          montant_disponible: data.montant_total
+          montant_disponible: data.montant_total,
+          date_ouverture: new Date().toISOString().split('T')[0]
         }])
         .select()
         .single();
