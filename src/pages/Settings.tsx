@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Users, TrendingUp } from 'lucide-react';
+import { MessageSquare, Users, TrendingUp, Building2 } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -27,6 +27,13 @@ export default function Settings() {
       description: 'Configuration des prix de marché et échéances',
       icon: TrendingUp,
       path: '/prix-marche'
+    },
+    {
+      id: 'lignes-bancaires',
+      title: 'Lignes Bancaires',
+      description: 'Gestion des lignes de crédit et financement',
+      icon: Building2,
+      path: '/lignes-bancaires'
     }
   ];
 

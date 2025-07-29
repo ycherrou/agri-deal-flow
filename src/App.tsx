@@ -25,6 +25,7 @@ import AdminReventes from "./pages/AdminReventes";
 import MesVentes from "./pages/MesVentes";
 import WhatsAppNotifications from "./pages/WhatsAppNotifications";
 import Finance from "./pages/Finance";
+import LignesBancaires from "./pages/LignesBancaires";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/transactions-secondaires" element={<Layout><TransactionsSecondaires /></Layout>} />
             <Route path="/futures-admin" element={<Layout><FuturesAdmin /></Layout>} />
             <Route path="/finance" element={<Layout><Finance /></Layout>} />
+            <Route path="/lignes-bancaires" element={<Layout><LignesBancaires /></Layout>} />
             <Route path="/whatsapp-notifications" element={<Layout><WhatsAppNotifications /></Layout>} />
             <Route path="*" element={<NotFound />} />
         </Routes>
