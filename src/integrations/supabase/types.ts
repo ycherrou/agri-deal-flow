@@ -210,6 +210,159 @@ export type Database = {
         }
         Relationships: []
       }
+      financements: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          date_financement: string
+          id: string
+          ligne_bancaire_id: string | null
+          montant_finance: number
+          statut: string
+          updated_at: string
+          vente_id: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          date_financement?: string
+          id?: string
+          ligne_bancaire_id?: string | null
+          montant_finance: number
+          statut?: string
+          updated_at?: string
+          vente_id: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          date_financement?: string
+          id?: string
+          ligne_bancaire_id?: string | null
+          montant_finance?: number
+          statut?: string
+          updated_at?: string
+          vente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_financements_ligne_bancaire"
+            columns: ["ligne_bancaire_id"]
+            isOneToOne: false
+            referencedRelation: "lignes_bancaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_financements_vente"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lignes_bancaires: {
+        Row: {
+          active: boolean
+          banque: string
+          created_at: string
+          date_echeance: string | null
+          date_ouverture: string
+          id: string
+          montant_disponible: number | null
+          montant_total: number
+          montant_utilise: number
+          nom: string
+          taux_interet: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          banque: string
+          created_at?: string
+          date_echeance?: string | null
+          date_ouverture: string
+          id?: string
+          montant_disponible?: number | null
+          montant_total: number
+          montant_utilise?: number
+          nom: string
+          taux_interet?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          banque?: string
+          created_at?: string
+          date_echeance?: string | null
+          date_ouverture?: string
+          id?: string
+          montant_disponible?: number | null
+          montant_total?: number
+          montant_utilise?: number
+          nom?: string
+          taux_interet?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mouvements_bancaires: {
+        Row: {
+          created_at: string
+          date_mouvement: string
+          description: string | null
+          financement_id: string | null
+          id: string
+          ligne_bancaire_id: string
+          montant: number
+          montant_apres: number
+          montant_avant: number
+          reference: string | null
+          type_mouvement: string
+        }
+        Insert: {
+          created_at?: string
+          date_mouvement?: string
+          description?: string | null
+          financement_id?: string | null
+          id?: string
+          ligne_bancaire_id: string
+          montant: number
+          montant_apres: number
+          montant_avant: number
+          reference?: string | null
+          type_mouvement: string
+        }
+        Update: {
+          created_at?: string
+          date_mouvement?: string
+          description?: string | null
+          financement_id?: string | null
+          id?: string
+          ligne_bancaire_id?: string
+          montant?: number
+          montant_apres?: number
+          montant_avant?: number
+          reference?: string | null
+          type_mouvement?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_mouvements_financement"
+            columns: ["financement_id"]
+            isOneToOne: false
+            referencedRelation: "financements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mouvements_ligne_bancaire"
+            columns: ["ligne_bancaire_id"]
+            isOneToOne: false
+            referencedRelation: "lignes_bancaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       navires: {
         Row: {
           created_at: string | null
@@ -618,6 +771,15 @@ export type Database = {
         Args: { bid_id_param: string; seller_client_id: string }
         Returns: string
       }
+      allouer_financement: {
+        Args: {
+          vente_id_param: string
+          ligne_bancaire_id_param: string
+          montant_param: number
+          commentaire_param?: string
+        }
+        Returns: string
+      }
       calculate_pru_vente: {
         Args: { vente_id_param: string }
         Returns: number
@@ -633,6 +795,13 @@ export type Database = {
       is_client_visible_on_market: {
         Args: { client_id_param: string }
         Returns: boolean
+      }
+      liberer_financement: {
+        Args: {
+          financement_id_param: string
+          montant_liberation_param?: number
+        }
+        Returns: undefined
       }
       update_existing_transactions_pru: {
         Args: Record<PropertyKey, never>

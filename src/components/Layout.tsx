@@ -351,6 +351,12 @@ export default function Layout({
     icon: Activity,
     path: '/futures-admin',
     roles: ['admin']
+  }, {
+    id: 'finance',
+    label: 'Finance',
+    icon: DollarSign,
+    path: '/finance',
+    roles: ['admin']
   }];
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-muted">

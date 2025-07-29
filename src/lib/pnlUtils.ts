@@ -508,11 +508,12 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           
           const primeVente = vente.prime_vente || 0;
           const facteurConversion = getConversionFactor(navire.produit);
+          
           const pnlPrime = (primeVente - primeAchat) * facteurConversion * vente.volume;
           clientData.pnl_prime += pnlPrime;
         }
 
-        // Calculer P&L flat pour cette vente
+        // Calculer P&L sur prix flat pour cette vente
         if (vente.type_deal === 'flat') {
           let prixAchatFlat = navire.prix_achat_flat || 0;
           
@@ -526,32 +527,38 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           clientData.pnl_flat += pnlFlat;
         }
 
-        // Calculer P&L sur futures pour cette vente
-        if (vente.couvertures && vente.couvertures.length > 0) {
-          const volumeVenteCouverte = vente.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
-          const prixFuturesVenteMoyen = volumeVenteCouverte > 0 ?
-            vente.couvertures.reduce((sum: number, c: any) => sum + c.prix_futures * c.volume_couvert, 0) / volumeVenteCouverte : 0;
-
+        // Calculer P&L futures pour cette vente
+        const couverturesVente = vente.couvertures || [];
+        const volumeVenteTotal = couverturesVente.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
+        
+        if (volumeVenteTotal > 0 && volumeAchatTotal > 0) {
+          const prixFuturesVenteMoyen = couverturesVente.reduce((sum: number, c: any) => {
+            return sum + c.prix_futures * c.volume_couvert;
+          }, 0) / volumeVenteTotal;
+          
           const facteurConversion = getConversionFactor(navire.produit);
-          const pnlFutures = (prixFuturesVenteMoyen - prixFuturesAchatMoyen) * facteurConversion * volumeVenteCouverte;
+          const prixAchatConverti = prixFuturesAchatMoyen * facteurConversion;
+          const prixVenteConverti = prixFuturesVenteMoyen * facteurConversion;
+          
+          const volumeCalcul = Math.min(volumeAchatTotal, volumeVenteTotal);
+          const pnlFutures = (prixVenteConverti - prixAchatConverti) * volumeCalcul;
+          
           clientData.pnl_futures += pnlFutures;
-          clientData.volume_couvert += volumeVenteCouverte;
+          clientData.volume_couvert += volumeVenteTotal;
         }
 
         clientData.pnl_total = clientData.pnl_prime + clientData.pnl_flat + clientData.pnl_futures;
       }
 
+      // Ajouter le navire aux résultats
       const clients = Array.from(clientsMap.values());
-      const totalPnL = clients.reduce((sum, c) => sum + c.pnl_total, 0);
-      const totalVolume = clients.reduce((sum, c) => sum + c.volume_total, 0);
-
       result.push({
         navire_id: navire.id,
         navire_nom: navire.nom,
         produit: navire.produit,
         clients,
-        total_pnl: totalPnL,
-        total_volume: totalVolume
+        total_pnl: clients.reduce((sum, c) => sum + c.pnl_total, 0),
+        total_volume: clients.reduce((sum, c) => sum + c.volume_total, 0)
       });
     }
 
@@ -560,4 +567,62 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
     console.error('Error calculating P&L by client:', error);
     throw error;
   }
+};
+
+/**
+ * Calcule le PRU pour une vente donnée
+ */
+export const calculatePRU = (vente: any): number => {
+  const navire = vente.navire;
+  const couvertures = vente.couvertures || [];
+  
+  let facteurConversion = 1;
+  
+  // Déterminer le facteur de conversion selon le produit
+  switch (navire.produit) {
+    case 'mais':
+      facteurConversion = 0.3937;
+      break;
+    case 'tourteau_soja':
+      facteurConversion = 0.9072;
+      break;
+    default:
+      facteurConversion = 1;
+  }
+  
+  if (vente.type_deal === 'flat') {
+    // Pour les deals flat : ajouter le fret directement au prix flat
+    let prixFlatAvecFret = vente.prix_flat || navire.prix_achat_flat || 0;
+    
+    if (navire.terme_commercial === 'FOB') {
+      prixFlatAvecFret += navire.taux_fret || 0;
+    }
+    
+    return prixFlatAvecFret;
+  } else {
+    // Pour les deals prime : convertir le fret et l'ajouter à la prime
+    let primeAchatAvecFret = navire.prime_achat || 0;
+    
+    if (navire.terme_commercial === 'FOB' && facteurConversion > 0) {
+      primeAchatAvecFret += (navire.taux_fret || 0) / facteurConversion;
+    }
+    
+    // Calculer le prix futures moyen
+    const prixFuturesMoyen = couvertures.length > 0 
+      ? couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / couvertures.length
+      : 0;
+    
+    // PRU = (prime_vente - prime_achat_avec_fret + futures) * facteur_conversion
+    return (vente.prime_vente - primeAchatAvecFret + prixFuturesMoyen) * facteurConversion;
+  }
+};
+
+export const calculateMoyennePonderee = (values: number[], volumes: number[]): number => {
+  if (values.length !== volumes.length || values.length === 0) return 0;
+  
+  const totalVolume = volumes.reduce((sum, volume) => sum + volume, 0);
+  if (totalVolume === 0) return 0;
+  
+  const sommePonderee = values.reduce((sum, value, index) => sum + (value * volumes[index]), 0);
+  return sommePonderee / totalVolume;
 };

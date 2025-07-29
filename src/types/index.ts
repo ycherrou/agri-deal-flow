@@ -146,3 +146,51 @@ export interface PortfolioPnL {
   volume_total: number;
   navires: PnLData[];
 }
+
+// Finance module types
+export interface LigneBancaire {
+  id: string;
+  nom: string;
+  montant_total: number;
+  montant_utilise: number;
+  montant_disponible: number;
+  taux_interet?: number;
+  banque: string;
+  date_ouverture: string;
+  date_echeance?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Financement {
+  id: string;
+  vente_id: string;
+  ligne_bancaire_id?: string;
+  montant_finance: number;
+  date_financement: string;
+  statut: 'actif' | 'rembourse' | 'partiellement_rembourse';
+  commentaire?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MouvementBancaire {
+  id: string;
+  ligne_bancaire_id: string;
+  financement_id?: string;
+  type_mouvement: 'allocation' | 'liberation' | 'remboursement';
+  montant: number;
+  montant_avant: number;
+  montant_apres: number;
+  date_mouvement: string;
+  reference?: string;
+  description?: string;
+  created_at: string;
+}
+
+export interface VenteFinancingData extends VenteWithDetails {
+  financement?: Financement;
+  montant_besoin_financement: number;
+  pru_actuel: number;
+}
