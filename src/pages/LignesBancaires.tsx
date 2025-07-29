@@ -19,10 +19,7 @@ export default function LignesBancaires() {
   const [formData, setFormData] = useState({
     nom: "",
     banque: "",
-    montant_total: "",
-    taux_interet: "",
-    date_ouverture: "",
-    date_echeance: ""
+    montant_total: ""
   });
 
   // Fetch bank lines
@@ -45,9 +42,6 @@ export default function LignesBancaires() {
       nom: string;
       banque: string;
       montant_total: number;
-      taux_interet?: number;
-      date_ouverture: string;
-      date_echeance?: string;
     }) => {
       const { data: result, error } = await supabase
         .from('lignes_bancaires')
@@ -71,10 +65,7 @@ export default function LignesBancaires() {
       setFormData({
         nom: "",
         banque: "",
-        montant_total: "",
-        taux_interet: "",
-        date_ouverture: "",
-        date_echeance: ""
+        montant_total: ""
       });
     },
     onError: (error) => {
@@ -113,7 +104,7 @@ export default function LignesBancaires() {
   });
 
   const handleSubmit = () => {
-    if (!formData.nom || !formData.banque || !formData.montant_total || !formData.date_ouverture) {
+    if (!formData.nom || !formData.banque || !formData.montant_total) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs requis.",
@@ -125,10 +116,7 @@ export default function LignesBancaires() {
     createLigneBancaire.mutate({
       nom: formData.nom,
       banque: formData.banque,
-      montant_total: parseFloat(formData.montant_total),
-      taux_interet: formData.taux_interet ? parseFloat(formData.taux_interet) : undefined,
-      date_ouverture: formData.date_ouverture,
-      date_echeance: formData.date_echeance || undefined
+      montant_total: parseFloat(formData.montant_total)
     });
   };
 
@@ -186,35 +174,6 @@ export default function LignesBancaires() {
                   value={formData.montant_total}
                   onChange={(e) => setFormData({ ...formData, montant_total: e.target.value })}
                   placeholder="1000000"
-                />
-              </div>
-              <div>
-                <Label htmlFor="taux_interet">Taux d'intérêt (%)</Label>
-                <Input
-                  id="taux_interet"
-                  type="number"
-                  step="0.01"
-                  value={formData.taux_interet}
-                  onChange={(e) => setFormData({ ...formData, taux_interet: e.target.value })}
-                  placeholder="3.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="date_ouverture">Date d'ouverture *</Label>
-                <Input
-                  id="date_ouverture"
-                  type="date"
-                  value={formData.date_ouverture}
-                  onChange={(e) => setFormData({ ...formData, date_ouverture: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="date_echeance">Date d'échéance</Label>
-                <Input
-                  id="date_echeance"
-                  type="date"
-                  value={formData.date_echeance}
-                  onChange={(e) => setFormData({ ...formData, date_echeance: e.target.value })}
                 />
               </div>
             </div>
@@ -287,8 +246,6 @@ export default function LignesBancaires() {
                 <TableHead>Montant Total</TableHead>
                 <TableHead>Utilisé</TableHead>
                 <TableHead>Disponible</TableHead>
-                <TableHead>Taux</TableHead>
-                <TableHead>Échéance</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -305,8 +262,6 @@ export default function LignesBancaires() {
                       {ligne.montant_disponible.toLocaleString()} USD
                     </span>
                   </TableCell>
-                  <TableCell>{ligne.taux_interet ? `${ligne.taux_interet}%` : '-'}</TableCell>
-                  <TableCell>{ligne.date_echeance || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={ligne.active ? "secondary" : "destructive"}>
                       {ligne.active ? "Active" : "Inactive"}
