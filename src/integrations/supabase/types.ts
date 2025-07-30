@@ -210,6 +210,68 @@ export type Database = {
         }
         Relationships: []
       }
+      factures: {
+        Row: {
+          client_id: string
+          conditions_paiement: string | null
+          created_at: string
+          date_echeance: string | null
+          date_facture: string
+          devise: string
+          id: string
+          montant_total: number
+          notes: string | null
+          numero_facture: string
+          statut: string
+          taux_change: number | null
+          type_facture: string
+          updated_at: string
+          vente_id: string | null
+        }
+        Insert: {
+          client_id: string
+          conditions_paiement?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string
+          devise?: string
+          id?: string
+          montant_total?: number
+          notes?: string | null
+          numero_facture: string
+          statut?: string
+          taux_change?: number | null
+          type_facture: string
+          updated_at?: string
+          vente_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          conditions_paiement?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string
+          devise?: string
+          id?: string
+          montant_total?: number
+          notes?: string | null
+          numero_facture?: string
+          statut?: string
+          taux_change?: number | null
+          type_facture?: string
+          updated_at?: string
+          vente_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financements: {
         Row: {
           commentaire: string | null
@@ -305,6 +367,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      lignes_facture: {
+        Row: {
+          created_at: string
+          description: string
+          facture_id: string
+          id: string
+          montant_ligne: number
+          prix_unitaire: number
+          quantite: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          facture_id: string
+          id?: string
+          montant_ligne: number
+          prix_unitaire: number
+          quantite: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          facture_id?: string
+          id?: string
+          montant_ligne?: number
+          prix_unitaire?: number
+          quantite?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lignes_facture_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mouvements_bancaires: {
         Row: {
@@ -500,6 +600,53 @@ export type Database = {
         }
         Relationships: []
       }
+      paiements_factures: {
+        Row: {
+          created_at: string
+          date_paiement: string
+          facture_id: string
+          finance_update_processed: boolean
+          id: string
+          methode_paiement: string
+          montant_paye: number
+          notes: string | null
+          reference_paiement: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_paiement: string
+          facture_id: string
+          finance_update_processed?: boolean
+          id?: string
+          methode_paiement: string
+          montant_paye: number
+          notes?: string | null
+          reference_paiement?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_paiement?: string
+          facture_id?: string
+          finance_update_processed?: boolean
+          id?: string
+          methode_paiement?: string
+          montant_paye?: number
+          notes?: string | null
+          reference_paiement?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_factures_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prix_marche: {
         Row: {
           created_at: string | null
@@ -600,6 +747,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sequences_factures: {
+        Row: {
+          annee: number
+          created_at: string
+          dernier_numero: number
+          id: string
+          type_facture: string
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          created_at?: string
+          dernier_numero?: number
+          id?: string
+          type_facture: string
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          created_at?: string
+          dernier_numero?: number
+          id?: string
+          type_facture?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       transactions_marche_secondaire: {
         Row: {
@@ -784,6 +958,10 @@ export type Database = {
         Args: { vente_id_param: string }
         Returns: number
       }
+      generer_numero_facture: {
+        Args: { type_facture_param: string }
+        Returns: string
+      }
       get_contract_size: {
         Args: { produit_type: string }
         Returns: number
@@ -801,6 +979,10 @@ export type Database = {
           financement_id_param: string
           montant_liberation_param?: number
         }
+        Returns: undefined
+      }
+      traiter_paiement_facture: {
+        Args: { paiement_id_param: string }
         Returns: undefined
       }
       update_existing_transactions_pru: {
