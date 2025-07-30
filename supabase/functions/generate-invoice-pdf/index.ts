@@ -102,7 +102,7 @@ const getInvoiceTemplate = (invoiceData: any) => {
       width: 210mm;
       height: 297mm;
       margin: 0;
-      padding: 8mm;
+      padding: 2mm 8mm 8mm 8mm;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -121,7 +121,7 @@ const getInvoiceTemplate = (invoiceData: any) => {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 2px;
     }
     
     .company-section {
