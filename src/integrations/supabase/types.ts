@@ -1008,6 +1008,10 @@ export type Database = {
         }
         Returns: string
       }
+      calculate_pru_facture: {
+        Args: { vente_id_param: string }
+        Returns: number
+      }
       calculate_pru_vente: {
         Args: { vente_id_param: string }
         Returns: number

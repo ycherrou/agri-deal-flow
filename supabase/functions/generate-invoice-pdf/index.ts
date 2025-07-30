@@ -48,79 +48,15 @@ const formatDate = (dateString: string): string => {
 
 // Template HTML optimisé reproduisant exactement la facture Yellowrock
 const getInvoiceTemplate = (invoiceData: any) => {
-  const { facture, client, lignes, vente, navire, prixMarche } = invoiceData;
+  const { facture, client, lignes, vente, navire, prixUnitaireCalcule } = invoiceData;
   
-  // Calculs exacts comme sur la vraie facture avec calcul PRU correct
+  // Calculs exacts comme sur la vraie facture
   const quantite = lignes.reduce((acc: number, ligne: any) => acc + (ligne.quantite || 0), 0);
   
-  // Calcul du PRU selon le type de deal et les couvertures
-  let prixUnitaire = 0;
+  // Utiliser le PRU calculé par la fonction de base de données
+  const prixUnitaire = prixUnitaireCalcule || 0;
   
-  console.log('Calcul PRU - Données initiales:', {
-    typeDeal: vente?.type_deal,
-    primeVente: vente?.prime_vente,
-    prixReference: vente?.prix_reference,
-    prixMarche: prixMarche?.prix,
-    produit: navire?.produit
-  });
-  
-  if (vente?.type_deal === 'flat') {
-    prixUnitaire = vente.prix_flat || 0;
-    console.log('Deal FLAT - PRU:', prixUnitaire);
-  } else if (vente?.type_deal === 'prime') {
-    // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
-    const facteurConversion = navire?.produit === 'mais' ? 0.3937 
-      : navire?.produit === 'tourteau_soja' ? 0.9072 
-      : 1;
-    
-    console.log('Deal PRIME - Facteur conversion:', facteurConversion);
-    
-    const couvertures = vente.couvertures || [];
-    const volumeTotal = vente.volume || quantite;
-    const volumeCouvert = couvertures.reduce((sum: number, c: any) => sum + (c.volume_couvert || 0), 0);
-    const volumeNonCouvert = volumeTotal - volumeCouvert;
-    
-    console.log('Volumes:', { volumeTotal, volumeCouvert, volumeNonCouvert });
-    
-    if (volumeCouvert > 0 && couvertures.length > 0) {
-      // Pour la partie couverte : utiliser les prix de couverture
-      const prixCouvertureMoyen = couvertures.reduce((sum: number, c: any) => 
-        sum + ((c.prix_futures || 0) * (c.volume_couvert || 0)), 0) / volumeCouvert;
-      const pruCouvert = ((vente.prime_vente || 0) + prixCouvertureMoyen) * facteurConversion;
-      
-      console.log('Partie couverte:', { prixCouvertureMoyen, pruCouvert });
-      
-      if (volumeNonCouvert > 0) {
-        // Pour la partie non couverte : utiliser le prix de marché si disponible
-        let prixPourNonCouvert = vente.prime_vente || 0;
-        if (prixMarche?.prix) {
-          prixPourNonCouvert += prixMarche.prix;
-        }
-        const pruNonCouvert = prixPourNonCouvert * facteurConversion;
-        
-        console.log('Partie non couverte:', { prixPourNonCouvert, pruNonCouvert });
-        
-        // Moyenne pondérée des deux parties
-        prixUnitaire = (pruCouvert * volumeCouvert + pruNonCouvert * volumeNonCouvert) / volumeTotal;
-        console.log('PRU final (mixte):', prixUnitaire);
-      } else {
-        prixUnitaire = pruCouvert;
-        console.log('PRU final (tout couvert):', prixUnitaire);
-      }
-    } else {
-      // Entièrement non couvert : utiliser le prix de marché si disponible
-      let prixTotal = vente.prime_vente || 0;
-      if (prixMarche?.prix) {
-        prixTotal += prixMarche.prix;
-      }
-      prixUnitaire = prixTotal * facteurConversion;
-      console.log('PRU final (non couvert):', { prixTotal, prixUnitaire });
-    }
-  } else {
-    // Fallback pour les anciennes lignes de facture
-    prixUnitaire = lignes.length > 0 ? (lignes[0].prix_unitaire || 0) : 0;
-    console.log('PRU fallback:', prixUnitaire);
-  }
+  console.log('Template - PRU utilisé:', prixUnitaire, 'pour volume:', quantite);
   
   const valeurFOB = quantite * prixUnitaire;
   const fret = navire?.taux_fret || (quantite * 30); // 30 EUR/TM par défaut
@@ -589,27 +525,20 @@ serve(async (req) => {
       navire = navireData;
     }
 
-    // Récupérer le prix de marché actuel si c'est un deal prime
-    let prixMarche = null;
-    if (factureData.vente?.type_deal === 'prime' && factureData.vente?.prix_reference) {
-      const { data: prixMarcheData } = await supabase
-        .from('prix_marche')
-        .select('prix, echeance:echeances!inner(nom, active)')
-        .eq('echeance.active', true)
-        .eq('echeance.nom', factureData.vente.prix_reference)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      prixMarche = prixMarcheData;
+    // Calculer le PRU en utilisant la fonction de base de données
+    let prixUnitaireCalcule = 0;
+    if (factureData.vente?.id) {
+      const { data: pruData, error: pruError } = await supabase
+        .rpc('calculate_pru_facture', { vente_id_param: factureData.vente.id });
+      
+      if (pruError) {
+        console.error('Erreur calcul PRU:', pruError);
+      } else {
+        prixUnitaireCalcule = pruData || 0;
+      }
     }
 
-    console.log('Invoice data processed successfully', {
-      prixUnitaire,
-      volumeCouvert: vente?.couvertures?.reduce((sum: number, c: any) => sum + (c.volume_couvert || 0), 0) || 0,
-      volumeTotal: vente?.volume || quantite,
-      prixMarche: prixMarche?.prix,
-      primeVente: vente?.prime_vente
-    });
+    console.log('PRU calculé par la fonction DB:', prixUnitaireCalcule);
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
@@ -617,7 +546,7 @@ serve(async (req) => {
       lignes: factureData.lignes,
       vente: factureData.vente,
       navire: navire,
-      prixMarche: prixMarche
+      prixUnitaireCalcule: prixUnitaireCalcule
     });
 
     return new Response(htmlContent, {
