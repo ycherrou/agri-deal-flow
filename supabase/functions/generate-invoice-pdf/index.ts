@@ -55,24 +55,40 @@ const getInvoiceTemplate = (invoiceData: any) => {
   
   // Calcul du PRU selon le type de deal et les couvertures
   let prixUnitaire = 0;
+  
+  console.log('Calcul PRU - Données initiales:', {
+    typeDeal: vente?.type_deal,
+    primeVente: vente?.prime_vente,
+    prixReference: vente?.prix_reference,
+    prixMarche: prixMarche?.prix,
+    produit: navire?.produit
+  });
+  
   if (vente?.type_deal === 'flat') {
     prixUnitaire = vente.prix_flat || 0;
+    console.log('Deal FLAT - PRU:', prixUnitaire);
   } else if (vente?.type_deal === 'prime') {
     // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
     const facteurConversion = navire?.produit === 'mais' ? 0.3937 
       : navire?.produit === 'tourteau_soja' ? 0.9072 
       : 1;
     
+    console.log('Deal PRIME - Facteur conversion:', facteurConversion);
+    
     const couvertures = vente.couvertures || [];
     const volumeTotal = vente.volume || quantite;
     const volumeCouvert = couvertures.reduce((sum: number, c: any) => sum + (c.volume_couvert || 0), 0);
     const volumeNonCouvert = volumeTotal - volumeCouvert;
+    
+    console.log('Volumes:', { volumeTotal, volumeCouvert, volumeNonCouvert });
     
     if (volumeCouvert > 0 && couvertures.length > 0) {
       // Pour la partie couverte : utiliser les prix de couverture
       const prixCouvertureMoyen = couvertures.reduce((sum: number, c: any) => 
         sum + ((c.prix_futures || 0) * (c.volume_couvert || 0)), 0) / volumeCouvert;
       const pruCouvert = ((vente.prime_vente || 0) + prixCouvertureMoyen) * facteurConversion;
+      
+      console.log('Partie couverte:', { prixCouvertureMoyen, pruCouvert });
       
       if (volumeNonCouvert > 0) {
         // Pour la partie non couverte : utiliser le prix de marché si disponible
@@ -82,10 +98,14 @@ const getInvoiceTemplate = (invoiceData: any) => {
         }
         const pruNonCouvert = prixPourNonCouvert * facteurConversion;
         
+        console.log('Partie non couverte:', { prixPourNonCouvert, pruNonCouvert });
+        
         // Moyenne pondérée des deux parties
         prixUnitaire = (pruCouvert * volumeCouvert + pruNonCouvert * volumeNonCouvert) / volumeTotal;
+        console.log('PRU final (mixte):', prixUnitaire);
       } else {
         prixUnitaire = pruCouvert;
+        console.log('PRU final (tout couvert):', prixUnitaire);
       }
     } else {
       // Entièrement non couvert : utiliser le prix de marché si disponible
@@ -94,10 +114,12 @@ const getInvoiceTemplate = (invoiceData: any) => {
         prixTotal += prixMarche.prix;
       }
       prixUnitaire = prixTotal * facteurConversion;
+      console.log('PRU final (non couvert):', { prixTotal, prixUnitaire });
     }
   } else {
     // Fallback pour les anciennes lignes de facture
     prixUnitaire = lignes.length > 0 ? (lignes[0].prix_unitaire || 0) : 0;
+    console.log('PRU fallback:', prixUnitaire);
   }
   
   const valeurFOB = quantite * prixUnitaire;
