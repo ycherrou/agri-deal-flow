@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LigneBancaire, VenteFinancingData, Financement } from "@/types";
 import { calculatePRU } from "@/lib/pnlUtils";
 import { Banknote, CreditCard, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import FinancingCharts from "@/components/FinancingCharts";
 
 export default function Finance() {
   const { toast } = useToast();
@@ -219,6 +220,17 @@ export default function Finance() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Analytics Charts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Analyse des Financements</CardTitle>
+          <CardDescription>Visualisation de l'utilisation et des tendances des lignes bancaires</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FinancingCharts />
+        </CardContent>
+      </Card>
 
       {/* Bank Lines Overview */}
       <Card>
