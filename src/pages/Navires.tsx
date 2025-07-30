@@ -186,14 +186,14 @@ export default function Navires() {
       const navireData = {
         nom: formData.nom,
         produit: formData.produit,
-        quantite_totale: parseFloat(formData.quantite_totale),
-        prime_achat: formData.prime_achat ? parseFloat(formData.prime_achat) : null,
-        prix_achat_flat: formData.prix_achat_flat ? parseFloat(formData.prix_achat_flat) : null,
+        quantite_totale: Number(formData.quantite_totale),
+        prime_achat: formData.prime_achat ? Number(formData.prime_achat) : null,
+        prix_achat_flat: formData.prix_achat_flat ? Number(formData.prix_achat_flat) : null,
         reference_cbot: formData.reference_cbot || null,
         date_arrivee: formData.date_arrivee,
         fournisseur: formData.fournisseur,
         terme_commercial: formData.terme_commercial,
-        taux_fret: formData.taux_fret ? parseFloat(formData.taux_fret) : null
+        taux_fret: formData.taux_fret ? Number(formData.taux_fret) : null
       };
 
       let result;
