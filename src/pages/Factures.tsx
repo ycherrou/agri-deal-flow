@@ -13,9 +13,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FileText, DollarSign, Download } from "lucide-react";
+import { Plus, FileText, DollarSign, Download, Edit, CreditCard } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import InvoiceEditDialog from "@/components/InvoiceEditDialog";
+import EditInvoiceDialog from "@/components/EditInvoiceDialog";
+import PaymentDialog from "@/components/PaymentDialog";
 
 const invoiceSchema = z.object({
   vente_id: z.string().uuid(),
@@ -32,6 +34,9 @@ export default function Factures() {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isInvoiceEditDialogOpen, setIsInvoiceEditDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<any>(null);
   const [selectedVente, setSelectedVente] = useState<any>(null);
   const [calculatedData, setCalculatedData] = useState<{
     pru: number;
@@ -235,6 +240,16 @@ export default function Factures() {
       return;
     }
     createInvoice.mutate({ editData, status, venteId });
+  };
+
+  const handleEditInvoice = (invoice: any) => {
+    setSelectedInvoiceForEdit(invoice);
+    setIsInvoiceEditDialogOpen(true);
+  };
+
+  const handlePaymentInvoice = (invoice: any) => {
+    setSelectedInvoiceForEdit(invoice);
+    setIsPaymentDialogOpen(true);
   };
 
   const getStatusBadge = (statut: string) => {
@@ -528,12 +543,24 @@ export default function Factures() {
                         size="sm"
                         onClick={() => downloadInvoicePDF(facture.id, facture.numero_facture)}
                       >
-                        <Download className="h-4 w-4 mr-1" />
-                        PDF
+                        <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Détails
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditInvoice(facture)}
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
+                      {facture.statut !== 'payee' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handlePaymentInvoice(facture)}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -559,6 +586,26 @@ export default function Factures() {
           }
         } : null}
         isLoading={createInvoice.isPending}
+      />
+
+      {/* Edit Existing Invoice Dialog */}
+      <EditInvoiceDialog
+        open={isInvoiceEditDialogOpen}
+        onClose={() => {
+          setIsInvoiceEditDialogOpen(false);
+          setSelectedInvoiceForEdit(null);
+        }}
+        invoice={selectedInvoiceForEdit}
+      />
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={isPaymentDialogOpen}
+        onClose={() => {
+          setIsPaymentDialogOpen(false);
+          setSelectedInvoiceForEdit(null);
+        }}
+        invoice={selectedInvoiceForEdit}
       />
     </div>
   );
