@@ -131,8 +131,8 @@ const getInvoiceTemplate = (invoiceData: any) => {
     }
     
     .company-logo {
-      max-width: 160px;
-      max-height: 80px;
+      max-width: 640px;
+      max-height: 320px;
       margin-bottom: 6px;
     }
     
