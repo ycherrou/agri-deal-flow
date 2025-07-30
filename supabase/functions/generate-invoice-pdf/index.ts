@@ -76,44 +76,49 @@ const getInvoiceTemplate = (invoiceData: any) => {
     
     body {
       font-family: Arial, sans-serif;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 10px;
+      line-height: 1.2;
       color: #333;
       background: white;
     }
     
-    /* Styles pour l'impression */
+    /* Styles pour l'impression - optimisé pour une page */
     @media print {
       body {
         margin: 0;
         padding: 0;
-        font-size: 10px;
+        font-size: 9px;
+        line-height: 1.1;
       }
       
       .invoice-container {
         max-width: none;
         width: 100%;
         margin: 0;
-        padding: 15mm;
+        padding: 10mm;
         page-break-inside: avoid;
+        min-height: auto;
       }
       
       .header {
         page-break-inside: avoid;
-        margin-bottom: 30px;
+        margin-bottom: 15px;
       }
       
       .company-logo {
-        max-width: 150px;
-        max-height: 80px;
+        max-width: 120px;
+        max-height: 60px;
+        margin-bottom: 8px;
       }
       
       .client-info, .invoice-details {
         page-break-inside: avoid;
+        margin-bottom: 10px;
       }
       
       .invoice-table {
         page-break-inside: auto;
+        margin-bottom: 15px;
       }
       
       .invoice-table tr {
@@ -122,15 +127,12 @@ const getInvoiceTemplate = (invoiceData: any) => {
       }
       
       .footer {
-        position: fixed;
-        bottom: 10mm;
-        left: 15mm;
-        right: 15mm;
+        margin-top: 10px;
         page-break-inside: avoid;
       }
       
       @page {
-        margin: 10mm;
+        margin: 8mm;
         size: A4;
       }
     }
@@ -138,17 +140,17 @@ const getInvoiceTemplate = (invoiceData: any) => {
     .invoice-container {
       max-width: 210mm;
       margin: 0 auto;
-      padding: 20mm;
-      min-height: 297mm;
+      padding: 15mm;
+      min-height: auto;
       position: relative;
     }
     
-    /* Header avec logo */
+    /* Header avec logo - compact */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     
     .company-section {
@@ -158,9 +160,9 @@ const getInvoiceTemplate = (invoiceData: any) => {
     }
     
     .company-logo {
-      max-width: 200px;
-      max-height: 100px;
-      margin-bottom: 20px;
+      max-width: 150px;
+      max-height: 75px;
+      margin-bottom: 10px;
     }
     
     .invoice-info {
@@ -168,25 +170,25 @@ const getInvoiceTemplate = (invoiceData: any) => {
     }
     
     .invoice-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
     }
     
     .invoice-ref {
-      font-size: 11px;
-      margin-bottom: 20px;
+      font-size: 10px;
+      margin-bottom: 15px;
     }
     
     .invoice-date {
-      font-size: 11px;
-      margin-bottom: 30px;
+      font-size: 10px;
+      margin-bottom: 20px;
     }
     
-    /* Client section */
+    /* Client section - compact */
     .client-section {
       text-align: right;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     
     .client-info {
@@ -202,117 +204,140 @@ const getInvoiceTemplate = (invoiceData: any) => {
       margin-bottom: 5px;
     }
     
-    /* Détails transport et marchandises */
+    /* Détails transport et marchandises - compact */
     .details-section {
-      margin-bottom: 30px;
+      margin-bottom: 15px;
     }
     
     .detail-row {
       display: flex;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       align-items: baseline;
     }
     
     .detail-label {
       font-weight: bold;
-      min-width: 180px;
+      min-width: 160px;
       flex-shrink: 0;
+      font-size: 9px;
     }
     
     .detail-value {
       flex: 1;
+      font-size: 9px;
     }
     
-    /* Section calculs */
+    /* Section calculs - compact */
     .calculations {
-      margin: 40px 0;
+      margin: 15px 0;
       border-top: 1px solid #ccc;
-      padding-top: 20px;
+      padding-top: 10px;
     }
     
     .calc-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       align-items: baseline;
     }
     
     .calc-label {
       font-weight: bold;
-      min-width: 200px;
+      min-width: 150px;
+      font-size: 9px;
     }
     
     .calc-value {
       text-align: right;
       font-weight: bold;
+      font-size: 9px;
     }
     
     .total-row {
       border-top: 1px solid #333;
-      margin-top: 15px;
-      padding-top: 10px;
-      font-size: 12px;
+      margin-top: 8px;
+      padding-top: 5px;
+      font-size: 10px;
       font-weight: bold;
     }
     
-    /* Conditions de paiement */
+    /* Conditions de paiement - compact */
     .payment-section {
-      margin: 40px 0;
-      padding: 15px 0;
+      margin: 15px 0;
+      padding: 8px 0;
       border-top: 1px solid #ccc;
     }
     
     .payment-title {
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
+      font-size: 9px;
     }
     
     .bank-details {
-      margin-top: 20px;
+      margin-top: 8px;
     }
     
     .bank-title {
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
+      font-size: 9px;
     }
     
     .bank-info {
-      line-height: 1.6;
+      line-height: 1.3;
+      font-size: 8px;
     }
     
-    /* Footer */
+    /* Footer - compact */
     .footer {
-      position: absolute;
-      bottom: 20mm;
-      left: 20mm;
-      right: 20mm;
+      margin-top: 15px;
       text-align: center;
       border-top: 1px solid #ccc;
-      padding-top: 15px;
+      padding-top: 8px;
     }
     
     .footer-logo {
-      max-width: 150px;
-      margin-bottom: 10px;
+      max-width: 100px;
+      margin-bottom: 5px;
     }
     
     .footer-info {
-      font-size: 10px;
-      line-height: 1.5;
+      font-size: 8px;
+      line-height: 1.3;
       color: #666;
     }
     
-    /* CSS Print optimisé */
+    /* CSS Print optimisé pour une page */
     @media print {
       .invoice-container {
         margin: 0;
-        padding: 15mm;
+        padding: 8mm;
         min-height: auto;
       }
       
       .footer {
-        position: fixed;
-        bottom: 15mm;
+        margin-top: 8px;
+        page-break-inside: avoid;
+      }
+      
+      .details-section {
+        margin-bottom: 8px;
+      }
+      
+      .calculations {
+        margin: 8px 0;
+        padding-top: 6px;
+      }
+      
+      .payment-section {
+        margin: 8px 0;
+        padding: 6px 0;
+      }
+      
+      /* Réduire encore plus les espacements */
+      .detail-row, .calc-row {
+        margin-bottom: 2px;
       }
       
       /* Éviter les coupures de page */
@@ -321,23 +346,19 @@ const getInvoiceTemplate = (invoiceData: any) => {
       .payment-section {
         page-break-inside: avoid;
       }
-      
-      /* Forcer une nouvelle page si nécessaire */
-      .page-break {
-        page-break-before: always;
-      }
     }
     
-    /* Styles pour données manquantes */
+    /* Styles pour données manquantes - compact */
     .missing-data {
       color: #999;
       font-style: italic;
+      font-size: 8px;
     }
     
     .highlight-missing {
       background-color: #fff3cd;
-      padding: 2px 4px;
-      border-radius: 3px;
+      padding: 1px 2px;
+      border-radius: 2px;
     }
   </style>
 </head>
