@@ -307,9 +307,9 @@ serve(async (req) => {
       .from('factures')
       .select(`
         *,
-        client:clients(*),
         vente:ventes(
           *,
+          client:clients(*),
           navire:navires(*)
         )
       `)
@@ -329,7 +329,7 @@ serve(async (req) => {
 
     const invoiceData = {
       facture,
-      client: facture.client,
+      client: facture.vente?.client,
       vente: facture.vente,
       navire: facture.vente?.navire,
       lignes: lignes || []
