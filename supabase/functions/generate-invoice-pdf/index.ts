@@ -51,13 +51,13 @@ const formatDate = (dateString: string): string => {
 const getInvoiceTemplate = (invoiceData: any) => {
   const { facture, client, lignes, vente, navire, prixUnitaireCalcule } = invoiceData;
   
-  // Calculs exacts comme sur la vraie facture
+  // NOUVEAU CODE v2.0 - Calculs exacts comme sur la vraie facture
   const quantite = lignes.reduce((acc: number, ligne: any) => acc + (ligne.quantite || 0), 0);
   
-  // Utiliser le PRU calculé par la fonction de base de données
+  // Utiliser EXCLUSIVEMENT le PRU calculé par la fonction de base de données
   const prixUnitaire = prixUnitaireCalcule || 0;
   
-  console.log('Template - PRU utilisé:', prixUnitaire, 'pour volume:', quantite);
+  console.log('🔥 TEMPLATE v2.0 - PRU FORCE:', prixUnitaire, 'pour volume:', quantite);
   
   const valeurFOB = quantite * prixUnitaire;
   const fret = navire?.taux_fret || (quantite * 30); // 30 EUR/TM par défaut
