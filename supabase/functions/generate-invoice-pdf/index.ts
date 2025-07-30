@@ -95,50 +95,58 @@ const getInvoiceTemplate = (invoiceData: any) => {
         max-width: none;
         width: 100%;
         margin: 0;
-        padding: 8mm;
+        padding: 6mm;
         page-break-inside: avoid;
-        min-height: auto;
+        min-height: calc(297mm - 12mm);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: calc(297mm - 16mm);
+      }
+      
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
       }
       
       .header {
-        margin-bottom: 8px;
+        margin-bottom: 15px;
       }
       
       .company-logo {
-        max-width: 100px;
-        max-height: 50px;
-        margin-bottom: 5px;
+        max-width: 120px;
+        max-height: 65px;
+        margin-bottom: 8px;
       }
       
       .client-section {
-        margin-bottom: 8px;
+        margin-bottom: 15px;
       }
       
       .details-section {
-        margin-bottom: 8px;
+        margin-bottom: 15px;
+        flex-grow: 1;
       }
       
       .calculations {
-        margin: 8px 0;
-        padding-top: 5px;
+        margin: 15px 0;
+        padding-top: 8px;
       }
       
       .payment-section {
-        margin: 8px 0;
-        padding: 5px 0;
+        margin: 15px 0;
+        padding: 8px 0;
+        flex-grow: 1;
       }
       
       .footer {
-        margin-top: auto;
-        padding-top: 5px;
+        margin-top: 15px;
+        padding-top: 8px;
       }
       
       @page {
-        margin: 6mm;
+        margin: 5mm;
         size: A4;
       }
     }
@@ -370,104 +378,106 @@ const getInvoiceTemplate = (invoiceData: any) => {
 </head>
 <body>
   <div class="invoice-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="company-section">
-        <img src="${COMPANY_CONFIG.logo}" alt="Yellowrock" class="company-logo" />
-        
-        <div class="invoice-info">
-          <div class="invoice-title">Facture Commerciale N° : ${facture.numero_facture}</div>
-          <div class="invoice-ref">Notre Ref : ${reference}</div>
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <div class="company-section">
+          <img src="${COMPANY_CONFIG.logo}" alt="Yellowrock" class="company-logo" />
           
-          <div class="invoice-date">${COMPANY_CONFIG.city.split('-')[1]}, le ${formatDate(facture.date_facture)}</div>
+          <div class="invoice-info">
+            <div class="invoice-title">Facture Commerciale N° : ${facture.numero_facture}</div>
+            <div class="invoice-ref">Notre Ref : ${reference}</div>
+            
+            <div class="invoice-date">${COMPANY_CONFIG.city.split('-')[1]}, le ${formatDate(facture.date_facture)}</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Client -->
-    <div class="client-section">
-      <div class="client-info">
-        <div class="client-name">${getDefaultValue(client?.nom, 'Client non spécifié').toUpperCase()}</div>
-        ${client?.adresse ? `${client.adresse}<br>` : '<span class="missing-data">Adresse non renseignée</span><br>'}
-        ${client?.ville ? `${client.ville}<br>` : ''}
-        ${client?.code_postal ? `${client.code_postal} ` : ''}${getDefaultValue(client?.pays, 'Maroc')}
+      <!-- Client -->
+      <div class="client-section">
+        <div class="client-info">
+          <div class="client-name">${getDefaultValue(client?.nom, 'Client non spécifié').toUpperCase()}</div>
+          ${client?.adresse ? `${client.adresse}<br>` : '<span class="missing-data">Adresse non renseignée</span><br>'}
+          ${client?.ville ? `${client.ville}<br>` : ''}
+          ${client?.code_postal ? `${client.code_postal} ` : ''}${getDefaultValue(client?.pays, 'Maroc')}
+        </div>
       </div>
-    </div>
 
-    <!-- Détails transport -->
-    <div class="details-section">
-      <div class="detail-row">
-        <span class="detail-label">Navire</span>
-        <span class="detail-value">: ${getDefaultValue(navire?.nom, 'M/V Non spécifié')}</span>
+      <!-- Détails transport -->
+      <div class="details-section">
+        <div class="detail-row">
+          <span class="detail-label">Navire</span>
+          <span class="detail-value">: ${getDefaultValue(navire?.nom, 'M/V Non spécifié')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Port de chargement</span>
+          <span class="detail-value">: ${getDefaultValue(navire?.port_chargement, 'Port de chargement')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Connaissement N°</span>
+          <span class="detail-value">: ${getDefaultValue(navire?.connaissement, '1')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Date de connaissement</span>
+          <span class="detail-value">: ${navire?.date_connaissement ? formatDate(navire.date_connaissement) : formatDate(facture.date_facture)}</span>
+        </div>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Port de chargement</span>
-        <span class="detail-value">: ${getDefaultValue(navire?.port_chargement, 'Port de chargement')}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Connaissement N°</span>
-        <span class="detail-value">: ${getDefaultValue(navire?.connaissement, '1')}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Date de connaissement</span>
-        <span class="detail-value">: ${navire?.date_connaissement ? formatDate(navire.date_connaissement) : formatDate(facture.date_facture)}</span>
-      </div>
-    </div>
 
-    <!-- Marchandises -->
-    <div class="details-section">
-      <div class="detail-row">
-        <span class="detail-label">Marchandises</span>
-        <span class="detail-value">: ${lignes[0]?.description || getDefaultValue(navire?.produit, 'Marchandises')}</span>
+      <!-- Marchandises -->
+      <div class="details-section">
+        <div class="detail-row">
+          <span class="detail-label">Marchandises</span>
+          <span class="detail-value">: ${lignes[0]?.description || getDefaultValue(navire?.produit, 'Marchandises')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Origine</span>
+          <span class="detail-value">: ${getDefaultValue(navire?.origine, 'Origine non spécifiée')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Port de déchargement</span>
+          <span class="detail-value">: ${getDefaultValue(navire?.port_dechargement, 'Port de destination')}</span>
+        </div>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Origine</span>
-        <span class="detail-value">: ${getDefaultValue(navire?.origine, 'Origine non spécifiée')}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Port de déchargement</span>
-        <span class="detail-value">: ${getDefaultValue(navire?.port_dechargement, 'Port de destination')}</span>
-      </div>
-    </div>
 
-    <!-- Calculs -->
-    <div class="calculations">
-      <div class="calc-row">
-        <span class="calc-label">Quantité</span>
-        <span class="calc-value">: ${quantite.toLocaleString('fr-FR', {minimumFractionDigits: 3})} TM</span>
-      </div>
-      <div class="calc-row">
-        <span class="calc-label">Prix/Parité</span>
-        <span class="calc-value">: ${facture.devise} ${prixUnitaire.toFixed(2)} / Tonne métrique</span>
-      </div>
-      
-      <div style="margin: 20px 0;">
+      <!-- Calculs -->
+      <div class="calculations">
         <div class="calc-row">
-          <span class="calc-label">Valeur F.O.B.</span>
-          <span class="calc-value">: ${facture.devise} ${(valeurFOB/quantite).toFixed(2)} / TM = <span style="margin-left: 20px;">${formatAmount(valeurFOB, facture.devise)}</span></span>
+          <span class="calc-label">Quantité</span>
+          <span class="calc-value">: ${quantite.toLocaleString('fr-FR', {minimumFractionDigits: 3})} TM</span>
         </div>
         <div class="calc-row">
-          <span class="calc-label">Fret</span>
-          <span class="calc-value">: ${facture.devise} ${(fret/quantite).toFixed(2)} / TM = <span style="margin-left: 20px;">${formatAmount(fret, facture.devise)}</span></span>
+          <span class="calc-label">Prix/Parité</span>
+          <span class="calc-value">: ${facture.devise} ${prixUnitaire.toFixed(2)} / Tonne métrique</span>
         </div>
-        <div class="calc-row total-row">
-          <span class="calc-label">Total dû CFR F.O.</span>
-          <span class="calc-value" style="margin-left: 74px;">${formatAmount(totalCFR, facture.devise)}</span>
+        
+        <div style="margin: 20px 0;">
+          <div class="calc-row">
+            <span class="calc-label">Valeur F.O.B.</span>
+            <span class="calc-value">: ${facture.devise} ${(valeurFOB/quantite).toFixed(2)} / TM = <span style="margin-left: 20px;">${formatAmount(valeurFOB, facture.devise)}</span></span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">Fret</span>
+            <span class="calc-value">: ${facture.devise} ${(fret/quantite).toFixed(2)} / TM = <span style="margin-left: 20px;">${formatAmount(fret, facture.devise)}</span></span>
+          </div>
+          <div class="calc-row total-row">
+            <span class="calc-label">Total dû CFR F.O.</span>
+            <span class="calc-value" style="margin-left: 74px;">${formatAmount(totalCFR, facture.devise)}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Conditions de paiement -->
-    <div class="payment-section">
-      <div class="payment-title">Conditions de paiement : ${getDefaultValue(facture.conditions_paiement, '100% contre présentation des documents via canal bancaire')}</div>
-      
-      <div class="bank-details">
-        <div class="bank-title">Coordonnées bancaires :</div>
-        <div class="bank-info">
-          Bénéficiaire: ${COMPANY_CONFIG.bank.beneficiary}<br>
-          Banque: ${COMPANY_CONFIG.bank.name}<br>
-          IBAN: ${COMPANY_CONFIG.bank.iban}<br>
-          SWIFT: ${COMPANY_CONFIG.bank.swift}
+      <!-- Conditions de paiement -->
+      <div class="payment-section">
+        <div class="payment-title">Conditions de paiement : ${getDefaultValue(facture.conditions_paiement, '100% contre présentation des documents via canal bancaire')}</div>
+        
+        <div class="bank-details">
+          <div class="bank-title">Coordonnées bancaires :</div>
+          <div class="bank-info">
+            Bénéficiaire: ${COMPANY_CONFIG.bank.beneficiary}<br>
+            Banque: ${COMPANY_CONFIG.bank.name}<br>
+            IBAN: ${COMPANY_CONFIG.bank.iban}<br>
+            SWIFT: ${COMPANY_CONFIG.bank.swift}
+          </div>
         </div>
       </div>
     </div>
