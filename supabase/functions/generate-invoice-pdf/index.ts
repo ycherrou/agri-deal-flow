@@ -527,18 +527,28 @@ serve(async (req) => {
 
     // Calculer le PRU en utilisant la fonction de base de données
     let prixUnitaireCalcule = 0;
+    console.log('Vente ID pour calcul PRU:', factureData.vente?.id);
+    
     if (factureData.vente?.id) {
+      console.log('Appel de la fonction calculate_pru_facture avec vente_id:', factureData.vente.id);
+      
       const { data: pruData, error: pruError } = await supabase
         .rpc('calculate_pru_facture', { vente_id_param: factureData.vente.id });
       
+      console.log('Résultat fonction PRU:', { pruData, pruError });
+      
       if (pruError) {
         console.error('Erreur calcul PRU:', pruError);
+        prixUnitaireCalcule = 0;
       } else {
         prixUnitaireCalcule = pruData || 0;
+        console.log('PRU calculé avec succès:', prixUnitaireCalcule);
       }
+    } else {
+      console.log('Aucune vente_id trouvée dans factureData.vente');
     }
 
-    console.log('PRU calculé par la fonction DB:', prixUnitaireCalcule);
+    console.log('PRU final utilisé pour la facture:', prixUnitaireCalcule);
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
