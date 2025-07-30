@@ -248,7 +248,7 @@ export default function Factures() {
       // Create a new window with the HTML content for printing
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        printWindow.document.write(data.html);
+        printWindow.document.write(data);
         printWindow.document.close();
         
         // Wait for content to load then trigger print
