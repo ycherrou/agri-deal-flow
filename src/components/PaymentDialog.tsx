@@ -67,12 +67,15 @@ export default function PaymentDialog({ open, onClose, invoice }: PaymentDialogP
       if (paymentError) throw paymentError;
 
       // Process payment using the existing function to handle financing liberation
-      const { error: processError } = await supabase
-        .rpc('traiter_paiement_facture', { 
-          paiement_id_param: payment.id 
-        });
+      // Only for commercial invoices (factures commerciales)
+      if (invoice.type_facture === 'commerciale') {
+        const { error: processError } = await supabase
+          .rpc('traiter_paiement_facture', { 
+            paiement_id_param: payment.id 
+          });
 
-      if (processError) throw processError;
+        if (processError) throw processError;
+      }
 
       return payment;
     },
@@ -83,7 +86,9 @@ export default function PaymentDialog({ open, onClose, invoice }: PaymentDialogP
       form.reset();
       toast({ 
         title: "Paiement enregistré avec succès", 
-        description: "Le financement associé a été automatiquement libéré"
+        description: invoice.type_facture === 'commerciale' 
+          ? "Le financement associé a été automatiquement libéré"
+          : "Paiement enregistré"
       });
     },
     onError: (error: any) => {

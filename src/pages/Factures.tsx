@@ -552,7 +552,7 @@ export default function Factures() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      {facture.statut !== 'payee' && (
+                      {facture.statut !== 'payee' && facture.type_facture !== 'proforma' && (
                         <Button 
                           variant="outline" 
                           size="sm"
