@@ -73,34 +73,46 @@ export type Database = {
       }
       clients: {
         Row: {
+          adresse: string | null
+          code_postal: string | null
           created_at: string | null
           email: string | null
           id: string
           nom: string
+          pays: string | null
           role: Database["public"]["Enums"]["user_role"]
           telephone: string | null
           updated_at: string | null
           user_id: string
+          ville: string | null
         }
         Insert: {
+          adresse?: string | null
+          code_postal?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           nom: string
+          pays?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           telephone?: string | null
           updated_at?: string | null
           user_id: string
+          ville?: string | null
         }
         Update: {
+          adresse?: string | null
+          code_postal?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           nom?: string
+          pays?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           telephone?: string | null
           updated_at?: string | null
           user_id?: string
+          ville?: string | null
         }
         Relationships: []
       }
@@ -222,6 +234,7 @@ export type Database = {
           montant_total: number
           notes: string | null
           numero_facture: string
+          reference: string | null
           statut: string
           taux_change: number | null
           type_facture: string
@@ -239,6 +252,7 @@ export type Database = {
           montant_total?: number
           notes?: string | null
           numero_facture: string
+          reference?: string | null
           statut?: string
           taux_change?: number | null
           type_facture: string
@@ -256,6 +270,7 @@ export type Database = {
           montant_total?: number
           notes?: string | null
           numero_facture?: string
+          reference?: string | null
           statut?: string
           taux_change?: number | null
           type_facture?: string
@@ -465,12 +480,17 @@ export type Database = {
       }
       navires: {
         Row: {
+          connaissement: string | null
           created_at: string | null
           date_arrivee: string
+          date_connaissement: string | null
           fournisseur: string
           id: string
           nom: string
+          origine: string | null
           parent_navire_id: string | null
+          port_chargement: string | null
+          port_dechargement: string | null
           prime_achat: number | null
           prix_achat_flat: number | null
           produit: Database["public"]["Enums"]["product_type"]
@@ -481,12 +501,17 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          connaissement?: string | null
           created_at?: string | null
           date_arrivee: string
+          date_connaissement?: string | null
           fournisseur: string
           id?: string
           nom: string
+          origine?: string | null
           parent_navire_id?: string | null
+          port_chargement?: string | null
+          port_dechargement?: string | null
           prime_achat?: number | null
           prix_achat_flat?: number | null
           produit: Database["public"]["Enums"]["product_type"]
@@ -497,12 +522,17 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          connaissement?: string | null
           created_at?: string | null
           date_arrivee?: string
+          date_connaissement?: string | null
           fournisseur?: string
           id?: string
           nom?: string
+          origine?: string | null
           parent_navire_id?: string | null
+          port_chargement?: string | null
+          port_dechargement?: string | null
           prime_achat?: number | null
           prix_achat_flat?: number | null
           produit?: Database["public"]["Enums"]["product_type"]
@@ -678,6 +708,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      references_factures: {
+        Row: {
+          annee: number
+          created_at: string | null
+          dernier_numero: number | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          annee: number
+          created_at?: string | null
+          dernier_numero?: number | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          annee?: number
+          created_at?: string | null
+          dernier_numero?: number | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       reventes_clients: {
         Row: {
@@ -960,6 +1014,10 @@ export type Database = {
       }
       generer_numero_facture: {
         Args: { type_facture_param: string }
+        Returns: string
+      }
+      generer_reference_facture: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_contract_size: {
