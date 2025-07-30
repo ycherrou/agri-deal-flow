@@ -163,185 +163,110 @@ export default function FinancingCharts() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {/* Bank Lines Usage Bar Chart */}
+      {/* Simple Bank Lines Overview - No Charts for Now */}
       <Card>
         <CardHeader>
           <CardTitle>Utilisation par Ligne Bancaire</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={bankLinesChartData} 
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  interval={0}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  domain={[0, 'dataMax']}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="utilise" stackId="a" fill="var(--color-utilise)" />
-                <Bar dataKey="disponible" stackId="a" fill="var(--color-disponible)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+          <div className="space-y-4">
+            {bankLinesChartData.map((ligne, index) => (
+              <div key={ligne.name} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">{ligne.name}</p>
+                  <p className="text-sm text-muted-foreground">{ligne.banque}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">{ligne.tauxUtilisation.toFixed(1)}%</p>
+                  <p className="text-sm text-muted-foreground">
+                    {ligne.utilise.toLocaleString()} / {ligne.total.toLocaleString()} USD
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Utilization Distribution Pie Chart */}
+      {/* Simple Distribution Display */}
       <Card>
         <CardHeader>
           <CardTitle>Répartition de l'Utilisation</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={utilizationData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {utilizationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <ChartTooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="rounded-lg border bg-background p-2 shadow-sm">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col">
-                              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                Ligne
-                              </span>
-                              <span className="font-bold text-muted-foreground">
-                                {data.name}
-                              </span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                Montant
-                              </span>
-                              <span className="font-bold">
-                                {data.value.toLocaleString()} USD
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+          <div className="space-y-3">
+            {utilizationData.map((item, index) => (
+              <div key={item.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-4 h-4 rounded-full" 
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="font-medium">{item.name}</span>
+                </div>
+                <span className="font-bold">{item.value.toLocaleString()} USD</span>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Utilization Rate Horizontal Bar Chart */}
+      {/* Utilization Rates */}
       <Card>
         <CardHeader>
           <CardTitle>Taux d'Utilisation par Ligne</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={bankLinesChartData.sort((a, b) => b.tauxUtilisation - a.tauxUtilisation)}
-                layout="horizontal"
-                margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
-              >
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  width={80}
-                />
-                <ChartTooltip 
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="rounded-lg border bg-background p-2 shadow-sm">
-                          <div className="grid grid-cols-1 gap-2">
-                            <span className="font-bold">{label}</span>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <span>Taux: {data.tauxUtilisation.toFixed(1)}%</span>
-                              <span>Utilisé: {data.utilise.toLocaleString()} USD</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar 
-                  dataKey="tauxUtilisation" 
-                  fill="hsl(var(--chart-1))"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+          <div className="space-y-3">
+            {bankLinesChartData
+              .sort((a, b) => b.tauxUtilisation - a.tauxUtilisation)
+              .map((ligne) => (
+                <div key={ligne.name} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{ligne.name}</span>
+                    <span className="font-medium">{ligne.tauxUtilisation.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(ligne.tauxUtilisation, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Timeline of Allocations and Liberations */}
+      {/* Timeline Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Évolution des Mouvements</CardTitle>
+          <CardTitle>Résumé des Mouvements</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis tick={{ fontSize: 12 }} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Area
-                  type="monotone"
-                  dataKey="allocations"
-                  stackId="1"
-                  stroke="var(--color-allocations)"
-                  fill="var(--color-allocations)"
-                  fillOpacity={0.6}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="liberations"
-                  stackId="2"
-                  stroke="var(--color-liberations)"
-                  fill="var(--color-liberations)"
-                  fillOpacity={0.6}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+          {timelineData.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">
+                    {timelineData.reduce((sum, d) => sum + d.allocations, 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-green-600">Total Allocations (USD)</p>
+                </div>
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">
+                    {timelineData.reduce((sum, d) => sum + d.liberations, 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-blue-600">Total Libérations (USD)</p>
+                </div>
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                Données basées sur les {timelineData.length} derniers mouvements
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">Aucun mouvement récent</p>
+          )}
         </CardContent>
       </Card>
     </div>
