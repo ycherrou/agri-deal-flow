@@ -246,8 +246,6 @@ export default function LignesBancaires() {
                 <TableHead>Montant Total</TableHead>
                 <TableHead>Utilisé</TableHead>
                 <TableHead>Disponible</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -261,24 +259,6 @@ export default function LignesBancaires() {
                     <span className={ligne.montant_disponible < 100000 ? "text-orange-600" : "text-green-600"}>
                       {ligne.montant_disponible.toLocaleString()} USD
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={ligne.active ? "secondary" : "destructive"}>
-                      {ligne.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toggleActiveMutation.mutate({
-                        id: ligne.id,
-                        active: !ligne.active
-                      })}
-                      disabled={toggleActiveMutation.isPending}
-                    >
-                      {ligne.active ? "Désactiver" : "Activer"}
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
