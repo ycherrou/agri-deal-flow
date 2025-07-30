@@ -512,9 +512,9 @@ serve(async (req) => {
       .from('factures')
       .select(`
         *,
+        client:clients(*),
         vente:ventes(
           *,
-          client:clients(*),
           navire:navires(*),
           couvertures(*)
         ),
@@ -563,7 +563,7 @@ serve(async (req) => {
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
-      client: factureData.vente?.client,
+      client: factureData.client,
       lignes: factureData.lignes,
       vente: factureData.vente,
       navire: navire
