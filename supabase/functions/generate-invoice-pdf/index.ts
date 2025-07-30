@@ -461,6 +461,8 @@ const getInvoiceTemplate = (invoiceData: any) => {
 };
 
 serve(async (req) => {
+  console.log('=== NOUVELLE VERSION EDGE FUNCTION - v2.0 ===');
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
