@@ -82,6 +82,59 @@ const getInvoiceTemplate = (invoiceData: any) => {
       background: white;
     }
     
+    /* Styles pour l'impression */
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 10px;
+      }
+      
+      .invoice-container {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        padding: 15mm;
+        page-break-inside: avoid;
+      }
+      
+      .header {
+        page-break-inside: avoid;
+        margin-bottom: 30px;
+      }
+      
+      .company-logo {
+        max-width: 150px;
+        max-height: 80px;
+      }
+      
+      .client-info, .invoice-details {
+        page-break-inside: avoid;
+      }
+      
+      .invoice-table {
+        page-break-inside: auto;
+      }
+      
+      .invoice-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+      
+      .footer {
+        position: fixed;
+        bottom: 10mm;
+        left: 15mm;
+        right: 15mm;
+        page-break-inside: avoid;
+      }
+      
+      @page {
+        margin: 10mm;
+        size: A4;
+      }
+    }
+    
     .invoice-container {
       max-width: 210mm;
       margin: 0 auto;
