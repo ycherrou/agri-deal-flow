@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon, DollarSign, ShoppingCart, Activity, MessageSquare } from 'lucide-react';
+import { Ship, TrendingUp, Users, LogOut, BarChart3, Settings, Shield, User as UserIcon, DollarSign, ShoppingCart, Activity, MessageSquare, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 interface LayoutProps {
   children: React.ReactNode;
@@ -356,6 +356,12 @@ export default function Layout({
     label: 'Finance',
     icon: DollarSign,
     path: '/finance',
+    roles: ['admin']
+  }, {
+    id: 'factures',
+    label: 'Facturation',
+    icon: FileText,
+    path: '/factures',
     roles: ['admin']
   }];
   if (loading) {
