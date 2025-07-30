@@ -57,7 +57,7 @@ export default function Finance() {
 
       const ventesWithFinancing: VenteFinancingData[] = await Promise.all(
         ventes.map(async (vente) => {
-          const pru = calculatePRU(vente);
+          const pru = await calculatePRU(vente);
           const montantBesoinFinancement = pru * vente.volume;
           const financement = vente.financements?.[0] as Financement | undefined;
           

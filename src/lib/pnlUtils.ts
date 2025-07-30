@@ -570,51 +570,86 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
 };
 
 /**
- * Calcule le PRU pour une vente donnée
+ * Calcule le PRU pour une vente donnée (identique au calcul client-side)
  */
-export const calculatePRU = (vente: any): number => {
+export const calculatePRU = async (vente: any): Promise<number> => {
   const navire = vente.navire;
   const couvertures = vente.couvertures || [];
   
-  let facteurConversion = 1;
-  
-  // Déterminer le facteur de conversion selon le produit
-  switch (navire.produit) {
-    case 'mais':
-      facteurConversion = 0.3937;
-      break;
-    case 'tourteau_soja':
-      facteurConversion = 0.9072;
-      break;
-    default:
-      facteurConversion = 1;
-  }
-  
   if (vente.type_deal === 'flat') {
-    // Pour les deals flat : ajouter le fret directement au prix flat
-    let prixFlatAvecFret = vente.prix_flat || navire.prix_achat_flat || 0;
+    // Pour les deals flat, le PRU est simplement le prix flat (déjà en USD/MT)
+    return vente.prix_flat || 0;
+  } else if (vente.type_deal === 'prime') {
+    // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
+    const facteurConversion = navire.produit === 'mais' ? 0.3937 
+      : navire.produit === 'tourteau_soja' ? 0.9072 
+      : 1;
     
-    if (navire.terme_commercial === 'FOB') {
-      prixFlatAvecFret += navire.taux_fret || 0;
+    let pruMoyen = 0;
+    const volumeTotal = vente.volume;
+    const volumeCouvert = couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
+    const volumeNonCouvert = volumeTotal - volumeCouvert;
+    
+    if (volumeCouvert > 0 && couvertures.length > 0) {
+      // Pour la partie couverte : utiliser les prix de couverture
+      const prixCouvertureMoyen = couvertures.reduce((sum: number, c: any) => 
+        sum + (c.prix_futures * c.volume_couvert), 0) / volumeCouvert;
+      const pruCouvert = (vente.prime_vente + prixCouvertureMoyen) * facteurConversion;
+      
+      if (volumeNonCouvert > 0) {
+        // Pour la partie non couverte : utiliser le dernier cours du contrat de référence
+        try {
+          const { data: prixMarche } = await supabase
+            .from('prix_marche')
+            .select('prix, echeance:echeances!inner(nom, active)')
+            .eq('echeance.active', true)
+            .eq('echeance.nom', vente.prix_reference)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          const dernierCoursMarche = prixMarche?.prix || 0;
+          const pruNonCouvert = (vente.prime_vente + dernierCoursMarche) * facteurConversion;
+          
+          // Moyenne pondérée des deux parties
+          pruMoyen = (pruCouvert * volumeCouvert + pruNonCouvert * volumeNonCouvert) / volumeTotal;
+        } catch (error) {
+          console.warn('Impossible de récupérer le prix de marché, utilisation de la partie couverte seulement');
+          pruMoyen = pruCouvert;
+        }
+      } else {
+        pruMoyen = pruCouvert;
+      }
+    } else if (volumeNonCouvert > 0) {
+      // Entièrement non couvert : utiliser le dernier cours du marché
+      try {
+        const { data: prixMarche } = await supabase
+          .from('prix_marche')
+          .select('prix, echeance:echeances!inner(nom, active)')
+          .eq('echeance.active', true)
+          .eq('echeance.nom', vente.prix_reference)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        const dernierCoursMarche = prixMarche?.prix || 0;
+        
+        if (dernierCoursMarche > 0) {
+          pruMoyen = (vente.prime_vente + dernierCoursMarche) * facteurConversion;
+        } else {
+          // Fallback si pas de prix de marché : prime seule
+          pruMoyen = vente.prime_vente * facteurConversion;
+        }
+      } catch (error) {
+        console.warn('Impossible de récupérer le prix de marché, utilisation de la prime seule');
+        pruMoyen = vente.prime_vente * facteurConversion;
+      }
     }
     
-    return prixFlatAvecFret;
-  } else {
-    // Pour les deals prime : convertir le fret et l'ajouter à la prime
-    let primeAchatAvecFret = navire.prime_achat || 0;
-    
-    if (navire.terme_commercial === 'FOB' && facteurConversion > 0) {
-      primeAchatAvecFret += (navire.taux_fret || 0) / facteurConversion;
-    }
-    
-    // Calculer le prix futures moyen
-    const prixFuturesMoyen = couvertures.length > 0 
-      ? couvertures.reduce((sum: number, c: any) => sum + c.prix_futures, 0) / couvertures.length
-      : 0;
-    
-    // PRU = (prime_vente - prime_achat_avec_fret + futures) * facteur_conversion
-    return (vente.prime_vente - primeAchatAvecFret + prixFuturesMoyen) * facteurConversion;
+    return pruMoyen;
   }
+  
+  return 0;
 };
 
 export const calculateMoyennePonderee = (values: number[], volumes: number[]): number => {
