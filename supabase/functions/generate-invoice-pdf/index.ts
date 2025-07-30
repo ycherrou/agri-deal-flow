@@ -11,6 +11,19 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Configuration de l'entreprise
+const COMPANY_CONFIG = {
+  name: "VOTRE ENTREPRISE",
+  logo: "https://via.placeholder.com/150x80/0F172A/FFFFFF?text=LOGO", // Remplacez par l'URL de votre logo
+  address: "123 Rue de l'Agriculture",
+  city: "75001 Paris, France",
+  phone: "+33 1 23 45 67 89",
+  email: "contact@entreprise.com",
+  siret: "123 456 789 00123",
+  brandColor: "#0F172A", // Remplacez par votre couleur de marque
+  accentColor: "#1E40AF"
+};
+
 // HTML template for invoice
 const getInvoiceTemplate = (invoiceData: any) => {
   const { facture, client, lignes, vente, navire } = invoiceData;
@@ -23,6 +36,11 @@ const getInvoiceTemplate = (invoiceData: any) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Facture ${facture.numero_facture}</title>
   <style>
+    :root {
+      --brand-color: ${COMPANY_CONFIG.brandColor};
+      --accent-color: ${COMPANY_CONFIG.accentColor};
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -49,8 +67,21 @@ const getInvoiceTemplate = (invoiceData: any) => {
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 30px;
-      border-bottom: 2px solid #2563eb;
+      border-bottom: 3px solid var(--brand-color);
       padding-bottom: 20px;
+    }
+    
+    .company-section {
+      display: flex;
+      align-items: flex-start;
+      flex: 1;
+      gap: 20px;
+    }
+    
+    .company-logo {
+      max-width: 120px;
+      max-height: 80px;
+      object-fit: contain;
     }
     
     .company-info {
@@ -60,13 +91,14 @@ const getInvoiceTemplate = (invoiceData: any) => {
     .company-name {
       font-size: 24px;
       font-weight: bold;
-      color: #2563eb;
+      color: var(--brand-color);
       margin-bottom: 10px;
     }
     
     .company-details {
       font-size: 11px;
       color: #666;
+      line-height: 1.5;
     }
     
     .invoice-title {
@@ -76,14 +108,16 @@ const getInvoiceTemplate = (invoiceData: any) => {
     
     .invoice-title h1 {
       font-size: 28px;
-      color: #2563eb;
+      color: var(--brand-color);
       margin-bottom: 10px;
+      font-weight: 700;
     }
     
     .invoice-number {
       font-size: 14px;
       font-weight: bold;
       margin-bottom: 5px;
+      color: var(--accent-color);
     }
     
     .invoice-date {
@@ -95,59 +129,70 @@ const getInvoiceTemplate = (invoiceData: any) => {
       display: flex;
       justify-content: space-between;
       margin-bottom: 30px;
+      gap: 20px;
     }
     
     .client-info, .invoice-details {
       flex: 1;
-      padding: 15px;
+      padding: 20px;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
-    }
-    
-    .client-info {
-      margin-right: 20px;
+      border-radius: 12px;
+      background: #fafafa;
     }
     
     .section-title {
       font-size: 14px;
       font-weight: bold;
-      color: #2563eb;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 5px;
+      color: var(--brand-color);
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .details-table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 30px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .details-table th {
-      background-color: #f3f4f6;
-      color: #374151;
+      background: linear-gradient(135deg, var(--brand-color), var(--accent-color));
+      color: white;
       font-weight: bold;
-      padding: 12px;
+      padding: 15px 12px;
       text-align: left;
-      border: 1px solid #d1d5db;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
     
     .details-table td {
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      background: white;
     }
     
     .details-table tbody tr:nth-child(even) {
-      background-color: #f9fafb;
+      background-color: #f8fafc;
+    }
+    
+    .details-table tbody tr:hover {
+      background-color: #f1f5f9;
     }
     
     .amount-right {
       text-align: right;
       font-weight: bold;
+      color: var(--brand-color);
     }
     
     .totals {
-      width: 300px;
+      width: 350px;
       margin-left: auto;
       margin-bottom: 30px;
     }
@@ -155,42 +200,59 @@ const getInvoiceTemplate = (invoiceData: any) => {
     .total-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 10px 0;
       border-bottom: 1px solid #e5e7eb;
     }
     
     .total-row.final {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: bold;
-      background-color: #2563eb;
+      background: linear-gradient(135deg, var(--brand-color), var(--accent-color));
       color: white;
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 10px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
     .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
+      margin-top: 50px;
+      padding-top: 25px;
+      border-top: 2px solid var(--brand-color);
       font-size: 11px;
       color: #666;
     }
     
     .payment-terms {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-left: 4px solid var(--accent-color);
+      border-radius: 4px;
     }
     
     .legal-mentions {
       font-size: 10px;
       text-align: center;
       color: #999;
+      margin-top: 20px;
+      padding: 10px;
+      background: #f9fafb;
+      border-radius: 6px;
     }
     
     @media print {
       .invoice-container {
         margin: 0;
         padding: 15mm;
+      }
+      
+      .details-table {
+        box-shadow: none;
+      }
+      
+      .total-row.final {
+        box-shadow: none;
       }
     }
   </style>
@@ -199,14 +261,17 @@ const getInvoiceTemplate = (invoiceData: any) => {
   <div class="invoice-container">
     <!-- Header -->
     <div class="header">
-      <div class="company-info">
-        <div class="company-name">VOTRE ENTREPRISE</div>
-        <div class="company-details">
-          123 Rue de l'Agriculture<br>
-          75001 Paris, France<br>
-          Tél: +33 1 23 45 67 89<br>
-          Email: contact@entreprise.com<br>
-          SIRET: 123 456 789 00123
+      <div class="company-section">
+        <img src="${COMPANY_CONFIG.logo}" alt="Logo ${COMPANY_CONFIG.name}" class="company-logo" />
+        <div class="company-info">
+          <div class="company-name">${COMPANY_CONFIG.name}</div>
+          <div class="company-details">
+            ${COMPANY_CONFIG.address}<br>
+            ${COMPANY_CONFIG.city}<br>
+            Tél: ${COMPANY_CONFIG.phone}<br>
+            Email: ${COMPANY_CONFIG.email}<br>
+            SIRET: ${COMPANY_CONFIG.siret}
+          </div>
         </div>
       </div>
       <div class="invoice-title">
