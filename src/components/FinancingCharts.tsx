@@ -7,6 +7,12 @@ import { LigneBancaire } from "@/types";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
+// Helper function to ensure valid numbers
+const safeNumber = (value: any, fallback: number = 0): number => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
 export default function FinancingCharts() {
   // Fetch bank lines with detailed usage
   const { data: bankLinesData = [] } = useQuery({
@@ -41,43 +47,56 @@ export default function FinancingCharts() {
     }
   });
 
-  // Prepare data for charts with null/undefined checks
-  const bankLinesChartData = bankLinesData.map(ligne => {
-    const total = ligne.montant_total || 0;
-    const utilise = ligne.montant_utilise || 0;
-    const disponible = ligne.montant_disponible || 0;
-    const tauxUtilisation = total > 0 ? (utilise / total) * 100 : 0;
-    
-    return {
-      name: ligne.nom || 'N/A',
-      banque: ligne.banque || 'N/A',
-      total,
-      utilise,
-      disponible,
-      tauxUtilisation: Number.isFinite(tauxUtilisation) ? tauxUtilisation : 0
-    };
-  });
+  // Prepare data for charts with comprehensive validation
+  const bankLinesChartData = bankLinesData
+    .filter(ligne => ligne && ligne.nom) // Filter out invalid entries
+    .map(ligne => {
+      const total = safeNumber(ligne.montant_total);
+      const utilise = safeNumber(ligne.montant_utilise);
+      const disponible = safeNumber(ligne.montant_disponible);
+      const tauxUtilisation = total > 0 ? (utilise / total) * 100 : 0;
+      
+      // Debug logging
+      console.log('Bank line data:', {
+        nom: ligne.nom,
+        total,
+        utilise,
+        disponible,
+        tauxUtilisation
+      });
+      
+      return {
+        name: ligne.nom || 'N/A',
+        banque: ligne.banque || 'N/A',
+        total,
+        utilise,
+        disponible,
+        tauxUtilisation: safeNumber(tauxUtilisation)
+      };
+    })
+    .filter(item => safeNumber(item.total) > 0); // Only include lines with valid totals
 
-  const utilizationData = bankLinesData
-    .filter(ligne => ligne.montant_utilise > 0) // Only include lines with actual usage
-    .map((ligne, index) => ({
-      name: ligne.nom || 'N/A',
-      value: ligne.montant_utilise || 0,
+  const utilizationData = bankLinesChartData
+    .filter(item => safeNumber(item.utilise) > 0) // Only include lines with actual usage
+    .map((item, index) => ({
+      name: item.name,
+      value: safeNumber(item.utilise),
       color: COLORS[index % COLORS.length]
     }));
 
   const timelineData = movementsData
-    .filter(movement => movement.montant && Number.isFinite(movement.montant)) // Filter out invalid amounts
+    .filter(movement => movement && movement.date_mouvement && movement.type_mouvement) // Filter out invalid movements
+    .filter(movement => safeNumber(movement.montant) > 0) // Filter out invalid amounts
     .reduce((acc: any[], movement: any) => {
       const date = new Date(movement.date_mouvement).toLocaleDateString();
       const existing = acc.find(item => item.date === date);
-      const montant = movement.montant || 0;
+      const montant = safeNumber(movement.montant);
       
       if (existing) {
         if (movement.type_mouvement === 'allocation') {
-          existing.allocations += montant;
+          existing.allocations = safeNumber(existing.allocations) + montant;
         } else if (movement.type_mouvement === 'liberation') {
-          existing.liberations += montant;
+          existing.liberations = safeNumber(existing.liberations) + montant;
         }
       } else {
         acc.push({
@@ -89,7 +108,21 @@ export default function FinancingCharts() {
       
       return acc;
     }, [])
-    .slice(-30); // Last 30 data points
+    .slice(-30) // Last 30 data points
+    .map(item => ({
+      ...item,
+      allocations: safeNumber(item.allocations),
+      liberations: safeNumber(item.liberations)
+    })); // Ensure all values are safe numbers
+
+  console.log('Chart data prepared:', {
+    bankLinesCount: bankLinesChartData.length,
+    utilizationCount: utilizationData.length,
+    timelineCount: timelineData.length,
+    bankLinesData: bankLinesChartData,
+    utilizationData,
+    timelineData
+  });
 
   const chartConfig = {
     utilise: {
@@ -110,10 +143,15 @@ export default function FinancingCharts() {
     }
   };
 
-  // Add safety check for empty data
-  if (bankLinesData.length === 0) {
+  // Add comprehensive safety checks for empty data
+  if (!bankLinesData || bankLinesData.length === 0 || bankLinesChartData.length === 0) {
     return (
       <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardContent className="flex items-center justify-center h-80">
+            <p className="text-muted-foreground">Aucune donnée disponible pour les graphiques</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="flex items-center justify-center h-80">
             <p className="text-muted-foreground">Aucune donnée disponible pour les graphiques</p>
@@ -133,15 +171,22 @@ export default function FinancingCharts() {
         <CardContent>
           <ChartContainer config={chartConfig} className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bankLinesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart 
+                data={bankLinesChartData} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
                 <XAxis 
                   dataKey="name" 
                   tick={{ fontSize: 12 }}
                   angle={-45}
                   textAnchor="end"
-                  height={60}
+                  height={80}
+                  interval={0}
                 />
-                <YAxis tick={{ fontSize: 12 }} />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  domain={[0, 'dataMax']}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="utilise" stackId="a" fill="var(--color-utilise)" />
                 <Bar dataKey="disponible" stackId="a" fill="var(--color-disponible)" />
