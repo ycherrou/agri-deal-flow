@@ -581,7 +581,13 @@ serve(async (req) => {
       prixMarche = prixMarcheData;
     }
 
-    console.log('Invoice data processed successfully');
+    console.log('Invoice data processed successfully', {
+      prixUnitaire,
+      volumeCouvert: vente?.couvertures?.reduce((sum: number, c: any) => sum + (c.volume_couvert || 0), 0) || 0,
+      volumeTotal: vente?.volume || quantite,
+      prixMarche: prixMarche?.prix,
+      primeVente: vente?.prime_vente
+    });
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
