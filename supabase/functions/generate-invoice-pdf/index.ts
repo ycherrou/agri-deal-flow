@@ -50,9 +50,48 @@ const formatDate = (dateString: string): string => {
 const getInvoiceTemplate = (invoiceData: any) => {
   const { facture, client, lignes, vente, navire } = invoiceData;
   
-  // Calculs exacts comme sur la vraie facture avec valeurs par défaut
+  // Calculs exacts comme sur la vraie facture avec calcul PRU correct
   const quantite = lignes.reduce((acc: number, ligne: any) => acc + (ligne.quantite || 0), 0);
-  const prixUnitaire = lignes.length > 0 ? (lignes[0].prix_unitaire || 0) : 0;
+  
+  // Calcul du PRU selon le type de deal et les couvertures
+  let prixUnitaire = 0;
+  if (vente?.type_deal === 'flat') {
+    prixUnitaire = vente.prix_flat || 0;
+  } else if (vente?.type_deal === 'prime') {
+    // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
+    const facteurConversion = navire?.produit === 'mais' ? 0.3937 
+      : navire?.produit === 'tourteau_soja' ? 0.9072 
+      : 1;
+    
+    const couvertures = vente.couvertures || [];
+    const volumeTotal = vente.volume || quantite;
+    const volumeCouvert = couvertures.reduce((sum: number, c: any) => sum + (c.volume_couvert || 0), 0);
+    const volumeNonCouvert = volumeTotal - volumeCouvert;
+    
+    if (volumeCouvert > 0 && couvertures.length > 0) {
+      // Pour la partie couverte : utiliser les prix de couverture
+      const prixCouvertureMoyen = couvertures.reduce((sum: number, c: any) => 
+        sum + ((c.prix_futures || 0) * (c.volume_couvert || 0)), 0) / volumeCouvert;
+      const pruCouvert = ((vente.prime_vente || 0) + prixCouvertureMoyen) * facteurConversion;
+      
+      if (volumeNonCouvert > 0) {
+        // Pour la partie non couverte : utiliser la prime seule comme fallback
+        const pruNonCouvert = (vente.prime_vente || 0) * facteurConversion;
+        
+        // Moyenne pondérée des deux parties
+        prixUnitaire = (pruCouvert * volumeCouvert + pruNonCouvert * volumeNonCouvert) / volumeTotal;
+      } else {
+        prixUnitaire = pruCouvert;
+      }
+    } else {
+      // Entièrement non couvert : utiliser la prime seule
+      prixUnitaire = (vente.prime_vente || 0) * facteurConversion;
+    }
+  } else {
+    // Fallback pour les anciennes lignes de facture
+    prixUnitaire = lignes.length > 0 ? (lignes[0].prix_unitaire || 0) : 0;
+  }
+  
   const valeurFOB = quantite * prixUnitaire;
   const fret = navire?.taux_fret || (quantite * 30); // 30 EUR/TM par défaut
   const totalCFR = valeurFOB + fret;
@@ -476,7 +515,8 @@ serve(async (req) => {
         vente:ventes(
           *,
           client:clients(*),
-          navire:navires(*)
+          navire:navires(*),
+          couvertures(*)
         ),
         lignes:lignes_facture(*)
       `)
