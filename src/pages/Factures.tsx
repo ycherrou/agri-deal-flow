@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FileText, DollarSign } from "lucide-react";
+import { Plus, FileText, DollarSign, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const invoiceSchema = z.object({
@@ -235,6 +235,42 @@ export default function Factures() {
     
     const config = typeConfig[type as keyof typeof typeConfig];
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const downloadInvoicePDF = async (factureId: string, numeroFacture: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-invoice-pdf', {
+        body: { factureId }
+      });
+
+      if (error) throw error;
+
+      // Create a new window with the HTML content for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 100);
+        };
+      }
+
+      toast({
+        title: "PDF généré",
+        description: "La facture s'ouvre dans une nouvelle fenêtre pour impression"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le PDF de la facture",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
@@ -463,9 +499,19 @@ export default function Factures() {
                   <TableCell>{getStatusBadge(facture.statut)}</TableCell>
                   <TableCell>{new Date(facture.date_facture).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm">
-                      Voir détails
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => downloadInvoicePDF(facture.id, facture.numero_facture)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Détails
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
