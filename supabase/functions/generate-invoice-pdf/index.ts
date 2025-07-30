@@ -481,7 +481,6 @@ serve(async (req) => {
       .from('factures')
       .select(`
         *,
-        client:clients(*),
         vente:ventes(
           *,
           navire:navires(*),
@@ -528,6 +527,17 @@ serve(async (req) => {
       navire = navireData;
     }
 
+    // Récupérer les données du client séparément
+    let client = null;
+    if (factureData.client_id) {
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', factureData.client_id)
+        .single();
+      client = clientData;
+    }
+
     // Calculer le PRU en utilisant la fonction de base de données
     let prixUnitaireCalcule = 0;
     console.log('Vente ID pour calcul PRU:', factureData.vente?.id);
@@ -555,7 +565,7 @@ serve(async (req) => {
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
-      client: factureData.client,
+      client: client,
       lignes: factureData.lignes,
       vente: factureData.vente,
       navire: navire,
