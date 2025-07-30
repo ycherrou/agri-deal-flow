@@ -413,13 +413,13 @@ serve(async (req) => {
   }
 
   try {
-    const { invoiceId } = await req.json();
+    const { factureId } = await req.json();
     
-    if (!invoiceId) {
-      throw new Error('Invoice ID is required');
+    if (!factureId) {
+      throw new Error('Facture ID is required');
     }
 
-    console.log('Generating invoice for ID:', invoiceId);
+    console.log('Generating invoice for ID:', factureId);
 
     // Récupérer les données de la facture avec jointures optimisées
     const { data: factureData, error: factureError } = await supabase
@@ -433,7 +433,7 @@ serve(async (req) => {
           navire:navires(*)
         )
       `)
-      .eq('id', invoiceId)
+      .eq('id', factureId)
       .single();
 
     if (factureError) {
@@ -447,11 +447,11 @@ serve(async (req) => {
 
     // Validation des données requises avec fallbacks
     if (!factureData.client) {
-      console.warn('Client data is missing for invoice:', invoiceId);
+      console.warn('Client data is missing for invoice:', factureId);
     }
 
     if (!factureData.lignes || factureData.lignes.length === 0) {
-      console.warn('Invoice lines are missing for invoice:', invoiceId);
+      console.warn('Invoice lines are missing for invoice:', factureId);
       // Créer une ligne par défaut si aucune ligne n'existe
       factureData.lignes = [{
         description: 'Marchandises',
