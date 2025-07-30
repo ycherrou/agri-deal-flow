@@ -405,7 +405,7 @@ export default function Navires() {
                 <Input
                   id="quantite_totale"
                   type="number"
-                  step="0.01"
+                  step="0.001"
                   value={formData.quantite_totale}
                   onChange={(e) => setFormData({ ...formData, quantite_totale: e.target.value })}
                   required
@@ -584,7 +584,7 @@ export default function Navires() {
                         {PRODUCTS.find(p => p.value === navire.produit)?.label}
                       </Badge>
                     </TableCell>
-                    <TableCell>{navire.quantite_totale} MT</TableCell>
+                    <TableCell>{navire.quantite_totale.toFixed(3)} MT</TableCell>
                     <TableCell>
                       {getPrixAchatAvecFret(navire)}
                     </TableCell>
@@ -613,7 +613,7 @@ export default function Navires() {
                       <div className="space-y-1">
                         <div className="flex items-center text-sm">
                           <Package className="h-3 w-3 mr-1 text-muted-foreground" />
-                          {navire.volumeVendu || 0} / {navire.quantite_totale} MT
+                          {(navire.volumeVendu || 0).toFixed(3)} / {navire.quantite_totale.toFixed(3)} MT
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {navire.nombreClients || 0} client{(navire.nombreClients || 0) > 1 ? 's' : ''}
