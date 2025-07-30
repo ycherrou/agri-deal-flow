@@ -82,81 +82,38 @@ const getInvoiceTemplate = (invoiceData: any) => {
       background: white;
     }
     
-    /* Styles pour l'impression - ultra optimisé */
-    @media print {
-      body {
-        margin: 0;
-        padding: 0;
-        font-size: 9px;
-        line-height: 1.1;
-      }
-      
-      .invoice-container {
-        max-width: none;
-        width: 100%;
-        margin: 0;
-        padding: 6mm;
-        page-break-inside: avoid;
-        min-height: calc(297mm - 12mm);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-      }
-      
-      .main-content {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-evenly;
-      }
-      
-      .header {
-        margin-bottom: 15px;
-      }
-      
-      .company-logo {
-        max-width: 120px;
-        max-height: 65px;
-        margin-bottom: 8px;
-      }
-      
-      .client-section {
-        margin-bottom: 15px;
-      }
-      
-      .details-section {
-        margin-bottom: 15px;
-        flex-grow: 1;
-      }
-      
-      .calculations {
-        margin: 15px 0;
-        padding-top: 8px;
-      }
-      
-      .payment-section {
-        margin: 15px 0;
-        padding: 8px 0;
-        flex-grow: 1;
-      }
-      
-      .footer {
-        margin-top: 15px;
-        padding-top: 8px;
-      }
-      
-      @page {
-        margin: 5mm;
-        size: A4;
-      }
+    /* Styles optimisés pour génération PDF */
+    body {
+      margin: 0;
+      padding: 0;
+      font-size: 9px;
+      line-height: 1.1;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+    }
+    
+    @page {
+      margin: 0;
+      size: A4;
     }
     
     .invoice-container {
-      max-width: 210mm;
-      margin: 0 auto;
-      padding: 12mm;
-      min-height: auto;
-      position: relative;
+      width: 210mm;
+      height: 297mm;
+      margin: 0;
+      padding: 8mm;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    .main-content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
     }
     
     /* Header avec logo - très compact */
