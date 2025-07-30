@@ -77,12 +77,12 @@ const getInvoiceTemplate = (invoiceData: any) => {
     body {
       font-family: Arial, sans-serif;
       font-size: 10px;
-      line-height: 1.2;
+      line-height: 1.15;
       color: #333;
       background: white;
     }
     
-    /* Styles pour l'impression - optimisé pour une page */
+    /* Styles pour l'impression - ultra optimisé */
     @media print {
       body {
         margin: 0;
@@ -95,44 +95,50 @@ const getInvoiceTemplate = (invoiceData: any) => {
         max-width: none;
         width: 100%;
         margin: 0;
-        padding: 10mm;
+        padding: 8mm;
         page-break-inside: avoid;
         min-height: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: calc(297mm - 16mm);
       }
       
       .header {
-        page-break-inside: avoid;
-        margin-bottom: 15px;
-      }
-      
-      .company-logo {
-        max-width: 120px;
-        max-height: 60px;
         margin-bottom: 8px;
       }
       
-      .client-info, .invoice-details {
-        page-break-inside: avoid;
-        margin-bottom: 10px;
+      .company-logo {
+        max-width: 100px;
+        max-height: 50px;
+        margin-bottom: 5px;
       }
       
-      .invoice-table {
-        page-break-inside: auto;
-        margin-bottom: 15px;
+      .client-section {
+        margin-bottom: 8px;
       }
       
-      .invoice-table tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
+      .details-section {
+        margin-bottom: 8px;
+      }
+      
+      .calculations {
+        margin: 8px 0;
+        padding-top: 5px;
+      }
+      
+      .payment-section {
+        margin: 8px 0;
+        padding: 5px 0;
       }
       
       .footer {
-        margin-top: 10px;
-        page-break-inside: avoid;
+        margin-top: auto;
+        padding-top: 5px;
       }
       
       @page {
-        margin: 8mm;
+        margin: 6mm;
         size: A4;
       }
     }
@@ -140,17 +146,17 @@ const getInvoiceTemplate = (invoiceData: any) => {
     .invoice-container {
       max-width: 210mm;
       margin: 0 auto;
-      padding: 15mm;
+      padding: 12mm;
       min-height: auto;
       position: relative;
     }
     
-    /* Header avec logo - compact */
+    /* Header avec logo - très compact */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     
     .company-section {
@@ -160,9 +166,9 @@ const getInvoiceTemplate = (invoiceData: any) => {
     }
     
     .company-logo {
-      max-width: 150px;
-      max-height: 75px;
-      margin-bottom: 10px;
+      max-width: 120px;
+      max-height: 60px;
+      margin-bottom: 6px;
     }
     
     .invoice-info {
@@ -170,25 +176,25 @@ const getInvoiceTemplate = (invoiceData: any) => {
     }
     
     .invoice-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     
     .invoice-ref {
-      font-size: 10px;
-      margin-bottom: 15px;
+      font-size: 9px;
+      margin-bottom: 8px;
     }
     
     .invoice-date {
-      font-size: 10px;
-      margin-bottom: 20px;
+      font-size: 9px;
+      margin-bottom: 12px;
     }
     
-    /* Client section - compact */
+    /* Client section - très compact */
     .client-section {
       text-align: right;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     
     .client-info {
@@ -204,67 +210,67 @@ const getInvoiceTemplate = (invoiceData: any) => {
       margin-bottom: 5px;
     }
     
-    /* Détails transport et marchandises - compact */
+    /* Détails transport et marchandises - ultra compact */
     .details-section {
-      margin-bottom: 15px;
+      margin-bottom: 8px;
     }
     
     .detail-row {
       display: flex;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       align-items: baseline;
     }
     
     .detail-label {
       font-weight: bold;
-      min-width: 160px;
+      min-width: 140px;
       flex-shrink: 0;
-      font-size: 9px;
+      font-size: 8px;
     }
     
     .detail-value {
       flex: 1;
-      font-size: 9px;
+      font-size: 8px;
     }
     
-    /* Section calculs - compact */
+    /* Section calculs - ultra compact */
     .calculations {
-      margin: 15px 0;
+      margin: 8px 0;
       border-top: 1px solid #ccc;
-      padding-top: 10px;
+      padding-top: 6px;
     }
     
     .calc-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       align-items: baseline;
     }
     
     .calc-label {
       font-weight: bold;
-      min-width: 150px;
-      font-size: 9px;
+      min-width: 120px;
+      font-size: 8px;
     }
     
     .calc-value {
       text-align: right;
       font-weight: bold;
-      font-size: 9px;
+      font-size: 8px;
     }
     
     .total-row {
       border-top: 1px solid #333;
-      margin-top: 8px;
-      padding-top: 5px;
-      font-size: 10px;
+      margin-top: 4px;
+      padding-top: 3px;
+      font-size: 9px;
       font-weight: bold;
     }
     
-    /* Conditions de paiement - compact */
+    /* Conditions de paiement - ultra compact */
     .payment-section {
-      margin: 15px 0;
-      padding: 8px 0;
+      margin: 8px 0;
+      padding: 5px 0;
       border-top: 1px solid #ccc;
     }
     
@@ -289,22 +295,22 @@ const getInvoiceTemplate = (invoiceData: any) => {
       font-size: 8px;
     }
     
-    /* Footer - compact */
+    /* Footer - très compact */
     .footer {
-      margin-top: 15px;
+      margin-top: 6px;
       text-align: center;
       border-top: 1px solid #ccc;
-      padding-top: 8px;
+      padding-top: 4px;
     }
     
     .footer-logo {
-      max-width: 100px;
-      margin-bottom: 5px;
+      max-width: 80px;
+      margin-bottom: 3px;
     }
     
     .footer-info {
-      font-size: 8px;
-      line-height: 1.3;
+      font-size: 7px;
+      line-height: 1.2;
       color: #666;
     }
     
