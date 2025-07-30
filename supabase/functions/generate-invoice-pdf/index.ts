@@ -426,12 +426,12 @@ serve(async (req) => {
       .from('factures')
       .select(`
         *,
-        client:clients(*),
-        lignes:lignes_facture(*),
         vente:ventes(
           *,
+          client:clients(*),
           navire:navires(*)
-        )
+        ),
+        lignes:lignes_facture(*)
       `)
       .eq('id', factureId)
       .single();
@@ -476,7 +476,7 @@ serve(async (req) => {
 
     const htmlContent = getInvoiceTemplate({
       facture: factureData,
-      client: factureData.client,
+      client: factureData.vente?.client,
       lignes: factureData.lignes,
       vente: factureData.vente,
       navire: navire
