@@ -99,9 +99,9 @@ export default function Factures() {
   // Calculate PRU and other data when vente is selected
   const calculateInvoiceData = async (venteId: string) => {
     try {
-      // Get PRU using the database function
+      // Get PRU using the NEW database function for invoices
       const { data: pruData, error: pruError } = await supabase
-        .rpc('calculate_pru_vente', { vente_id_param: venteId });
+        .rpc('calculate_pru_facture', { vente_id_param: venteId });
 
       if (pruError) throw pruError;
 
