@@ -48,7 +48,7 @@ const formatDate = (dateString: string): string => {
 
 // Template HTML optimisé reproduisant exactement la facture Yellowrock
 const getInvoiceTemplate = (invoiceData: any) => {
-  const { facture, client, lignes, vente, navire } = invoiceData;
+  const { facture, client, lignes, vente, navire, prixMarche } = invoiceData;
   
   // Calculs exacts comme sur la vraie facture avec calcul PRU correct
   const quantite = lignes.reduce((acc: number, ligne: any) => acc + (ligne.quantite || 0), 0);
@@ -75,8 +75,12 @@ const getInvoiceTemplate = (invoiceData: any) => {
       const pruCouvert = ((vente.prime_vente || 0) + prixCouvertureMoyen) * facteurConversion;
       
       if (volumeNonCouvert > 0) {
-        // Pour la partie non couverte : utiliser la prime seule comme fallback
-        const pruNonCouvert = (vente.prime_vente || 0) * facteurConversion;
+        // Pour la partie non couverte : utiliser le prix de marché si disponible
+        let prixPourNonCouvert = vente.prime_vente || 0;
+        if (prixMarche?.prix) {
+          prixPourNonCouvert += prixMarche.prix;
+        }
+        const pruNonCouvert = prixPourNonCouvert * facteurConversion;
         
         // Moyenne pondérée des deux parties
         prixUnitaire = (pruCouvert * volumeCouvert + pruNonCouvert * volumeNonCouvert) / volumeTotal;
@@ -84,8 +88,12 @@ const getInvoiceTemplate = (invoiceData: any) => {
         prixUnitaire = pruCouvert;
       }
     } else {
-      // Entièrement non couvert : utiliser la prime seule
-      prixUnitaire = (vente.prime_vente || 0) * facteurConversion;
+      // Entièrement non couvert : utiliser le prix de marché si disponible
+      let prixTotal = vente.prime_vente || 0;
+      if (prixMarche?.prix) {
+        prixTotal += prixMarche.prix;
+      }
+      prixUnitaire = prixTotal * facteurConversion;
     }
   } else {
     // Fallback pour les anciennes lignes de facture
@@ -559,6 +567,20 @@ serve(async (req) => {
       navire = navireData;
     }
 
+    // Récupérer le prix de marché actuel si c'est un deal prime
+    let prixMarche = null;
+    if (factureData.vente?.type_deal === 'prime' && factureData.vente?.prix_reference) {
+      const { data: prixMarcheData } = await supabase
+        .from('prix_marche')
+        .select('prix, echeance:echeances!inner(nom, active)')
+        .eq('echeance.active', true)
+        .eq('echeance.nom', factureData.vente.prix_reference)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      prixMarche = prixMarcheData;
+    }
+
     console.log('Invoice data processed successfully');
 
     const htmlContent = getInvoiceTemplate({
@@ -566,7 +588,8 @@ serve(async (req) => {
       client: factureData.client,
       lignes: factureData.lignes,
       vente: factureData.vente,
-      navire: navire
+      navire: navire,
+      prixMarche: prixMarche
     });
 
     return new Response(htmlContent, {
