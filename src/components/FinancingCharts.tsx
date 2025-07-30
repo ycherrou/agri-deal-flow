@@ -41,38 +41,49 @@ export default function FinancingCharts() {
     }
   });
 
-  // Prepare data for charts
-  const bankLinesChartData = bankLinesData.map(ligne => ({
-    name: ligne.nom,
-    banque: ligne.banque,
-    total: ligne.montant_total,
-    utilise: ligne.montant_utilise,
-    disponible: ligne.montant_disponible,
-    tauxUtilisation: (ligne.montant_utilise / ligne.montant_total) * 100
-  }));
+  // Prepare data for charts with null/undefined checks
+  const bankLinesChartData = bankLinesData.map(ligne => {
+    const total = ligne.montant_total || 0;
+    const utilise = ligne.montant_utilise || 0;
+    const disponible = ligne.montant_disponible || 0;
+    const tauxUtilisation = total > 0 ? (utilise / total) * 100 : 0;
+    
+    return {
+      name: ligne.nom || 'N/A',
+      banque: ligne.banque || 'N/A',
+      total,
+      utilise,
+      disponible,
+      tauxUtilisation: Number.isFinite(tauxUtilisation) ? tauxUtilisation : 0
+    };
+  });
 
-  const utilizationData = bankLinesData.map((ligne, index) => ({
-    name: ligne.nom,
-    value: ligne.montant_utilise,
-    color: COLORS[index % COLORS.length]
-  }));
+  const utilizationData = bankLinesData
+    .filter(ligne => ligne.montant_utilise > 0) // Only include lines with actual usage
+    .map((ligne, index) => ({
+      name: ligne.nom || 'N/A',
+      value: ligne.montant_utilise || 0,
+      color: COLORS[index % COLORS.length]
+    }));
 
   const timelineData = movementsData
+    .filter(movement => movement.montant && Number.isFinite(movement.montant)) // Filter out invalid amounts
     .reduce((acc: any[], movement: any) => {
       const date = new Date(movement.date_mouvement).toLocaleDateString();
       const existing = acc.find(item => item.date === date);
+      const montant = movement.montant || 0;
       
       if (existing) {
         if (movement.type_mouvement === 'allocation') {
-          existing.allocations += movement.montant;
+          existing.allocations += montant;
         } else if (movement.type_mouvement === 'liberation') {
-          existing.liberations += movement.montant;
+          existing.liberations += montant;
         }
       } else {
         acc.push({
           date,
-          allocations: movement.type_mouvement === 'allocation' ? movement.montant : 0,
-          liberations: movement.type_mouvement === 'liberation' ? movement.montant : 0
+          allocations: movement.type_mouvement === 'allocation' ? montant : 0,
+          liberations: movement.type_mouvement === 'liberation' ? montant : 0
         });
       }
       
@@ -98,6 +109,19 @@ export default function FinancingCharts() {
       color: "hsl(var(--chart-4))",
     }
   };
+
+  // Add safety check for empty data
+  if (bankLinesData.length === 0) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardContent className="flex items-center justify-center h-80">
+            <p className="text-muted-foreground">Aucune donnée disponible pour les graphiques</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
