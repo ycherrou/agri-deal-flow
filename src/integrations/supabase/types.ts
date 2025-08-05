@@ -1028,6 +1028,10 @@ export type Database = {
         Args: { produit_type: string }
         Returns: number
       }
+      is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       is_client_visible_on_market: {
         Args: { client_id_param: string }
         Returns: boolean
