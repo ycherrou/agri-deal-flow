@@ -1028,10 +1028,6 @@ export type Database = {
         Args: { produit_type: string }
         Returns: number
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
       is_client_visible_on_market: {
         Args: { client_id_param: string }
         Returns: boolean
