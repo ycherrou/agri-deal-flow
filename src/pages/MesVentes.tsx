@@ -83,26 +83,32 @@ export default function MesVentes() {
       // Enrichir avec les données de revente, navire et acheteur
       const enrichedTransactions = await Promise.all(
         (data || []).map(async (transaction) => {
-          // Récupérer les données de la revente et du navire
+          // Récupérer les données de la revente
           const { data: reventeData } = await supabase
             .from('reventes_clients')
             .select(`
               id,
               vente_id,
               prime_demandee,
-              type_position,
-              ventes!inner(
-                id,
-                type_deal,
-                prime_vente,
-                navires!inner(
-                  nom,
-                  produit,
-                  prime_achat
-                )
-              )
+              type_position
             `)
             .eq('id', transaction.revente_id)
+            .single();
+
+          // Récupérer les données de la vente et du navire
+          const { data: venteData } = await supabase
+            .from('ventes')
+            .select(`
+              id,
+              type_deal,
+              prime_vente,
+              navires!inner(
+                nom,
+                produit,
+                prime_achat
+              )
+            `)
+            .eq('id', reventeData?.vente_id)
             .single();
 
           // Récupérer les données de l'acheteur
@@ -119,13 +125,13 @@ export default function MesVentes() {
               prime_demandee: reventeData?.prime_demandee || null,
               type_position: reventeData?.type_position || '',
               vente: {
-                id: reventeData?.ventes?.id || '',
-                type_deal: reventeData?.ventes?.type_deal || '',
-                prime_vente: reventeData?.ventes?.prime_vente || null,
+                id: venteData?.id || '',
+                type_deal: venteData?.type_deal || '',
+                prime_vente: venteData?.prime_vente || null,
                 navire: {
-                  nom: reventeData?.ventes?.navires?.nom || '',
-                  produit: reventeData?.ventes?.navires?.produit || '',
-                  prime_achat: reventeData?.ventes?.navires?.prime_achat || null
+                  nom: venteData?.navires?.nom || '',
+                  produit: venteData?.navires?.produit || '',
+                  prime_achat: venteData?.navires?.prime_achat || null
                 }
               }
             },
