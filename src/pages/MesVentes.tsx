@@ -277,7 +277,7 @@ export default function MesVentes() {
                       <span className="text-muted-foreground">Prime achat originale:</span>
                       <div className="font-medium">
                         {transaction.revente.type_position === 'prime' 
-                          ? `${(transaction.revente.prime_demandee || 0).toFixed(2)} cts/bu`
+                          ? `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`
                           : `${transaction.prix_achat_original.toFixed(2)} $/MT`
                         }
                       </div>
@@ -300,7 +300,7 @@ export default function MesVentes() {
                       <span className="text-muted-foreground">Marge:</span>
                       <div className="font-medium">
                         {transaction.revente.type_position === 'prime' 
-                          ? `${((transaction.revente.vente.prime_vente || 0) - (transaction.revente.prime_demandee || 0)).toFixed(2)} cts/bu`
+                          ? `${((transaction.revente.prime_demandee || 0) - (transaction.revente.vente.prime_vente || 0)).toFixed(2)} cts/bu`
                           : `${(transaction.prix_vente_final - transaction.prix_achat_original).toFixed(2)} $/MT`
                         }
                       </div>
