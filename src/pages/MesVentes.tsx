@@ -52,13 +52,18 @@ export default function MesVentes() {
   const fetchTransactions = async () => {
     try {
       // Récupérer l'ID du client connecté
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Utilisateur non connecté');
+
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (clientError) throw clientError;
+      if (clientError || !clientData) {
+        throw new Error('Client non trouvé');
+      }
 
       // Récupérer les transactions où le client est vendeur
       const { data, error } = await supabase
@@ -80,72 +85,82 @@ export default function MesVentes() {
 
       if (error) throw error;
 
-      // Enrichir avec les données de revente, navire et acheteur
+      // Enrichir avec les données complètes
       const enrichedTransactions = await Promise.all(
         (data || []).map(async (transaction) => {
-          // Récupérer les données de la revente
-          const { data: reventeData } = await supabase
-            .from('reventes_clients')
-            .select(`
-              id,
-              vente_id,
-              prime_demandee,
-              type_position
-            `)
-            .eq('id', transaction.revente_id)
-            .single();
+          try {
+            // Récupérer la revente
+            const { data: reventeData } = await supabase
+              .from('reventes_clients')
+              .select('id, vente_id, prime_demandee, type_position')
+              .eq('id', transaction.revente_id)
+              .maybeSingle();
 
-          // Récupérer les données de la vente et du navire
-          const { data: venteData } = await supabase
-            .from('ventes')
-            .select(`
-              id,
-              type_deal,
-              prime_vente,
-              navires!inner(
-                nom,
-                produit,
-                prime_achat
-              )
-            `)
-            .eq('id', reventeData?.vente_id)
-            .single();
+            if (!reventeData) {
+              console.warn(`Revente non trouvée pour transaction ${transaction.id}`);
+              return null;
+            }
 
-          // Récupérer les données de l'acheteur
-          const { data: acheteurData } = await supabase
-            .from('clients')
-            .select('nom')
-            .eq('id', transaction.acheteur_id)
-            .single();
+            // Récupérer la vente originale avec navire
+            const { data: venteData } = await supabase
+              .from('ventes')
+              .select(`
+                id,
+                type_deal,
+                prime_vente,
+                navires!inner(nom, produit, prime_achat)
+              `)
+              .eq('id', reventeData.vente_id)
+              .maybeSingle();
 
-           return {
-            ...transaction,
-            revente: {
-              id: reventeData?.id || '',
-              prime_demandee: reventeData?.prime_demandee || null,
-              type_position: reventeData?.type_position || '',
-              vente: {
-                id: venteData?.id || '',
-                type_deal: venteData?.type_deal || '',
-                prime_vente: venteData?.prime_vente || null,
-                navire: {
-                  nom: venteData?.navires?.nom || '',
-                  produit: venteData?.navires?.produit || '',
-                  prime_achat: venteData?.navires?.prime_achat || null
+            if (!venteData) {
+              console.warn(`Vente non trouvée pour revente ${reventeData.id}`);
+              return null;
+            }
+
+            // Récupérer l'acheteur
+            const { data: acheteurData } = await supabase
+              .from('clients')
+              .select('nom')
+              .eq('id', transaction.acheteur_id)
+              .maybeSingle();
+
+            return {
+              ...transaction,
+              revente: {
+                id: reventeData.id,
+                prime_demandee: reventeData.prime_demandee,
+                type_position: reventeData.type_position,
+                vente: {
+                  id: venteData.id,
+                  type_deal: venteData.type_deal,
+                  prime_vente: venteData.prime_vente,
+                  navire: {
+                    nom: venteData.navires?.nom || 'Navire inconnu',
+                    produit: venteData.navires?.produit || 'Produit inconnu',
+                    prime_achat: venteData.navires?.prime_achat
+                  }
                 }
+              },
+              acheteur: {
+                nom: acheteurData?.nom || 'Acheteur inconnu'
               }
-            },
-            acheteur: acheteurData || { nom: '' }
-           };
+            };
+          } catch (error) {
+            console.error(`Erreur lors de l'enrichissement de la transaction ${transaction.id}:`, error);
+            return null;
+          }
         })
       );
 
-      setTransactions(enrichedTransactions);
+      // Filtrer les transactions nulles
+      const validTransactions = enrichedTransactions.filter(t => t !== null) as Transaction[];
+      setTransactions(validTransactions);
 
       // Calculer les statistiques
-      const totalGain = enrichedTransactions.reduce((sum, t) => sum + t.gain_vendeur, 0);
-      const totalVolume = enrichedTransactions.reduce((sum, t) => sum + t.volume_transige, 0);
-      const nombreTransactions = enrichedTransactions.length;
+      const totalGain = validTransactions.reduce((sum, t) => sum + t.gain_vendeur, 0);
+      const totalVolume = validTransactions.reduce((sum, t) => sum + t.volume_transige, 0);
+      const nombreTransactions = validTransactions.length;
       const gainMoyen = nombreTransactions > 0 ? totalGain / nombreTransactions : 0;
 
       setStats({
@@ -177,6 +192,41 @@ export default function MesVentes() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR');
+  };
+
+  // Fonction pour afficher la prime d'achat originale selon le type de deal
+  const formatPrimeAchatOriginale = (transaction: Transaction) => {
+    if (transaction.revente.vente.type_deal === 'prime') {
+      // Pour les deals prime : afficher la prime de vente originale (ce que le client a payé)
+      return `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`;
+    } else {
+      // Pour les deals flat : utiliser le prix d'achat original
+      return `${transaction.prix_achat_original.toFixed(2)} $/MT`;
+    }
+  };
+
+  // Fonction pour afficher la prime de vente finale
+  const formatPrimeVenteFinale = (transaction: Transaction) => {
+    if (transaction.revente.vente.type_deal === 'prime') {
+      // Pour les deals prime : afficher la prime demandée sur le marché secondaire
+      return `${(transaction.revente.prime_demandee || 0).toFixed(2)} cts/bu`;
+    } else {
+      // Pour les deals flat : afficher le prix de vente final
+      return `${transaction.prix_vente_final.toFixed(2)} $/MT`;
+    }
+  };
+
+  // Fonction pour calculer et afficher la marge
+  const formatMarge = (transaction: Transaction) => {
+    if (transaction.revente.vente.type_deal === 'prime') {
+      // Pour les deals prime : différence entre prime demandée et prime originale
+      const margeCtsBu = (transaction.revente.prime_demandee || 0) - (transaction.revente.vente.prime_vente || 0);
+      return `${margeCtsBu.toFixed(2)} cts/bu`;
+    } else {
+      // Pour les deals flat : différence entre prix de vente et prix d'achat
+      const margeUsdMt = transaction.prix_vente_final - transaction.prix_achat_original;
+      return `${margeUsdMt.toFixed(2)} $/MT`;
+    }
   };
 
   if (loading) {
@@ -282,12 +332,9 @@ export default function MesVentes() {
                     <div>
                       <span className="text-muted-foreground">Prime achat originale:</span>
                       <div className="font-medium">
-                        {transaction.revente.type_position === 'prime' 
-                          ? `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`
-                          : `${transaction.prix_achat_original.toFixed(2)} $/MT`
-                        }
+                        {formatPrimeAchatOriginale(transaction)}
                       </div>
-                      {transaction.revente.type_position === 'prime' && (
+                      {transaction.revente.vente.type_deal === 'prime' && (
                         <div className="text-xs text-muted-foreground">
                           PRU calculé: {transaction.prix_achat_original.toFixed(2)} $/MT
                         </div>
@@ -296,19 +343,13 @@ export default function MesVentes() {
                     <div>
                       <span className="text-muted-foreground">Prime vente:</span>
                       <div className="font-medium">
-                        {transaction.revente.vente.type_deal === 'prime' 
-                          ? `${transaction.revente.vente.prime_vente || 0} cts/bu`
-                          : `${transaction.prix_vente_final.toFixed(2)} $/MT`
-                        }
+                        {formatPrimeVenteFinale(transaction)}
                       </div>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Marge:</span>
                       <div className="font-medium">
-                        {transaction.revente.type_position === 'prime' 
-                          ? `${((transaction.revente.prime_demandee || 0) - (transaction.revente.vente.prime_vente || 0)).toFixed(2)} cts/bu`
-                          : `${(transaction.prix_vente_final - transaction.prix_achat_original).toFixed(2)} $/MT`
-                        }
+                        {formatMarge(transaction)}
                       </div>
                     </div>
                     <div>
