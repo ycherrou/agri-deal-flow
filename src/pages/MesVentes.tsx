@@ -16,6 +16,8 @@ interface Transaction {
   date_paiement_pnl: string | null;
   revente: {
     id: string;
+    prime_demandee: number | null;
+    type_position: string;
     vente: {
       id: string;
       type_deal: string;
@@ -87,6 +89,8 @@ export default function MesVentes() {
             .select(`
               id,
               vente_id,
+              prime_demandee,
+              type_position,
               ventes!inner(
                 id,
                 type_deal,
@@ -112,6 +116,8 @@ export default function MesVentes() {
             ...transaction,
             revente: {
               id: reventeData?.id || '',
+              prime_demandee: reventeData?.prime_demandee || null,
+              type_position: reventeData?.type_position || '',
               vente: {
                 id: reventeData?.ventes?.id || '',
                 type_deal: reventeData?.ventes?.type_deal || '',
@@ -270,12 +276,12 @@ export default function MesVentes() {
                     <div>
                       <span className="text-muted-foreground">Prime achat originale:</span>
                       <div className="font-medium">
-                        {transaction.revente.vente.type_deal === 'prime' 
-                          ? `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`
+                        {transaction.revente.type_position === 'prime' 
+                          ? `${(transaction.revente.prime_demandee || 0).toFixed(2)} cts/bu`
                           : `${transaction.prix_achat_original.toFixed(2)} $/MT`
                         }
                       </div>
-                      {transaction.revente.vente.type_deal === 'prime' && (
+                      {transaction.revente.type_position === 'prime' && (
                         <div className="text-xs text-muted-foreground">
                           PRU calculé: {transaction.prix_achat_original.toFixed(2)} $/MT
                         </div>
@@ -293,8 +299,8 @@ export default function MesVentes() {
                     <div>
                       <span className="text-muted-foreground">Marge:</span>
                       <div className="font-medium">
-                        {transaction.revente.vente.type_deal === 'prime' 
-                          ? `${((transaction.revente.vente.prime_vente || 0) - (transaction.revente.vente.navire.prime_achat || 0))} cts/bu`
+                        {transaction.revente.type_position === 'prime' 
+                          ? `${((transaction.revente.vente.prime_vente || 0) - (transaction.revente.prime_demandee || 0)).toFixed(2)} cts/bu`
                           : `${(transaction.prix_vente_final - transaction.prix_achat_original).toFixed(2)} $/MT`
                         }
                       </div>
