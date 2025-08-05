@@ -268,10 +268,10 @@ export default function MesVentes() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Prime achat:</span>
+                      <span className="text-muted-foreground">Prime achat originale:</span>
                       <div className="font-medium">
                         {transaction.revente.vente.type_deal === 'prime' 
-                          ? `${transaction.revente.vente.navire.prime_achat || 0} cts/bu`
+                          ? `${transaction.revente.vente.prime_vente || 0} cts/bu`
                           : `${transaction.prix_achat_original.toFixed(2)} $/MT`
                         }
                       </div>
