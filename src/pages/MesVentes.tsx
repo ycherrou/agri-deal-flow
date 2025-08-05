@@ -197,8 +197,8 @@ export default function MesVentes() {
   // Fonction pour afficher la prime d'achat originale selon le type de deal
   const formatPrimeAchatOriginale = (transaction: Transaction) => {
     if (transaction.revente.vente.type_deal === 'prime') {
-      // Pour les deals prime : afficher la prime de vente originale (ce que le client a payé)
-      return `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`;
+      // Pour les deals prime : utiliser la prime d'achat du navire (vraie prime originale)
+      return `${(transaction.revente.vente.navire.prime_achat || 0).toFixed(2)} cts/bu`;
     } else {
       // Pour les deals flat : utiliser le prix d'achat original
       return `${transaction.prix_achat_original.toFixed(2)} $/MT`;
@@ -219,8 +219,8 @@ export default function MesVentes() {
   // Fonction pour calculer et afficher la marge
   const formatMarge = (transaction: Transaction) => {
     if (transaction.revente.vente.type_deal === 'prime') {
-      // Pour les deals prime : différence entre prime demandée et prime originale
-      const margeCtsBu = (transaction.revente.prime_demandee || 0) - (transaction.revente.vente.prime_vente || 0);
+      // Pour les deals prime : différence entre prime demandée et prime d'achat originale du navire
+      const margeCtsBu = (transaction.revente.prime_demandee || 0) - (transaction.revente.vente.navire.prime_achat || 0);
       return `${margeCtsBu.toFixed(2)} cts/bu`;
     } else {
       // Pour les deals flat : différence entre prix de vente et prix d'achat
