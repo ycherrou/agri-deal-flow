@@ -89,20 +89,29 @@ export default function MesVentes() {
       const enrichedTransactions = await Promise.all(
         (data || []).map(async (transaction) => {
           try {
+            console.log('Enrichissement transaction:', transaction.id, 'revente_id:', transaction.revente_id);
+            
             // Récupérer la revente
-            const { data: reventeData } = await supabase
+            const { data: reventeData, error: reventeError } = await supabase
               .from('reventes_clients')
               .select('id, vente_id, prime_demandee, type_position')
               .eq('id', transaction.revente_id)
               .maybeSingle();
 
-            if (!reventeData) {
-              console.warn(`Revente non trouvée pour transaction ${transaction.id}`);
+            if (reventeError) {
+              console.error(`Erreur récupération revente ${transaction.revente_id}:`, reventeError);
               return null;
             }
 
+            if (!reventeData) {
+              console.warn(`Revente non trouvée pour transaction ${transaction.id}, revente_id: ${transaction.revente_id}`);
+              return null;
+            }
+
+            console.log('Revente trouvée:', reventeData);
+
             // Récupérer la vente originale avec navire
-            const { data: venteData } = await supabase
+            const { data: venteData, error: venteError } = await supabase
               .from('ventes')
               .select(`
                 id,
@@ -113,19 +122,30 @@ export default function MesVentes() {
               .eq('id', reventeData.vente_id)
               .maybeSingle();
 
-            if (!venteData) {
-              console.warn(`Vente non trouvée pour revente ${reventeData.id}`);
+            if (venteError) {
+              console.error(`Erreur récupération vente ${reventeData.vente_id}:`, venteError);
               return null;
             }
 
+            if (!venteData) {
+              console.warn(`Vente non trouvée pour revente ${reventeData.id}, vente_id: ${reventeData.vente_id}`);
+              return null;
+            }
+
+            console.log('Vente trouvée:', venteData);
+
             // Récupérer l'acheteur
-            const { data: acheteurData } = await supabase
+            const { data: acheteurData, error: acheteurError } = await supabase
               .from('clients')
               .select('nom')
               .eq('id', transaction.acheteur_id)
               .maybeSingle();
 
-            return {
+            if (acheteurError) {
+              console.error(`Erreur récupération acheteur ${transaction.acheteur_id}:`, acheteurError);
+            }
+
+            const enrichedTransaction = {
               ...transaction,
               revente: {
                 id: reventeData.id,
@@ -146,6 +166,9 @@ export default function MesVentes() {
                 nom: acheteurData?.nom || 'Acheteur inconnu'
               }
             };
+
+            console.log('Transaction enrichie:', enrichedTransaction);
+            return enrichedTransaction;
           } catch (error) {
             console.error(`Erreur lors de l'enrichissement de la transaction ${transaction.id}:`, error);
             return null;
