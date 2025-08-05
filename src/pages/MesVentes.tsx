@@ -271,10 +271,15 @@ export default function MesVentes() {
                       <span className="text-muted-foreground">Prime achat originale:</span>
                       <div className="font-medium">
                         {transaction.revente.vente.type_deal === 'prime' 
-                          ? `${transaction.revente.vente.prime_vente || 0} cts/bu`
+                          ? `${(transaction.revente.vente.prime_vente || 0).toFixed(2)} cts/bu`
                           : `${transaction.prix_achat_original.toFixed(2)} $/MT`
                         }
                       </div>
+                      {transaction.revente.vente.type_deal === 'prime' && (
+                        <div className="text-xs text-muted-foreground">
+                          PRU calculé: {transaction.prix_achat_original.toFixed(2)} $/MT
+                        </div>
+                      )}
                     </div>
                     <div>
                       <span className="text-muted-foreground">Prime vente:</span>
