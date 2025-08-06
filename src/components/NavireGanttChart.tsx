@@ -32,10 +32,22 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
   const { ganttData, dateRange, tickCount } = useMemo(() => {
     if (navires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
 
+    // Filtre les navires avec des dates valides
+    const validNavires = navires.filter(n => {
+      const date = new Date(n.date_arrivee);
+      return !isNaN(date.getTime()) && n.date_arrivee;
+    });
+
+    if (validNavires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+
     // Trouve les dates min et max
-    const dates = navires.map(n => new Date(n.date_arrivee));
-    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    const dates = validNavires.map(n => new Date(n.date_arrivee));
+    const validDates = dates.filter(d => !isNaN(d.getTime()));
+    
+    if (validDates.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    
+    const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
     
     // Ajoute une marge de 30 jours avant et après
     const startDate = addDays(minDate, -30);
@@ -44,26 +56,26 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     // Calcule le nombre de jours total pour déterminer l'échelle
     const totalDays = differenceInDays(endDate, startDate);
     
-    const ganttItems: GanttItem[] = navires.map(navire => {
+    const ganttItems: GanttItem[] = validNavires.map(navire => {
       const arrivalDate = new Date(navire.date_arrivee);
       const daysSinceStart = differenceInDays(arrivalDate, startDate);
       
       return {
-        name: navire.navire_nom,
-        start: daysSinceStart,
+        name: navire.navire_nom || 'Navire sans nom',
+        start: Math.max(0, daysSinceStart), // Assure que start n'est pas négatif
         duration: 7, // 7 jours de fenêtre d'arrivée
-        volume: navire.volume_total,
-        produit: navire.produit,
+        volume: navire.volume_total || 0,
+        produit: navire.produit || 'inconnu',
         navire_id: navire.navire_id,
         date_arrivee: navire.date_arrivee,
-        fournisseur: navire.fournisseur,
+        fournisseur: navire.fournisseur || 'Inconnu',
       };
-    });
+    }).filter(item => !isNaN(item.start) && item.start >= 0); // Filtre les items invalides
 
     return {
       ganttData: ganttItems,
       dateRange: { start: startDate, end: endDate },
-      tickCount: Math.min(10, Math.ceil(totalDays / 30)),
+      tickCount: Math.min(10, Math.max(1, Math.ceil(totalDays / 30))),
     };
   }, [navires]);
 
