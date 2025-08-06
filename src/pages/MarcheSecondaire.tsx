@@ -143,12 +143,36 @@ export default function MarcheSecondaire() {
       console.log('Reventes fetched:', data);
       
       // Filtrer les reventes pour exclure celles appartenant au client connecté (sauf pour les admins qui voient tout)
-      const filteredReventes = (data || []).filter(revente => {
-        if (!currentClient) return true;
-        if (currentClient.role === 'admin') return true; // Les admins voient tout pour pouvoir annuler
-        // Exclure seulement les reventes qui appartiennent au client connecté
-        return revente.ventes?.client_id !== currentClient.id;
+      console.log('🔍 Debug filtrage:', { 
+        dataLength: data?.length, 
+        currentClient: currentClient ? { id: currentClient.id, role: currentClient.role } : null,
+        firstRevente: data?.[0] ? { 
+          id: data[0].id, 
+          ventes: data[0].ventes,
+          ventesClientId: data[0].ventes?.client_id 
+        } : null
       });
+      
+      const filteredReventes = (data || []).filter(revente => {
+        if (!currentClient) {
+          console.log('🔍 No current client, showing revente:', revente.id);
+          return true;
+        }
+        if (currentClient.role === 'admin') {
+          console.log('🔍 Admin user, showing revente:', revente.id);
+          return true; // Les admins voient tout pour pouvoir annuler
+        }
+        // Exclure seulement les reventes qui appartiennent au client connecté
+        const shouldShow = revente.ventes?.client_id !== currentClient.id;
+        console.log('🔍 Client filter for revente:', revente.id, {
+          ventesClientId: revente.ventes?.client_id,
+          currentClientId: currentClient.id,
+          shouldShow
+        });
+        return shouldShow;
+      });
+      
+      console.log('🔍 Filtered reventes count:', filteredReventes.length);
       
       setReventes(filteredReventes as ReventeSecondaire[]);
     } catch (err) {
