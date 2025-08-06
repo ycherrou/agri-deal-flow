@@ -30,13 +30,21 @@ interface GanttItem {
 
 export default function NavireGanttChart({ navires, onNavireClick }: NavireGanttChartProps) {
   const { ganttData, dateRange, tickCount } = useMemo(() => {
+    console.log('NavireGanttChart - Input navires:', navires);
+    
     if (navires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
 
     // Filtre les navires avec des dates valides
     const validNavires = navires.filter(n => {
       const date = new Date(n.date_arrivee);
-      return !isNaN(date.getTime()) && n.date_arrivee;
+      const isValid = !isNaN(date.getTime()) && n.date_arrivee;
+      if (!isValid) {
+        console.log('Invalid navire date:', n);
+      }
+      return isValid;
     });
+
+    console.log('Valid navires after filtering:', validNavires);
 
     if (validNavires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
 
@@ -44,21 +52,30 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     const dates = validNavires.map(n => new Date(n.date_arrivee));
     const validDates = dates.filter(d => !isNaN(d.getTime()));
     
+    console.log('Valid dates:', validDates);
+    
     if (validDates.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
     
     const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
     
+    console.log('Min date:', minDate, 'Max date:', maxDate);
+    
     // Ajoute une marge de 30 jours avant et après
     const startDate = addDays(minDate, -30);
     const endDate = addDays(maxDate, 30);
     
+    console.log('Start date:', startDate, 'End date:', endDate);
+    
     // Calcule le nombre de jours total pour déterminer l'échelle
     const totalDays = differenceInDays(endDate, startDate);
+    console.log('Total days:', totalDays);
     
     const ganttItems: GanttItem[] = validNavires.map(navire => {
       const arrivalDate = new Date(navire.date_arrivee);
       const daysSinceStart = differenceInDays(arrivalDate, startDate);
+      
+      console.log(`Processing navire ${navire.navire_nom}: arrival=${arrivalDate}, daysSinceStart=${daysSinceStart}`);
       
       return {
         name: navire.navire_nom || 'Navire sans nom',
@@ -70,7 +87,17 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
         date_arrivee: navire.date_arrivee,
         fournisseur: navire.fournisseur || 'Inconnu',
       };
-    }).filter(item => !isNaN(item.start) && item.start >= 0); // Filtre les items invalides
+    }).filter(item => {
+      const isValid = !isNaN(item.start) && item.start >= 0;
+      if (!isValid) {
+        console.log('Invalid gantt item:', item);
+      }
+      return isValid;
+    });
+
+    console.log('Final gantt data:', ganttItems);
+    console.log('Final date range:', { start: startDate, end: endDate });
+    console.log('Final tick count:', Math.min(10, Math.max(1, Math.ceil(totalDays / 30))));
 
     return {
       ganttData: ganttItems,
@@ -128,6 +155,15 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     );
   }
 
+  // Calcule le domain de l'axe X de manière sécurisée
+  const xAxisDomain = useMemo(() => {
+    if (!dateRange.start || !dateRange.end) return [0, 100];
+    const totalDays = differenceInDays(dateRange.end, dateRange.start);
+    const safeDomain = isNaN(totalDays) || totalDays <= 0 ? 100 : totalDays;
+    console.log('XAxis domain calculation - totalDays:', totalDays, 'safeDomain:', safeDomain);
+    return [0, safeDomain];
+  }, [dateRange]);
+
   return (
     <div className="space-y-4">
       <div className="h-96">
@@ -140,7 +176,7 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
               type="number"
-              domain={[0, differenceInDays(dateRange.end, dateRange.start)]}
+              domain={xAxisDomain}
               tickFormatter={formatTick}
               tickCount={tickCount}
               stroke="hsl(var(--muted-foreground))"
