@@ -6,9 +6,11 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Ship, Shield, Package, AlertCircle, Anchor, Calendar, ShoppingCart, ShieldAlert, AlertTriangle, BarChart3 } from 'lucide-react';
 import ReventeCreationDialog from '@/components/ReventeCreationDialog';
+import NavireGanttChart from '@/components/NavireGanttChart';
 
 interface NavirePortfolioData {
   navire_id: string;
@@ -205,7 +207,6 @@ export default function ClientPortfolio() {
     return position.couvertures.reduce((total: number, couv: any) => total + couv.volume_couvert, 0);
   };
 
-
   const formatPrice = (price: number) => {
     return price.toFixed(2);
   };
@@ -272,375 +273,237 @@ export default function ClientPortfolio() {
         <p className="text-muted-foreground">Vos positions par navire</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Navigation */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Ship className="h-5 w-5" />
-              Mes Navires
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {portfolioData.map(navire => (
-              <button
-                key={navire.navire_id}
-                onClick={() => setActiveNavire(navire.navire_id)}
-                className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                  activeNavire === navire.navire_id 
-                    ? 'bg-primary text-primary-foreground border-primary' 
-                    : 'bg-card hover:bg-muted border-border'
-                }`}
-              >
-                <div className="font-medium">{navire.navire_nom}</div>
-                <div className="text-sm opacity-75">
-                  {navire.produit} - {navire.volume_total} tonnes
-                </div>
-                <div className="text-xs opacity-60">
-                  {navire.positions.length} position{navire.positions.length > 1 ? 's' : ''}
-                </div>
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="details" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="details" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Vue Détaillée
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Vue Timeline
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Main Content */}
-        <div className="lg:col-span-3">
-          {navireActif && (
-            <div className="space-y-6">
-              {/* Header avec informations générales */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Ship className="h-5 w-5" />
-                      {navireActif.navire_nom}
-                    </CardTitle>
-                    <Badge className={getProductBadgeColor(navireActif.produit)}>
-                      {navireActif.produit}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    <span className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Arrivée: {formatDate(navireActif.date_arrivee)}
-                      </span>
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
-              {/* Informations du navire */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Capacité Totale
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.quantite_totale} tonnes</div>
-                    <div className="text-sm text-muted-foreground">Capacité du navire</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Volume Acheté
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{navireActif.volume_total} tonnes</div>
-                    <div className="text-sm text-muted-foreground">
-                      Couvert: {navireActif.volume_couvert_total} | Non couvert: {navireActif.volume_non_couvert_total}
+        <TabsContent value="details" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar Navigation */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ship className="h-5 w-5" />
+                  Mes Navires
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {portfolioData.map(navire => (
+                  <button
+                    key={navire.navire_id}
+                    onClick={() => setActiveNavire(navire.navire_id)}
+                    className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                      activeNavire === navire.navire_id 
+                        ? 'bg-primary text-primary-foreground border-primary' 
+                        : 'bg-card hover:bg-muted border-border'
+                    }`}
+                  >
+                    <div className="font-medium">{navire.navire_nom}</div>
+                    <div className="text-sm opacity-75">
+                      {navire.produit} - {navire.volume_total} tonnes
                     </div>
-                    <div className="text-sm font-medium mt-2">
-                      Valeur totale: ${(() => {
-                        // Facteur de conversion selon le produit
-                        const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                          : navireActif.produit === 'tourteau_soja' ? 0.4640 
-                          : 1;
-                        
-                        // Calcul pour toutes les positions avec couverture
-                        let valeurTotale = 0;
-                        navireActif.positions.forEach(position => {
-                          if (position.couvertures.length > 0) {
-                            const prixFuturesMoyen = position.couvertures.reduce((sum, c) => sum + c.prix_futures, 0) / position.couvertures.length;
-                            valeurTotale += (position.prime_payee + prixFuturesMoyen) * position.volume_achete * facteurConversion;
-                          }
-                        });
-                        
-                        return valeurTotale.toLocaleString();
-                      })()}
+                    <div className="text-xs opacity-60">
+                      {navire.positions.length} position{navire.positions.length > 1 ? 's' : ''}
                     </div>
-                  </CardContent>
-                </Card>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Prime Moyenne
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatPrice(navireActif.prime_moyenne)}</div>
-                    <div className="text-sm text-muted-foreground">Moyenne pondérée</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-
-              {/* Détail des positions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Détail des Positions</CardTitle>
-                  <CardDescription>Liste de toutes vos positions sur ce navire</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {navireActif.positions.map((position, index) => (
-                      <div key={position.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">Position #{index + 1}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {formatDate(position.date_deal)} - {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
-                            </div>
-                            {position.prix_reference && (
-                              <div className="text-xs text-muted-foreground">
-                                Référence: {position.prix_reference}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold">{position.volume_achete} tonnes</div>
-                            <div className="text-sm text-muted-foreground">
-                              Couvert: {position.volume_achete - position.volume_non_couvert} tonnes
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                          <div>
-                            <div className="text-sm text-muted-foreground">Prime payée</div>
-                            <div className="font-medium">{formatPrice(position.prime_payee)}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">PRU</div>
-                            <div className="font-medium">${(() => {
-                              // Calcul du PRU complet en USD/MT
-                              if (position.type_deal === 'flat') {
-                                // Pour un deal flat, le PRU est simplement le prix flat (déjà en USD/MT)
-                                return formatPrice(position.prix_flat || 0);
-                              } else if (position.type_deal === 'prime') {
-                                // Facteur de conversion selon le produit (Cts/Bu vers USD/MT)
-                                const facteurConversion = navireActif.produit === 'mais' ? 0.3937 
-                                  : navireActif.produit === 'tourteau_soja' ? 0.9072 
-                                  : 1;
-                                
-                                let pruMoyen = 0;
-                                
-                                const volumeCouvert = position.couvertures.reduce((sum: number, c: any) => sum + c.volume_couvert, 0);
-                                
-                                if (volumeCouvert > 0 && position.couvertures.length > 0) {
-                                  // Pour la partie couverte : utiliser les prix de couverture
-                                  const prixCouvertureMoyen = position.couvertures.reduce((sum: number, c: any) => 
-                                    sum + (c.prix_futures * c.volume_couvert), 0) / volumeCouvert;
-                                  const pruCouvert = (position.prime_payee + prixCouvertureMoyen) * facteurConversion;
-                                  
-                                  if (position.volume_non_couvert > 0) {
-                                    // Pour la partie non couverte : utiliser le dernier cours du contrat de référence
-                                    // Récupérer le dernier prix de marché pour ce contrat
-                                    const dernierCoursMarche = prixMarche.find(p => 
-                                      p.echeance?.nom === position.prix_reference
-                                    )?.prix || 0;
-                                    
-                                    const pruNonCouvert = (position.prime_payee + dernierCoursMarche) * facteurConversion;
-                                    
-                                    // Moyenne pondérée des deux parties
-                                    pruMoyen = (pruCouvert * volumeCouvert + pruNonCouvert * position.volume_non_couvert) / position.volume_achete;
-                                  } else {
-                                    pruMoyen = pruCouvert;
-                                  }
-                                } else if (position.volume_non_couvert > 0) {
-                                  // Entièrement non couvert : utiliser le dernier cours du marché
-                                  const dernierCoursMarche = prixMarche.find(p => 
-                                    p.echeance?.nom === position.prix_reference
-                                  )?.prix || 0;
-                                  
-                                  if (dernierCoursMarche > 0) {
-                                    pruMoyen = (position.prime_payee + dernierCoursMarche) * facteurConversion;
-                                  } else {
-                                    return `${formatPrice(position.prime_payee * facteurConversion)} (prime seule)`;
-                                  }
-                                }
-                                
-                                return formatPrice(pruMoyen);
-                              }
-                              return "N/A";
-                            })()}</div>
-                          </div>
-                          {position.type_deal === 'flat' && position.prix_flat && (
-                            <div>
-                              <div className="text-sm text-muted-foreground">Prix flat</div>
-                              <div className="font-medium">{formatPrice(position.prix_flat)}</div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Statut de couverture individuel pour cette position */}
-                        <div className="pt-2 border-t">
-                          <div className="text-sm text-muted-foreground mb-2">Statut de Couverture</div>
-                          <div className="space-y-2">
-                            {(() => {
-                              const volumeCouvert = getVolumeCouvert(position);
-                              const volumeNonCouvert = position.volume_achete - volumeCouvert;
-                              const tauxCouverture = position.volume_achete > 0 ? (volumeCouvert / position.volume_achete) * 100 : 0;
-                              
-                              return (
-                                <>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Taux de couverture</span>
-                                    <span className="font-medium">{tauxCouverture.toFixed(1)}%</span>
-                                  </div>
-                                  <Progress value={tauxCouverture} className="h-2" />
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">Volume couvert:</span>
-                                      <span className="font-medium">{volumeCouvert.toFixed(1)} tonnes</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">Volume non couvert:</span>
-                                      <span className="font-medium">{volumeNonCouvert.toFixed(1)} tonnes</span>
-                                    </div>
-                                  </div>
-                                  {volumeNonCouvert > 0 && (
-                                    <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
-                                      <AlertCircle className="h-4 w-4" />
-                                      Position non couverte exposée aux variations de prix
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                        
-                        {position.couvertures.length > 0 && (
-                          <div className="pt-2 border-t">
-                            <div className="text-sm text-muted-foreground mb-2">Couvertures Futures:</div>
-                            <div className="space-y-2">
-                              {position.couvertures.map((couv, idx) => (
-                                <div key={couv.id} className="text-xs bg-muted p-3 rounded">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <span className="font-medium">{formatDate(couv.date_couverture)}</span>
-                                    <span className="text-right">
-                                      <div className="font-medium">{couv.volume_couvert} tonnes</div>
-                                      <div className="text-muted-foreground">{(couv.volume_couvert / position.volume_achete * 100).toFixed(1)}% de la position</div>
-                                    </span>
-                                  </div>
-                                   <div className="grid grid-cols-1 gap-2">
-                                     <div>
-                                       <div className="text-muted-foreground">Prix futures</div>
-                                       <div className="font-medium">{formatPrice(couv.prix_futures)}</div>
-                                     </div>
-                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {navireActif && (
+                <div className="space-y-6">
+                  {/* Header avec informations générales */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <Ship className="h-5 w-5" />
+                          {navireActif.navire_nom}
+                        </CardTitle>
+                        <Badge className={getProductBadgeColor(navireActif.produit)}>
+                          {navireActif.produit}
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <CardDescription>
+                        <span className="flex items-center gap-4 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            Arrivée: {formatDate(navireActif.date_arrivee)}
+                          </span>
+                        </span>
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
 
-              {/* Section Revente */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
-                    Revente de positions
-                  </CardTitle>
-                  <CardDescription>
-                    Remettez en vente vos positions (couvertes et non couvertes) sur le marché secondaire
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {getPositionsAvailableForResale().length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">
-                      Aucune position disponible pour la revente.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {getPositionsAvailableForResale().map((pos, idx) => {
-                        const volumeCouvert = getVolumeCouvert(pos);
-                        const volumeNonCouvert = pos.volume_achete - volumeCouvert;
-                        
-                        return (
-                          <div key={pos.id} className="border rounded-lg p-4">
+                  {/* Informations du navire */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          Capacité Totale
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{navireActif.quantite_totale} tonnes</div>
+                        <div className="text-sm text-muted-foreground">Capacité du navire</div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          Volume Acheté
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{navireActif.volume_total} tonnes</div>
+                        <div className="text-sm text-muted-foreground">
+                          Couvert: {navireActif.volume_couvert_total} | Non couvert: {navireActif.volume_non_couvert_total}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Prime Moyenne
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{formatPrice(navireActif.prime_moyenne)}</div>
+                        <div className="text-sm text-muted-foreground">Moyenne pondérée</div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Détail des positions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Détail des Positions</CardTitle>
+                      <CardDescription>Liste de toutes vos positions sur ce navire</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {navireActif.positions.map((position, index) => (
+                          <div key={position.id} className="border rounded-lg p-4 space-y-3">
                             <div className="flex justify-between items-start">
                               <div>
-                                <div className="font-medium">Position #{idx + 1}</div>
+                                <div className="font-medium">Position #{index + 1}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
+                                  {formatDate(position.date_deal)} - {position.type_deal === 'prime' ? 'Prime' : 'Flat'}
                                 </div>
-                                 <div className="text-sm space-y-1">
-                                   <div className="flex items-center gap-2">
-                                     <span>Statut:</span>
-                                     {volumeCouvert === pos.volume_achete ? (
-                                       <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                                         <Shield className="h-3 w-3 mr-1" />
-                                         Couverte
-                                       </Badge>
-                                     ) : volumeCouvert > 0 ? (
-                                       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                                         <ShieldAlert className="h-3 w-3 mr-1" />
-                                         Partiellement couverte
-                                       </Badge>
-                                     ) : (
-                                       <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
-                                         <AlertTriangle className="h-3 w-3 mr-1" />
-                                         Non couverte
-                                       </Badge>
-                                     )}
-                                   </div>
-                                   {volumeCouvert > 0 && (
-                                     <div>Volume couvert: <span className="font-medium text-green-600">{volumeCouvert} tonnes</span></div>
-                                   )}
-                                   {volumeNonCouvert > 0 && (
-                                     <div>Volume non couvert: <span className="font-medium text-orange-600">{volumeNonCouvert} tonnes</span></div>
-                                   )}
-                                 </div>
+                                {position.prix_reference && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Référence: {position.prix_reference}
+                                  </div>
+                                )}
                               </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setReventeDialog({open: true, position: pos})}
-                              >
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                                Mettre en vente
-                              </Button>
+                              <div className="text-right">
+                                <div className="text-lg font-bold">{position.volume_achete} tonnes</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Couvert: {position.volume_achete - position.volume_non_couvert} tonnes
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-      {/* Dialog de revente amélioré */}
+                  {/* Section Revente */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ShoppingCart className="h-5 w-5" />
+                        Revente de positions
+                      </CardTitle>
+                      <CardDescription>
+                        Remettez en vente vos positions sur le marché secondaire
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {getPositionsAvailableForResale().length === 0 ? (
+                        <p className="text-muted-foreground text-center py-4">
+                          Aucune position disponible pour la revente.
+                        </p>
+                      ) : (
+                        <div className="space-y-4">
+                          {getPositionsAvailableForResale().map((pos, idx) => {
+                            const volumeCouvert = getVolumeCouvert(pos);
+                            
+                            return (
+                              <div key={pos.id} className="border rounded-lg p-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-medium">Position #{idx + 1}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {navireActif?.navire_nom} - {formatDate(pos.date_deal)}
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setReventeDialog({open: true, position: pos})}
+                                  >
+                                    <ShoppingCart className="h-4 w-4 mr-2" />
+                                    Mettre en vente
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Timeline des Navires
+              </CardTitle>
+              <CardDescription>
+                Visualisation temporelle de vos navires et dates d'arrivée
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NavireGanttChart
+                navires={portfolioData.map(navire => ({
+                  navire_id: navire.navire_id,
+                  navire_nom: navire.navire_nom,
+                  produit: navire.produit,
+                  date_arrivee: navire.date_arrivee,
+                  volume_total: navire.volume_total,
+                  fournisseur: navire.fournisseur,
+                }))}
+                onNavireClick={(navireId) => setActiveNavire(navireId)}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
       <ReventeCreationDialog
         open={reventeDialog.open}
         onClose={() => setReventeDialog({open: false, position: null})}
