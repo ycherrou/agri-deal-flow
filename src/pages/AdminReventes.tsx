@@ -47,6 +47,8 @@ export default function AdminReventes() {
 
   const fetchReventes = async () => {
     try {
+      console.log('🔍 Fetching reventes...');
+      
       const { data, error } = await supabase
         .from('reventes_clients')
         .select(`
@@ -80,6 +82,8 @@ export default function AdminReventes() {
         .eq('validated_by_admin', false)
         .order('date_revente', { ascending: false });
 
+      console.log('🔍 Query result:', { data, error });
+
       if (error) {
         console.error('Erreur lors de la récupération des reventes:', error);
         toast({
@@ -90,6 +94,8 @@ export default function AdminReventes() {
         return;
       }
 
+      console.log('📊 Raw data from DB:', data);
+      
       // Filter out reventes with missing required data
       const validReventes = (data || []).filter(revente => 
         revente && 
@@ -97,6 +103,8 @@ export default function AdminReventes() {
         revente.ventes.navires && 
         revente.ventes.clients
       ) as ReventeEnAttente[];
+      
+      console.log('✅ Valid reventes after filtering:', validReventes);
       
       setReventes(validReventes);
     } catch (err) {
