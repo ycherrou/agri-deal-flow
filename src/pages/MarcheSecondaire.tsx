@@ -87,9 +87,10 @@ export default function MarcheSecondaire() {
 
   const fetchReventes = async () => {
     try {
-      console.log('Fetching reventes...');
+      console.log('🔍 Fetching reventes...');
       
-      const { data, error } = await supabase
+      // Étape 1: Récupérer les reventes sans jointures
+      const { data: reventesData, error: reventesError } = await supabase
         .from('reventes_clients')
         .select(`
           id,
@@ -98,40 +99,14 @@ export default function MarcheSecondaire() {
           prime_demandee,
           date_revente,
           vente_id,
-          type_position,
-          ventes (
-            navire_id,
-            volume,
-            prime_vente,
-            prix_reference,
-            client_id,
-            navires (
-              nom,
-              produit,
-              date_arrivee
-            ),
-            clients (
-              nom
-            )
-          ),
-          bids_marche_secondaire (
-            id,
-            prix_bid,
-            volume_bid,
-            date_bid,
-            client_id,
-            statut,
-            clients (
-              nom
-            )
-          )
+          type_position
         `)
         .eq('etat', 'en_attente')
         .eq('validated_by_admin', true)
         .order('date_revente', { ascending: false });
 
-      if (error) {
-        console.error('Erreur lors de la récupération des reventes:', error);
+      if (reventesError) {
+        console.error('Erreur lors de la récupération des reventes:', reventesError);
         toast({
           title: "Erreur",
           description: "Impossible de charger les positions en vente",
@@ -140,40 +115,120 @@ export default function MarcheSecondaire() {
         return;
       }
 
-      console.log('Reventes fetched:', data);
+      console.log('🔍 Query result:', { data: reventesData, error: reventesError });
+      console.log('📊 Raw reventes from DB:', reventesData);
+
+      if (!reventesData || reventesData.length === 0) {
+        console.log('✅ No reventes found');
+        setReventes([]);
+        return;
+      }
+
+      // Étape 2: Récupérer les détails des ventes, navires et clients
+      const venteIds = reventesData.map(r => r.vente_id);
       
+      // Récupérer les ventes avec navires et clients (utiliser les politiques admin existantes)
+      const { data: ventesData, error: ventesError } = await supabase
+        .from('ventes')
+        .select(`
+          id,
+          navire_id,
+          volume,
+          prime_vente,
+          prix_reference,
+          client_id,
+          navires!inner (
+            nom,
+            produit,
+            date_arrivee
+          ),
+          clients!inner (
+            nom
+          )
+        `)
+        .in('id', venteIds);
+
+      // Si la requête principale échoue, essayer une approche alternative
+      let ventesDetails = [];
+      if (ventesError || !ventesData) {
+        console.log('🔄 Requête ventes principale échouée, essai alternatif...');
+        
+        // Récupérer directement depuis les tables individuelles
+        for (const venteId of venteIds) {
+          try {
+            const { data: venteData } = await supabase
+              .from('ventes')
+              .select('id, navire_id, volume, prime_vente, prix_reference, client_id')
+              .eq('id', venteId)
+              .single();
+            
+            if (venteData) {
+              const { data: navireData } = await supabase
+                .from('navires')
+                .select('nom, produit, date_arrivee')
+                .eq('id', venteData.navire_id)
+                .single();
+              
+              const { data: clientData } = await supabase
+                .from('clients')
+                .select('nom')
+                .eq('id', venteData.client_id)
+                .single();
+              
+              ventesDetails.push({
+                ...venteData,
+                navires: navireData,
+                clients: clientData
+              });
+            }
+          } catch (err) {
+            console.log('❌ Erreur pour vente:', venteId, err);
+          }
+        }
+      } else {
+        ventesDetails = ventesData;
+      }
+
+      // Étape 3: Récupérer les bids
+      const { data: bidsData } = await supabase
+        .from('bids_marche_secondaire')
+        .select(`
+          id,
+          prix_bid,
+          volume_bid,
+          date_bid,
+          client_id,
+          statut,
+          revente_id,
+          clients (
+            nom
+          )
+        `)
+        .in('revente_id', reventesData.map(r => r.id));
+
+      // Étape 4: Combiner toutes les données
+      const enrichedReventes = reventesData.map(revente => {
+        const venteDetails = ventesDetails.find(v => v.id === revente.vente_id);
+        const reventerBids = bidsData?.filter(b => b.revente_id === revente.id) || [];
+        
+        return {
+          ...revente,
+          ventes: venteDetails || null,
+          bids_marche_secondaire: reventerBids
+        };
+      });
+
+      console.log('✅ Enriched reventes:', enrichedReventes);
+
       // Filtrer les reventes pour exclure celles appartenant au client connecté (sauf pour les admins qui voient tout)
-      console.log('🔍 Debug filtrage:', { 
-        dataLength: data?.length, 
-        currentClient: currentClient ? { id: currentClient.id, role: currentClient.role } : null,
-        firstRevente: data?.[0] ? { 
-          id: data[0].id, 
-          ventes: data[0].ventes,
-          ventesClientId: data[0].ventes?.client_id 
-        } : null
-      });
-      
-      const filteredReventes = (data || []).filter(revente => {
-        if (!currentClient) {
-          console.log('🔍 No current client, showing revente:', revente.id);
-          return true;
-        }
-        if (currentClient.role === 'admin') {
-          console.log('🔍 Admin user, showing revente:', revente.id);
-          return true; // Les admins voient tout pour pouvoir annuler
-        }
+      const filteredReventes = enrichedReventes.filter(revente => {
+        if (!currentClient) return true;
+        if (currentClient.role === 'admin') return true; // Les admins voient tout
         // Exclure seulement les reventes qui appartiennent au client connecté
-        const shouldShow = revente.ventes?.client_id !== currentClient.id;
-        console.log('🔍 Client filter for revente:', revente.id, {
-          ventesClientId: revente.ventes?.client_id,
-          currentClientId: currentClient.id,
-          shouldShow
-        });
-        return shouldShow;
+        return revente.ventes?.client_id !== currentClient.id;
       });
       
-      console.log('🔍 Filtered reventes count:', filteredReventes.length);
-      
+      console.log('✅ Valid reventes after filtering:', filteredReventes);
       setReventes(filteredReventes as ReventeSecondaire[]);
     } catch (err) {
       console.error('Erreur inattendue:', err);
