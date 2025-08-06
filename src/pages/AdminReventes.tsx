@@ -29,11 +29,11 @@ interface ReventeEnAttente {
       nom: string;
       produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
       date_arrivee: string;
-    };
+    } | null;
     clients: {
       nom: string;
-    };
-  };
+    } | null;
+  } | null;
 }
 
 export default function AdminReventes() {
@@ -90,7 +90,15 @@ export default function AdminReventes() {
         return;
       }
 
-      setReventes((data || []) as ReventeEnAttente[]);
+      // Filter out reventes with missing required data
+      const validReventes = (data || []).filter(revente => 
+        revente && 
+        revente.ventes && 
+        revente.ventes.navires && 
+        revente.ventes.clients
+      ) as ReventeEnAttente[];
+      
+      setReventes(validReventes);
     } catch (err) {
       console.error('Erreur inattendue:', err);
       toast({
@@ -131,7 +139,7 @@ export default function AdminReventes() {
         try {
           // Récupérer les détails de la revente pour les notifications
           const revente = reventes.find(r => r.id === reventeId);
-          if (revente) {
+          if (revente && revente.ventes && revente.ventes.navires) {
             // Récupérer tous les clients (sauf le vendeur) pour les notifier
             const { data: allClients, error: clientsError } = await supabase
               .from('clients')
@@ -151,11 +159,11 @@ export default function AdminReventes() {
                       template_name: 'nouvelle_offre_marche',
                       variables: {
                         volume: revente.volume.toString(),
-                        produit: revente.ventes.navires.produit.replace('_', ' '),
+                        produit: revente.ventes.navires!.produit.replace('_', ' '),
                         prix: revente.type_position === 'non_couverte' 
                           ? `${revente.prime_demandee} cts/bu`
                           : `${revente.prix_flat_demande} USD/MT`,
-                        navire: revente.ventes.navires.nom,
+                        navire: revente.ventes.navires!.nom,
                         type_position: revente.type_position === 'couverte' ? 'couverte' : 'non couverte'
                       }
                     }
@@ -256,14 +264,14 @@ export default function AdminReventes() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-orange-500" />
-                      {revente.ventes.navires.nom}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={getProductBadgeColor(revente.ventes.navires.produit)}>
-                        {revente.ventes.navires.produit.replace('_', ' ')}
-                      </Badge>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <Clock className="h-5 w-5 text-orange-500" />
+                       {revente.ventes?.navires?.nom || 'Navire inconnu'}
+                     </CardTitle>
+                     <div className="flex items-center gap-2 mt-2">
+                       <Badge className={getProductBadgeColor(revente.ventes?.navires?.produit || 'mais')}>
+                         {revente.ventes?.navires?.produit?.replace('_', ' ') || 'Produit inconnu'}
+                       </Badge>
                       <Badge variant={revente.type_position === 'couverte' ? 'default' : 'secondary'}>
                         {revente.type_position === 'couverte' ? (
                           <>
@@ -281,9 +289,9 @@ export default function AdminReventes() {
                         <Badge variant="destructive">Expirée</Badge>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Vendeur: {revente.ventes.clients.nom}
-                    </div>
+                     <div className="text-sm text-muted-foreground mt-1">
+                       Vendeur: {revente.ventes?.clients?.nom || 'Vendeur inconnu'}
+                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold text-primary">
@@ -309,10 +317,15 @@ export default function AdminReventes() {
                           <span>Date de demande:</span>
                           <span>{format(new Date(revente.date_revente), 'dd/MM/yyyy', { locale: fr })}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Date d'arrivée navire:</span>
-                          <span>{format(new Date(revente.ventes.navires.date_arrivee), 'dd/MM/yyyy', { locale: fr })}</span>
-                        </div>
+                         <div className="flex justify-between">
+                           <span>Date d'arrivée navire:</span>
+                           <span>
+                             {revente.ventes?.navires?.date_arrivee 
+                               ? format(new Date(revente.ventes.navires.date_arrivee), 'dd/MM/yyyy', { locale: fr })
+                               : 'Date inconnue'
+                             }
+                           </span>
+                         </div>
                         {revente.date_expiration_validation && (
                           <div className="flex justify-between">
                             <span>Expiration validation:</span>
