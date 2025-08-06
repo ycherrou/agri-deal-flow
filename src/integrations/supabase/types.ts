@@ -1032,6 +1032,26 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: string
       }
+      get_validated_secondary_market: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          revente_id: string
+          volume: number
+          prix_flat_demande: number
+          prime_demandee: number
+          date_revente: string
+          vente_id: string
+          type_position: string
+          navire_nom: string
+          navire_produit: string
+          navire_date_arrivee: string
+          vendeur_nom: string
+          vendeur_id: string
+          vente_volume: number
+          vente_prime_vente: number
+          vente_prix_reference: string
+        }[]
+      }
       is_client_visible_on_market: {
         Args: { client_id_param: string }
         Returns: boolean

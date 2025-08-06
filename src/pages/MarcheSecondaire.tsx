@@ -87,26 +87,14 @@ export default function MarcheSecondaire() {
 
   const fetchReventes = async () => {
     try {
-      console.log('🔍 Fetching reventes...');
+      console.log('🔍 Fetching reventes using function...');
       
-      // Étape 1: Récupérer les reventes sans jointures
-      const { data: reventesData, error: reventesError } = await supabase
-        .from('reventes_clients')
-        .select(`
-          id,
-          volume,
-          prix_flat_demande,
-          prime_demandee,
-          date_revente,
-          vente_id,
-          type_position
-        `)
-        .eq('etat', 'en_attente')
-        .eq('validated_by_admin', true)
-        .order('date_revente', { ascending: false });
+      // Utiliser la fonction PostgreSQL qui contourne les restrictions RLS
+      const { data: marketData, error: marketError } = await supabase
+        .rpc('get_validated_secondary_market');
 
-      if (reventesError) {
-        console.error('Erreur lors de la récupération des reventes:', reventesError);
+      if (marketError) {
+        console.error('Erreur lors de la récupération du marché secondaire:', marketError);
         toast({
           title: "Erreur",
           description: "Impossible de charger les positions en vente",
@@ -115,81 +103,16 @@ export default function MarcheSecondaire() {
         return;
       }
 
-      console.log('🔍 Query result:', { data: reventesData, error: reventesError });
-      console.log('📊 Raw reventes from DB:', reventesData);
+      console.log('🔍 Market data from function:', marketData);
 
-      if (!reventesData || reventesData.length === 0) {
-        console.log('✅ No reventes found');
+      if (!marketData || marketData.length === 0) {
+        console.log('✅ No market data found');
         setReventes([]);
         return;
       }
 
-      // Étape 2: Récupérer les détails des ventes, navires et clients
-      const venteIds = reventesData.map(r => r.vente_id);
-      
-      // Récupérer les ventes avec navires et clients (utiliser les politiques admin existantes)
-      const { data: ventesData, error: ventesError } = await supabase
-        .from('ventes')
-        .select(`
-          id,
-          navire_id,
-          volume,
-          prime_vente,
-          prix_reference,
-          client_id,
-          navires!inner (
-            nom,
-            produit,
-            date_arrivee
-          ),
-          clients!inner (
-            nom
-          )
-        `)
-        .in('id', venteIds);
-
-      // Si la requête principale échoue, essayer une approche alternative
-      let ventesDetails = [];
-      if (ventesError || !ventesData) {
-        console.log('🔄 Requête ventes principale échouée, essai alternatif...');
-        
-        // Récupérer directement depuis les tables individuelles
-        for (const venteId of venteIds) {
-          try {
-            const { data: venteData } = await supabase
-              .from('ventes')
-              .select('id, navire_id, volume, prime_vente, prix_reference, client_id')
-              .eq('id', venteId)
-              .single();
-            
-            if (venteData) {
-              const { data: navireData } = await supabase
-                .from('navires')
-                .select('nom, produit, date_arrivee')
-                .eq('id', venteData.navire_id)
-                .single();
-              
-              const { data: clientData } = await supabase
-                .from('clients')
-                .select('nom')
-                .eq('id', venteData.client_id)
-                .single();
-              
-              ventesDetails.push({
-                ...venteData,
-                navires: navireData,
-                clients: clientData
-              });
-            }
-          } catch (err) {
-            console.log('❌ Erreur pour vente:', venteId, err);
-          }
-        }
-      } else {
-        ventesDetails = ventesData;
-      }
-
-      // Étape 3: Récupérer les bids
+      // Récupérer les bids séparément
+      const reventeIds = marketData.map(item => item.revente_id);
       const { data: bidsData } = await supabase
         .from('bids_marche_secondaire')
         .select(`
@@ -204,24 +127,43 @@ export default function MarcheSecondaire() {
             nom
           )
         `)
-        .in('revente_id', reventesData.map(r => r.id));
+        .in('revente_id', reventeIds);
 
-      // Étape 4: Combiner toutes les données
-      const enrichedReventes = reventesData.map(revente => {
-        const venteDetails = ventesDetails.find(v => v.id === revente.vente_id);
-        const reventerBids = bidsData?.filter(b => b.revente_id === revente.id) || [];
+      // Transformer les données pour correspondre à l'interface ReventeSecondaire
+      const transformedReventes = marketData.map(item => {
+        const reventerBids = bidsData?.filter(b => b.revente_id === item.revente_id) || [];
         
         return {
-          ...revente,
-          ventes: venteDetails || null,
+          id: item.revente_id,
+          volume: item.volume,
+          prix_flat_demande: item.prix_flat_demande,
+          prime_demandee: item.prime_demandee,
+          date_revente: item.date_revente,
+          vente_id: item.vente_id,
+          type_position: item.type_position,
+          ventes: {
+            navire_id: null, // Pas nécessaire pour l'affichage
+            volume: item.vente_volume,
+            prime_vente: item.vente_prime_vente,
+            prix_reference: item.vente_prix_reference,
+            client_id: item.vendeur_id,
+            navires: {
+              nom: item.navire_nom,
+              produit: item.navire_produit,
+              date_arrivee: item.navire_date_arrivee
+            },
+            clients: {
+              nom: item.vendeur_nom
+            }
+          },
           bids_marche_secondaire: reventerBids
         };
       });
 
-      console.log('✅ Enriched reventes:', enrichedReventes);
+      console.log('✅ Transformed reventes:', transformedReventes);
 
-      // Filtrer les reventes pour exclure celles appartenant au client connecté (sauf pour les admins qui voient tout)
-      const filteredReventes = enrichedReventes.filter(revente => {
+      // Filtrer les reventes pour exclure celles appartenant au client connecté (sauf pour les admins)
+      const filteredReventes = transformedReventes.filter(revente => {
         if (!currentClient) return true;
         if (currentClient.role === 'admin') return true; // Les admins voient tout
         // Exclure seulement les reventes qui appartiennent au client connecté
