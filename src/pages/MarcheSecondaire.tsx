@@ -146,6 +146,7 @@ export default function MarcheSecondaire() {
       const filteredReventes = (data || []).filter(revente => {
         if (!currentClient) return true;
         if (currentClient.role === 'admin') return true; // Les admins voient tout pour pouvoir annuler
+        // Exclure seulement les reventes qui appartiennent au client connecté
         return revente.ventes?.client_id !== currentClient.id;
       });
       
