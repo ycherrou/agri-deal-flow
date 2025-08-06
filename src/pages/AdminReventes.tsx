@@ -159,11 +159,11 @@ export default function AdminReventes() {
                       template_name: 'nouvelle_offre_marche',
                       variables: {
                         volume: revente.volume.toString(),
-                        produit: revente.ventes.navires!.produit.replace('_', ' '),
+                        produit: revente.ventes?.navires?.produit?.replace('_', ' ') || 'Produit inconnu',
                         prix: revente.type_position === 'non_couverte' 
                           ? `${revente.prime_demandee} cts/bu`
                           : `${revente.prix_flat_demande} USD/MT`,
-                        navire: revente.ventes.navires!.nom,
+                        navire: revente.ventes?.navires?.nom || 'Navire inconnu',
                         type_position: revente.type_position === 'couverte' ? 'couverte' : 'non couverte'
                       }
                     }
