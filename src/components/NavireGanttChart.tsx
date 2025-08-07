@@ -32,25 +32,54 @@ interface GanttItem {
 
 export default function NavireGanttChart({ navires, onNavireClick }: NavireGanttChartProps) {
   const { ganttData, dateRange, tickCount } = useMemo(() => {
-    console.log('NavireGanttChart - Input navires:', navires);
+    console.log('=== GANTT CHART DEBUGGING ===');
+    console.log('Input navires:', navires);
+    console.log('Navires length:', navires.length);
     
-    if (navires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    if (navires.length === 0) {
+      console.log('No navires provided, returning empty data');
+      return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    }
+
+    // Log each navire's date fields in detail
+    navires.forEach((navire, index) => {
+      console.log(`Navire ${index}:`, {
+        id: navire.navire_id,
+        nom: navire.navire_nom,
+        date_debut_planche: navire.date_debut_planche,
+        date_fin_planche: navire.date_fin_planche,
+        volume_total: navire.volume_total,
+        date_debut_valid: navire.date_debut_planche && !isNaN(new Date(navire.date_debut_planche).getTime()),
+        date_fin_valid: navire.date_fin_planche && !isNaN(new Date(navire.date_fin_planche).getTime())
+      });
+    });
 
     // Filtre les navires avec des dates valides
     const validNavires = navires.filter(n => {
       const dateDebut = new Date(n.date_debut_planche);
       const dateFin = new Date(n.date_fin_planche);
-      const isValid = !isNaN(dateDebut.getTime()) && !isNaN(dateFin.getTime()) && 
-                     n.date_debut_planche && n.date_fin_planche;
+      const isValidDebut = !isNaN(dateDebut.getTime()) && n.date_debut_planche;
+      const isValidFin = !isNaN(dateFin.getTime()) && n.date_fin_planche;
+      const isValid = isValidDebut && isValidFin;
+      
       if (!isValid) {
-        console.log('Invalid navire dates:', n);
+        console.log('INVALID navire found:', {
+          navire: n,
+          dateDebut: dateDebut.toString(),
+          dateFin: dateFin.toString(),
+          isValidDebut,
+          isValidFin
+        });
       }
       return isValid;
     });
 
-    console.log('Valid navires after filtering:', validNavires);
+    console.log('Valid navires after filtering:', validNavires.length);
 
-    if (validNavires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    if (validNavires.length === 0) {
+      console.log('No valid navires after filtering, returning empty data');
+      return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    }
 
     // Calcule la plage de dates en utilisant les dates de début et fin de planche
     const allDates = validNavires.flatMap(n => [
@@ -59,38 +88,73 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     ]);
     const validDates = allDates.filter(d => !isNaN(d.getTime()));
     
-    console.log('Valid dates:', validDates);
+    console.log('All dates extracted:', allDates.map(d => d.toString()));
+    console.log('Valid dates:', validDates.map(d => d.toString()));
     
-    if (validDates.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    if (validDates.length === 0) {
+      console.log('No valid dates found, returning empty data');
+      return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
+    }
     
     const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
     
-    console.log('Min date:', minDate, 'Max date:', maxDate);
+    console.log('Date range calculation:', {
+      minDate: minDate.toString(),
+      maxDate: maxDate.toString(),
+      minTime: minDate.getTime(),
+      maxTime: maxDate.getTime()
+    });
     
     // Ajoute une marge de 30 jours avant et après
     const startDate = addDays(minDate, -30);
     const endDate = addDays(maxDate, 30);
     
-    console.log('Start date:', startDate, 'End date:', endDate);
+    console.log('Final date range:', {
+      startDate: startDate.toString(),
+      endDate: endDate.toString()
+    });
     
     // Calcule le nombre de jours total pour déterminer l'échelle
     const totalDays = differenceInDays(endDate, startDate);
-    console.log('Total days:', totalDays);
+    console.log('Total days calculation:', totalDays);
     
-    const ganttItems: GanttItem[] = validNavires.map(navire => {
+    if (isNaN(totalDays) || totalDays <= 0) {
+      console.error('INVALID TOTAL DAYS:', totalDays);
+      return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 1 };
+    }
+    
+    const ganttItems: GanttItem[] = validNavires.map((navire, index) => {
       const dateDebut = new Date(navire.date_debut_planche);
       const dateFin = new Date(navire.date_fin_planche);
       const daysSinceStart = differenceInDays(dateDebut, startDate);
       const duration = differenceInDays(dateFin, dateDebut) + 1; // +1 to include both start and end days
       
-      console.log(`Processing navire ${navire.navire_nom}: debut=${dateDebut}, fin=${dateFin}, daysSinceStart=${daysSinceStart}, duration=${duration}`);
+      console.log(`Processing navire ${index} (${navire.navire_nom}):`, {
+        dateDebut: dateDebut.toString(),
+        dateFin: dateFin.toString(),
+        daysSinceStart,
+        duration,
+        volume_total: navire.volume_total,
+        startDate: startDate.toString()
+      });
+      
+      // Validate all calculations
+      if (isNaN(daysSinceStart)) {
+        console.error('NaN daysSinceStart for navire:', navire);
+      }
+      if (isNaN(duration)) {
+        console.error('NaN duration for navire:', navire);
+      }
+      if (isNaN(navire.volume_total)) {
+        console.error('NaN volume_total for navire:', navire);
+      }
       
       return {
         name: navire.navire_nom || 'Navire sans nom',
-        start: Math.max(0, daysSinceStart),
-        duration: Math.max(1, duration), // Minimum 1 day duration
-        volume: navire.volume_total || 0,
+        start: Math.max(0, daysSinceStart || 0),
+        duration: Math.max(1, duration || 1), // Minimum 1 day duration
+        volume: Math.max(0, navire.volume_total || 0),
         produit: navire.produit || 'inconnu',
         navire_id: navire.navire_id,
         date_debut_planche: navire.date_debut_planche,
@@ -98,21 +162,23 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
         fournisseur: navire.fournisseur || 'Inconnu',
       };
     }).filter(item => {
-      const isValid = !isNaN(item.start) && item.start >= 0 && !isNaN(item.duration) && item.duration > 0;
+      const isValid = !isNaN(item.start) && item.start >= 0 && !isNaN(item.duration) && item.duration > 0 && !isNaN(item.volume);
       if (!isValid) {
-        console.log('Invalid gantt item:', item);
+        console.error('INVALID gantt item:', item);
       }
       return isValid;
     });
 
     console.log('Final gantt data:', ganttItems);
     console.log('Final date range:', { start: startDate, end: endDate });
-    console.log('Final tick count:', Math.min(10, Math.max(1, Math.ceil(totalDays / 30))));
+    
+    const finalTickCount = Math.min(10, Math.max(1, Math.ceil(totalDays / 30)));
+    console.log('Final tick count:', finalTickCount);
 
     return {
       ganttData: ganttItems,
       dateRange: { start: startDate, end: endDate },
-      tickCount: Math.min(10, Math.max(1, Math.ceil(totalDays / 30))),
+      tickCount: finalTickCount,
     };
   }, [navires]);
 
@@ -170,12 +236,56 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
 
   // Calcule le domain de l'axe X de manière sécurisée
   const xAxisDomain = useMemo(() => {
-    if (!dateRange.start || !dateRange.end) return [0, 100];
+    console.log('=== X-AXIS DOMAIN CALCULATION ===');
+    console.log('Date range:', dateRange);
+    
+    if (!dateRange.start || !dateRange.end) {
+      console.log('Missing date range, using default domain [0, 100]');
+      return [0, 100];
+    }
+    
     const totalDays = differenceInDays(dateRange.end, dateRange.start);
-    const safeDomain = isNaN(totalDays) || totalDays <= 0 ? 100 : totalDays;
-    console.log('XAxis domain calculation - totalDays:', totalDays, 'safeDomain:', safeDomain);
-    return [0, safeDomain];
+    console.log('Total days for X-axis:', totalDays);
+    
+    if (isNaN(totalDays) || totalDays <= 0) {
+      console.error('INVALID totalDays for X-axis:', totalDays);
+      return [0, 100];
+    }
+    
+    const safeDomain = [0, totalDays];
+    console.log('Final X-axis domain:', safeDomain);
+    return safeDomain;
   }, [dateRange]);
+
+  // Additional safety check before rendering
+  if (ganttData.length === 0) {
+    console.log('No gantt data to render');
+    return (
+      <div className="h-64 flex items-center justify-center text-muted-foreground">
+        Aucun navire à afficher
+      </div>
+    );
+  }
+
+  // Validate all gantt data before rendering
+  const hasInvalidData = ganttData.some(item => 
+    isNaN(item.start) || isNaN(item.duration) || isNaN(item.volume) || 
+    item.start < 0 || item.duration <= 0
+  );
+
+  if (hasInvalidData) {
+    console.error('Invalid data detected in gantt items, preventing render');
+    return (
+      <div className="h-64 flex items-center justify-center text-muted-foreground">
+        Erreur dans les données du graphique
+      </div>
+    );
+  }
+
+  console.log('=== RENDERING GANTT CHART ===');
+  console.log('Gantt data to render:', ganttData);
+  console.log('X-axis domain:', xAxisDomain);
+  console.log('Tick count:', tickCount);
 
   return (
     <div className="space-y-4">
@@ -191,7 +301,7 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
               type="number"
               domain={xAxisDomain}
               tickFormatter={formatTick}
-              tickCount={tickCount}
+              tickCount={Math.max(1, tickCount)}
               stroke="hsl(var(--muted-foreground))"
             />
             <YAxis 

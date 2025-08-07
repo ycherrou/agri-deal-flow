@@ -495,15 +495,32 @@ export default function ClientPortfolio() {
             </CardHeader>
             <CardContent>
               <NavireGanttChart
-                navires={portfolioData.map(navire => ({
-                  navire_id: navire.navire_id,
-                  navire_nom: navire.navire_nom,
-                  produit: navire.produit,
-                  date_debut_planche: navire.date_debut_planche || navire.date_arrivee,
-                  date_fin_planche: navire.date_fin_planche || navire.date_arrivee,
-                  volume_total: navire.volume_total,
-                  fournisseur: navire.fournisseur,
-                }))}
+                navires={portfolioData.map(navire => {
+                  // Ensure we have valid date fields, fallback to date_arrivee
+                  const debut = navire.date_debut_planche || navire.date_arrivee;
+                  const fin = navire.date_fin_planche || navire.date_arrivee;
+                  
+                  console.log('Portfolio navire mapping:', {
+                    id: navire.navire_id,
+                    nom: navire.navire_nom,
+                    original_debut: navire.date_debut_planche,
+                    original_fin: navire.date_fin_planche,
+                    fallback_date: navire.date_arrivee,
+                    final_debut: debut,
+                    final_fin: fin,
+                    volume: navire.volume_total
+                  });
+                  
+                  return {
+                    navire_id: navire.navire_id,
+                    navire_nom: navire.navire_nom,
+                    produit: navire.produit,
+                    date_debut_planche: debut,
+                    date_fin_planche: fin,
+                    volume_total: navire.volume_total || 0,
+                    fournisseur: navire.fournisseur,
+                  };
+                })}
                 onNavireClick={(navireId) => setActiveNavire(navireId)}
               />
             </CardContent>
