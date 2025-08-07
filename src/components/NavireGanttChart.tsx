@@ -20,7 +20,7 @@ interface NavireGanttChartProps {
 
 interface GanttItem {
   name: string;
-  start: number;
+  startGap: number;
   duration: number;
   volume: number;
   produit: string;
@@ -150,10 +150,13 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
         console.error('NaN volume_total for navire:', navire);
       }
       
+      const startPos = Math.max(0, Math.round(daysSinceStart || 0));
+      const durationValue = Math.max(1, Math.round(duration || 1));
+      
       return {
         name: navire.navire_nom || 'Navire sans nom',
-        start: Math.max(0, Math.round(daysSinceStart || 0)),
-        duration: Math.max(1, Math.round(duration || 1)),
+        startGap: startPos, // Invisible bar to position the actual bar
+        duration: durationValue, // Visible bar
         volume: Math.max(0, Math.round(navire.volume_total || 0)),
         produit: navire.produit || 'inconnu',
         navire_id: navire.navire_id,
@@ -163,15 +166,15 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
       };
     }).filter(item => {
       // More stringent validation
-      const isValidStart = typeof item.start === 'number' && !isNaN(item.start) && isFinite(item.start) && item.start >= 0;
+      const isValidStartGap = typeof item.startGap === 'number' && !isNaN(item.startGap) && isFinite(item.startGap) && item.startGap >= 0;
       const isValidDuration = typeof item.duration === 'number' && !isNaN(item.duration) && isFinite(item.duration) && item.duration > 0;
       const isValidVolume = typeof item.volume === 'number' && !isNaN(item.volume) && isFinite(item.volume) && item.volume >= 0;
-      const isValid = isValidStart && isValidDuration && isValidVolume;
+      const isValid = isValidStartGap && isValidDuration && isValidVolume;
       
       if (!isValid) {
         console.error('INVALID gantt item detected:', {
           item,
-          isValidStart,
+          isValidStartGap,
           isValidDuration,
           isValidVolume
         });
@@ -279,8 +282,8 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
 
   // Validate all gantt data before rendering
   const hasInvalidData = ganttData.some(item => 
-    isNaN(item.start) || isNaN(item.duration) || isNaN(item.volume) || 
-    item.start < 0 || item.duration <= 0
+    isNaN(item.startGap) || isNaN(item.duration) || isNaN(item.volume) || 
+    item.startGap < 0 || item.duration <= 0
   );
 
   if (hasInvalidData) {
@@ -335,10 +338,18 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
               tick={{ fontSize: 12 }}
             />
             <Tooltip content={<CustomTooltip />} />
+            {/* Invisible bar for positioning */}
+            <Bar 
+              dataKey="startGap"
+              fill="transparent"
+              stackId="gantt"
+            />
+            {/* Visible bar for duration */}
             <Bar 
               dataKey="duration"
               fill="hsl(var(--primary))"
               radius={[0, 4, 4, 0]}
+              stackId="gantt"
               onClick={(data) => onNavireClick?.(data.navire_id)}
               style={{ cursor: onNavireClick ? 'pointer' : 'default' }}
             >
