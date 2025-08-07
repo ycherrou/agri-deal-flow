@@ -191,6 +191,8 @@ export default function Navires() {
         prix_achat_flat: formData.prix_achat_flat ? Number(formData.prix_achat_flat) : null,
         reference_cbot: formData.reference_cbot || null,
         date_arrivee: formData.date_arrivee,
+        date_debut_planche: formData.date_arrivee,
+        date_fin_planche: new Date(new Date(formData.date_arrivee).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         fournisseur: formData.fournisseur,
         terme_commercial: formData.terme_commercial,
         taux_fret: formData.taux_fret ? Number(formData.taux_fret) : null

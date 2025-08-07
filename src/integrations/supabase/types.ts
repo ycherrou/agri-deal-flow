@@ -484,6 +484,8 @@ export type Database = {
           created_at: string | null
           date_arrivee: string
           date_connaissement: string | null
+          date_debut_planche: string
+          date_fin_planche: string
           fournisseur: string
           id: string
           nom: string
@@ -505,6 +507,8 @@ export type Database = {
           created_at?: string | null
           date_arrivee: string
           date_connaissement?: string | null
+          date_debut_planche: string
+          date_fin_planche: string
           fournisseur: string
           id?: string
           nom: string
@@ -526,6 +530,8 @@ export type Database = {
           created_at?: string | null
           date_arrivee?: string
           date_connaissement?: string | null
+          date_debut_planche?: string
+          date_fin_planche?: string
           fournisseur?: string
           id?: string
           nom?: string

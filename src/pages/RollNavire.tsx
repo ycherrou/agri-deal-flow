@@ -18,6 +18,8 @@ interface Navire {
   prime_achat: number | null;
   reference_cbot: string | null;
   date_arrivee: string;
+  date_debut_planche?: string;
+  date_fin_planche?: string;
 }
 
 interface CouvertureAchat {
@@ -168,6 +170,8 @@ export default function RollNavire() {
         prime_achat: navire!.prime_achat,
         reference_cbot: formData.nouvelle_reference_cbot,
         date_arrivee: navire!.date_arrivee,
+        date_debut_planche: navire!.date_debut_planche || navire!.date_arrivee,
+        date_fin_planche: navire!.date_fin_planche || new Date(new Date(navire!.date_arrivee).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         parent_navire_id: navire!.id
       };
 

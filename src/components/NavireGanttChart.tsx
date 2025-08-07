@@ -7,7 +7,8 @@ interface NavireGanttData {
   navire_id: string;
   navire_nom: string;
   produit: string;
-  date_arrivee: string;
+  date_debut_planche: string;
+  date_fin_planche: string;
   volume_total: number;
   fournisseur: string;
 }
@@ -24,7 +25,8 @@ interface GanttItem {
   volume: number;
   produit: string;
   navire_id: string;
-  date_arrivee: string;
+  date_debut_planche: string;
+  date_fin_planche: string;
   fournisseur: string;
 }
 
@@ -36,10 +38,12 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
 
     // Filtre les navires avec des dates valides
     const validNavires = navires.filter(n => {
-      const date = new Date(n.date_arrivee);
-      const isValid = !isNaN(date.getTime()) && n.date_arrivee;
+      const dateDebut = new Date(n.date_debut_planche);
+      const dateFin = new Date(n.date_fin_planche);
+      const isValid = !isNaN(dateDebut.getTime()) && !isNaN(dateFin.getTime()) && 
+                     n.date_debut_planche && n.date_fin_planche;
       if (!isValid) {
-        console.log('Invalid navire date:', n);
+        console.log('Invalid navire dates:', n);
       }
       return isValid;
     });
@@ -48,9 +52,12 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
 
     if (validNavires.length === 0) return { ganttData: [], dateRange: { start: new Date(), end: new Date() }, tickCount: 0 };
 
-    // Trouve les dates min et max
-    const dates = validNavires.map(n => new Date(n.date_arrivee));
-    const validDates = dates.filter(d => !isNaN(d.getTime()));
+    // Calcule la plage de dates en utilisant les dates de début et fin de planche
+    const allDates = validNavires.flatMap(n => [
+      new Date(n.date_debut_planche),
+      new Date(n.date_fin_planche)
+    ]);
+    const validDates = allDates.filter(d => !isNaN(d.getTime()));
     
     console.log('Valid dates:', validDates);
     
@@ -72,23 +79,26 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     console.log('Total days:', totalDays);
     
     const ganttItems: GanttItem[] = validNavires.map(navire => {
-      const arrivalDate = new Date(navire.date_arrivee);
-      const daysSinceStart = differenceInDays(arrivalDate, startDate);
+      const dateDebut = new Date(navire.date_debut_planche);
+      const dateFin = new Date(navire.date_fin_planche);
+      const daysSinceStart = differenceInDays(dateDebut, startDate);
+      const duration = differenceInDays(dateFin, dateDebut) + 1; // +1 to include both start and end days
       
-      console.log(`Processing navire ${navire.navire_nom}: arrival=${arrivalDate}, daysSinceStart=${daysSinceStart}`);
+      console.log(`Processing navire ${navire.navire_nom}: debut=${dateDebut}, fin=${dateFin}, daysSinceStart=${daysSinceStart}, duration=${duration}`);
       
       return {
         name: navire.navire_nom || 'Navire sans nom',
-        start: Math.max(0, daysSinceStart), // Assure que start n'est pas négatif
-        duration: 7, // 7 jours de fenêtre d'arrivée
+        start: Math.max(0, daysSinceStart),
+        duration: Math.max(1, duration), // Minimum 1 day duration
         volume: navire.volume_total || 0,
         produit: navire.produit || 'inconnu',
         navire_id: navire.navire_id,
-        date_arrivee: navire.date_arrivee,
+        date_debut_planche: navire.date_debut_planche,
+        date_fin_planche: navire.date_fin_planche,
         fournisseur: navire.fournisseur || 'Inconnu',
       };
     }).filter(item => {
-      const isValid = !isNaN(item.start) && item.start >= 0;
+      const isValid = !isNaN(item.start) && item.start >= 0 && !isNaN(item.duration) && item.duration > 0;
       if (!isValid) {
         console.log('Invalid gantt item:', item);
       }
@@ -136,7 +146,10 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
             Volume: <span className="font-medium">{data.volume.toLocaleString()} tonnes</span>
           </p>
           <p className="text-sm text-muted-foreground">
-            Arrivée: <span className="font-medium">{format(new Date(data.date_arrivee), 'dd MMM yyyy', { locale: fr })}</span>
+            Début: <span className="font-medium">{format(new Date(data.date_debut_planche), 'dd MMM yyyy', { locale: fr })}</span>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Fin: <span className="font-medium">{format(new Date(data.date_fin_planche), 'dd MMM yyyy', { locale: fr })}</span>
           </p>
           <p className="text-sm text-muted-foreground">
             Fournisseur: <span className="font-medium">{data.fournisseur}</span>

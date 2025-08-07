@@ -17,6 +17,8 @@ interface NavirePortfolioData {
   navire_nom: string;
   produit: string;
   date_arrivee: string;
+  date_debut_planche?: string;
+  date_fin_planche?: string;
   fournisseur: string;
   quantite_totale: number;
   positions: Array<{
@@ -100,6 +102,8 @@ export default function ClientPortfolio() {
           nom,
           produit,
           date_arrivee,
+          date_debut_planche,
+          date_fin_planche,
           fournisseur,
           quantite_totale,
           ventes!inner (
@@ -165,6 +169,8 @@ export default function ClientPortfolio() {
           navire_nom: navire.nom,
           produit: navire.produit,
           date_arrivee: navire.date_arrivee,
+          date_debut_planche: navire.date_debut_planche,
+          date_fin_planche: navire.date_fin_planche,
           fournisseur: navire.fournisseur,
           quantite_totale: navire.quantite_totale,
           positions,
@@ -493,7 +499,8 @@ export default function ClientPortfolio() {
                   navire_id: navire.navire_id,
                   navire_nom: navire.navire_nom,
                   produit: navire.produit,
-                  date_arrivee: navire.date_arrivee,
+                  date_debut_planche: navire.date_debut_planche || navire.date_arrivee,
+                  date_fin_planche: navire.date_fin_planche || navire.date_arrivee,
                   volume_total: navire.volume_total,
                   fournisseur: navire.fournisseur,
                 }))}

@@ -18,6 +18,8 @@ export interface Navire {
   prix_achat_flat?: number;
   reference_cbot?: string;
   date_arrivee: string;
+  date_debut_planche: string;
+  date_fin_planche: string;
   fournisseur: string;
   terme_commercial: 'FOB' | 'CFR';
   taux_fret?: number;
