@@ -152,9 +152,9 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
       
       return {
         name: navire.navire_nom || 'Navire sans nom',
-        start: Math.max(0, daysSinceStart || 0),
-        duration: Math.max(1, duration || 1), // Minimum 1 day duration
-        volume: Math.max(0, navire.volume_total || 0),
+        start: Math.max(0, Math.round(daysSinceStart || 0)),
+        duration: Math.max(1, Math.round(duration || 1)),
+        volume: Math.max(0, Math.round(navire.volume_total || 0)),
         produit: navire.produit || 'inconnu',
         navire_id: navire.navire_id,
         date_debut_planche: navire.date_debut_planche,
@@ -162,9 +162,19 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
         fournisseur: navire.fournisseur || 'Inconnu',
       };
     }).filter(item => {
-      const isValid = !isNaN(item.start) && item.start >= 0 && !isNaN(item.duration) && item.duration > 0 && !isNaN(item.volume);
+      // More stringent validation
+      const isValidStart = typeof item.start === 'number' && !isNaN(item.start) && isFinite(item.start) && item.start >= 0;
+      const isValidDuration = typeof item.duration === 'number' && !isNaN(item.duration) && isFinite(item.duration) && item.duration > 0;
+      const isValidVolume = typeof item.volume === 'number' && !isNaN(item.volume) && isFinite(item.volume) && item.volume >= 0;
+      const isValid = isValidStart && isValidDuration && isValidVolume;
+      
       if (!isValid) {
-        console.error('INVALID gantt item:', item);
+        console.error('INVALID gantt item detected:', {
+          item,
+          isValidStart,
+          isValidDuration,
+          isValidVolume
+        });
       }
       return isValid;
     });
@@ -247,12 +257,12 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
     const totalDays = differenceInDays(dateRange.end, dateRange.start);
     console.log('Total days for X-axis:', totalDays);
     
-    if (isNaN(totalDays) || totalDays <= 0) {
+    if (isNaN(totalDays) || totalDays <= 0 || !isFinite(totalDays)) {
       console.error('INVALID totalDays for X-axis:', totalDays);
       return [0, 100];
     }
     
-    const safeDomain = [0, totalDays];
+    const safeDomain = [0, Math.round(totalDays)];
     console.log('Final X-axis domain:', safeDomain);
     return safeDomain;
   }, [dateRange]);
@@ -300,9 +310,22 @@ export default function NavireGanttChart({ navires, onNavireClick }: NavireGantt
             <XAxis 
               type="number"
               domain={xAxisDomain}
-              tickFormatter={formatTick}
-              tickCount={Math.max(1, tickCount)}
+              tickFormatter={(value) => {
+                try {
+                  const tickValue = Number(value);
+                  if (!isFinite(tickValue) || isNaN(tickValue)) {
+                    console.warn('Invalid tick value:', value);
+                    return '';
+                  }
+                  return formatTick(tickValue);
+                } catch (error) {
+                  console.error('Error formatting tick:', error, value);
+                  return '';
+                }
+              }}
+              tickCount={Math.max(1, Math.min(10, tickCount))}
               stroke="hsl(var(--muted-foreground))"
+              allowDecimals={false}
             />
             <YAxis 
               type="category"
