@@ -28,13 +28,29 @@ export default function Auth() {
     role: 'client' as 'admin' | 'client'
   });
 
+  const [adminData, setAdminData] = useState({
+    nom: '',
+    email: '',
+    password: ''
+  });
+
+  const [hasAdmin, setHasAdmin] = useState<boolean | null>(null);
+
   useEffect(() => {
-    // Check if user is already logged in
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate('/');
       }
+      
+      // Vérifier s'il existe déjà un admin
+      const { data: admins } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1);
+      
+      setHasAdmin(admins && admins.length > 0);
     };
     checkAuth();
   }, [navigate]);
@@ -87,7 +103,7 @@ export default function Auth() {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             nom: signupData.nom,
-            role: signupData.role
+            role: 'client'
           }
         }
       });
@@ -106,7 +122,6 @@ export default function Auth() {
         description: 'Votre compte a été créé avec succès.'
       });
       
-      // Try to log in immediately after signup
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: signupData.email,
         password: signupData.password
@@ -120,6 +135,50 @@ export default function Auth() {
       toast({
         title: 'Erreur d\'inscription',
         description: 'Une erreur inattendue s\'est produite.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-first-admin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify(adminData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erreur lors de la création');
+      }
+
+      toast({
+        title: 'Administrateur créé',
+        description: 'Le compte administrateur a été créé avec succès.'
+      });
+
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: adminData.email,
+        password: adminData.password
+      });
+
+      if (!loginError) {
+        navigate('/');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erreur',
+        description: error.message,
         variant: 'destructive'
       });
     } finally {
@@ -211,23 +270,6 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-role">Rôle</Label>
-                  <Select 
-                    value={signupData.role} 
-                    onValueChange={(value: 'admin' | 'client') => 
-                      setSignupData({ ...signupData, role: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="client">Client</SelectItem>
-                      <SelectItem value="admin">Administrateur</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="signup-password">Mot de passe</Label>
                   <div className="relative">
                     <Input
@@ -257,6 +299,60 @@ export default function Auth() {
                 </Button>
               </form>
             </TabsContent>
+
+            {hasAdmin === false && (
+              <TabsContent value="admin" className="space-y-4">
+                <form onSubmit={handleCreateAdmin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-nom">Nom de l'administrateur</Label>
+                    <Input
+                      id="admin-nom"
+                      value={adminData.nom}
+                      onChange={(e) => setAdminData({ ...adminData, nom: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={adminData.email}
+                      onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Mot de passe</Label>
+                    <div className="relative">
+                      <Input
+                        id="admin-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={adminData.password}
+                        onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Création...' : 'Créer le compte administrateur'}
+                  </Button>
+                </form>
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
