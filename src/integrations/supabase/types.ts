@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bids_marche_secondaire: {
         Row: {
+          accepted_by_seller: boolean | null
           client_id: string
           commentaire: string | null
           created_at: string | null
@@ -28,6 +29,7 @@ export type Database = {
           volume_bid: number | null
         }
         Insert: {
+          accepted_by_seller?: boolean | null
           client_id: string
           commentaire?: string | null
           created_at?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           volume_bid?: number | null
         }
         Update: {
+          accepted_by_seller?: boolean | null
           client_id?: string
           commentaire?: string | null
           created_at?: string | null
@@ -201,6 +204,13 @@ export type Database = {
             columns: ["navire_id"]
             isOneToOne: false
             referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couvertures_achat_navire_id_fkey"
+            columns: ["navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires_with_aliases"
             referencedColumns: ["id"]
           },
         ]
@@ -526,6 +536,13 @@ export type Database = {
             referencedRelation: "navires"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["navire_parent_id"]
+            isOneToOne: false
+            referencedRelation: "navires_with_aliases"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications_history: {
@@ -707,12 +724,17 @@ export type Database = {
       transactions_marche_secondaire: {
         Row: {
           acheteur_id: string
+          admin_paiement_id: string | null
+          bid_id: string | null
           commission: number | null
+          commission_admin: number | null
           created_at: string | null
+          date_paiement_pnl: string | null
           date_transaction: string | null
           gain_vendeur: number | null
           id: string
           notes: string | null
+          pnl_paye: boolean | null
           prix_achat_original: number | null
           prix_transaction: number
           prix_vente_final: number | null
@@ -725,12 +747,17 @@ export type Database = {
         }
         Insert: {
           acheteur_id: string
+          admin_paiement_id?: string | null
+          bid_id?: string | null
           commission?: number | null
+          commission_admin?: number | null
           created_at?: string | null
+          date_paiement_pnl?: string | null
           date_transaction?: string | null
           gain_vendeur?: number | null
           id?: string
           notes?: string | null
+          pnl_paye?: boolean | null
           prix_achat_original?: number | null
           prix_transaction: number
           prix_vente_final?: number | null
@@ -743,12 +770,17 @@ export type Database = {
         }
         Update: {
           acheteur_id?: string
+          admin_paiement_id?: string | null
+          bid_id?: string | null
           commission?: number | null
+          commission_admin?: number | null
           created_at?: string | null
+          date_paiement_pnl?: string | null
           date_transaction?: string | null
           gain_vendeur?: number | null
           id?: string
           notes?: string | null
+          pnl_paye?: boolean | null
           prix_achat_original?: number | null
           prix_transaction?: number
           prix_vente_final?: number | null
@@ -858,6 +890,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ventes_navire_id_fkey"
+            columns: ["navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires_with_aliases"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ventes_parent_deal_id_fkey"
             columns: ["parent_deal_id"]
             isOneToOne: false
@@ -879,6 +918,7 @@ export type Database = {
           content: string
           created_at: string | null
           description: string | null
+          event_type: string | null
           id: string
           name: string
           updated_at: string | null
@@ -888,6 +928,7 @@ export type Database = {
           content: string
           created_at?: string | null
           description?: string | null
+          event_type?: string | null
           id?: string
           name: string
           updated_at?: string | null
@@ -897,6 +938,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           description?: string | null
+          event_type?: string | null
           id?: string
           name?: string
           updated_at?: string | null
@@ -905,7 +947,111 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      navires_with_aliases: {
+        Row: {
+          created_at: string | null
+          date_arrivee: string | null
+          date_debut_planche: string | null
+          date_fin_planche: string | null
+          echeance_id: string | null
+          est_roll: boolean | null
+          fournisseur: string | null
+          id: string | null
+          navire_parent_id: string | null
+          nom: string | null
+          parent_navire_id: string | null
+          prime_achat: number | null
+          prix_achat_flat: number | null
+          produit: Database["public"]["Enums"]["product_type"] | null
+          quantite_totale: number | null
+          reference_cbot: string | null
+          taux_fret: number | null
+          terme_commercial: string | null
+          updated_at: string | null
+          volume_dispo_achat: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_arrivee?: string | null
+          date_debut_planche?: string | null
+          date_fin_planche?: string | null
+          echeance_id?: string | null
+          est_roll?: boolean | null
+          fournisseur?: string | null
+          id?: string | null
+          navire_parent_id?: string | null
+          nom?: string | null
+          parent_navire_id?: string | null
+          prime_achat?: number | null
+          prix_achat_flat?: number | null
+          produit?: Database["public"]["Enums"]["product_type"] | null
+          quantite_totale?: number | null
+          reference_cbot?: string | null
+          taux_fret?: number | null
+          terme_commercial?: string | null
+          updated_at?: string | null
+          volume_dispo_achat?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date_arrivee?: string | null
+          date_debut_planche?: string | null
+          date_fin_planche?: string | null
+          echeance_id?: string | null
+          est_roll?: boolean | null
+          fournisseur?: string | null
+          id?: string | null
+          navire_parent_id?: string | null
+          nom?: string | null
+          parent_navire_id?: string | null
+          prime_achat?: number | null
+          prix_achat_flat?: number | null
+          produit?: Database["public"]["Enums"]["product_type"] | null
+          quantite_totale?: number | null
+          reference_cbot?: string | null
+          taux_fret?: number | null
+          terme_commercial?: string | null
+          updated_at?: string | null
+          volume_dispo_achat?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navires_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["parent_navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["navire_parent_id"]
+            isOneToOne: false
+            referencedRelation: "navires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["parent_navire_id"]
+            isOneToOne: false
+            referencedRelation: "navires_with_aliases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["navire_parent_id"]
+            isOneToOne: false
+            referencedRelation: "navires_with_aliases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_bid_and_create_transaction: {
@@ -949,7 +1095,13 @@ export type Database = {
     }
     Enums: {
       deal_type: "prime" | "flat"
-      product_type: "mais" | "tourteau_soja" | "ble" | "orge"
+      product_type:
+        | "mais"
+        | "tourteau_soja"
+        | "ble"
+        | "orge"
+        | "ddgs"
+        | "ferrailles"
       revente_status:
         | "en_attente_validation"
         | "valide"
@@ -1085,7 +1237,14 @@ export const Constants = {
   public: {
     Enums: {
       deal_type: ["prime", "flat"],
-      product_type: ["mais", "tourteau_soja", "ble", "orge"],
+      product_type: [
+        "mais",
+        "tourteau_soja",
+        "ble",
+        "orge",
+        "ddgs",
+        "ferrailles",
+      ],
       revente_status: [
         "en_attente_validation",
         "valide",

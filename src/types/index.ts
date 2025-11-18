@@ -67,7 +67,7 @@ export interface ReventeClient {
 export interface Echeance {
   id: string;
   nom: string;
-  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge' | 'ddgs' | 'ferrailles';
   date_echeance: string;
   active: boolean;
   created_at: string;

@@ -82,32 +82,14 @@ export default function PrixMarchePage() {
     setPrixMarche(data || []);
   };
 
-  // Gestion des échéances
+  // Gestion des échéances - Désactivé car nécessite plus de champs
   const handleAddEcheance = async () => {
-    if (!newEcheance.trim()) return;
-    
-    try {
-      const { error } = await supabase
-        .from('echeances')
-        .insert([{ nom: newEcheance.trim() }]);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Succès",
-        description: "Échéance ajoutée avec succès",
-      });
-      
-      setNewEcheance('');
-      fetchEcheances();
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'échéance:', error);
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de l'ajout de l'échéance",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Fonctionnalité en cours de développement",
+      description: "L'ajout d'échéances nécessite de spécifier le produit et la date d'échéance",
+      variant: "destructive"
+    });
+    return;
   };
 
   const handleUpdateEcheance = async () => {
