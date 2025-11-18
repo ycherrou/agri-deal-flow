@@ -106,18 +106,8 @@ export default function Clients() {
           throw new Error('Email et mot de passe requis pour un nouveau client');
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('Session expirée');
-        }
-
-        const response = await fetch(`https://ghakstxearfsffrbkuxs.supabase.co/functions/v1/manage-clients`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const { data, error } = await supabase.functions.invoke('manage-clients', {
+          body: {
             action: 'CREATE_CLIENT',
             clientData: {
               nom: formData.nom,
@@ -126,14 +116,11 @@ export default function Clients() {
               role: formData.role,
               password: formData.password
             }
-          })
+          }
         });
 
-        const result = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(result.error || 'Erreur lors de la création du client');
-        }
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || 'Erreur lors de la création du client');
 
         toast({
           title: 'Succès',
@@ -184,31 +171,18 @@ export default function Clients() {
       setProcessingId(client.id);
       setLoading(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Session expirée');
-      }
-
-      const response = await fetch(`https://ghakstxearfsffrbkuxs.supabase.co/functions/v1/manage-clients`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('manage-clients', {
+        body: {
           action: 'DELETE_CLIENT',
           clientData: {
             clientId: client.id,
             userId: client.user_id
           }
-        })
+        }
       });
 
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Erreur lors de la suppression du client');
-      }
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Erreur lors de la suppression du client');
 
       toast({
         title: 'Succès',
