@@ -41,14 +41,14 @@ serve(async (req) => {
     }
 
     // Vérifier que l'utilisateur est admin depuis la table clients
-    const { data: clientData, error: clientError } = await supabaseAdmin
+    const { data: roleRow, error: roleError } = await supabaseAdmin
       .from('clients')
       .select('role')
       .eq('user_id', user.id)
       .single();
     
-    if (clientError || !clientData || clientData.role !== 'admin') {
-      console.log('User role check failed:', { clientError, clientData });
+    if (roleError || !roleRow || roleRow.role !== 'admin') {
+      console.log('User role check failed:', { roleError, roleRow });
       throw new Error('Seuls les administrateurs peuvent gérer les clients');
     }
 
