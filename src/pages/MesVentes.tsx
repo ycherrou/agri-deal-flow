@@ -17,6 +17,8 @@ interface Transaction {
   revente_id: string;
   acheteur_id: string;
   vendeur_id: string;
+  pnl_paye: boolean;
+  date_paiement_pnl: string | null;
   revente: {
     id: string;
     vente: {

@@ -10,7 +10,7 @@ interface NavireWithPnLData {
   prix_achat_flat: number | null;
   terme_commercial: 'FOB' | 'CFR';
   taux_fret: number | null;
-  parent_navire_id: string | null;
+  navire_parent_id: string | null;
   reference_cbot: string | null;
   couvertures_achat: Array<{
     volume_couvert: number;

@@ -14,9 +14,10 @@ import { MessageSquare, Send, Settings } from 'lucide-react';
 
 interface WhatsAppTemplate {
   id: string;
-  nom: string;
-  message_template: string;
+  name: string;
+  content: string;
   event_type: string;
+  description?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -26,7 +27,7 @@ interface NotificationHistory {
   id: string;
   client_id: string;
   phone_number: string;
-  message_type: string;
+  template_name: string;
   message_content: string;
   status: string;
   sent_at: string | null;
@@ -42,8 +43,8 @@ export default function WhatsAppNotifications() {
   const queryClient = useQueryClient();
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [newTemplate, setNewTemplate] = useState({
-    nom: '',
-    message_template: '',
+    name: '',
+    content: '',
     event_type: 'nouvelle_offre',
     active: true
   });
@@ -124,8 +125,8 @@ export default function WhatsAppNotifications() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-templates'] });
       setNewTemplate({
-        nom: '',
-        message_template: '',
+        name: '',
+        content: '',
         event_type: 'nouvelle_offre',
         active: true
       });
@@ -213,7 +214,7 @@ export default function WhatsAppNotifications() {
   });
 
   const handleCreateTemplate = () => {
-    if (!newTemplate.nom || !newTemplate.message_template) {
+    if (!newTemplate.name || !newTemplate.content) {
       toast({
         title: "Champs requis",
         description: "Le nom et le message sont obligatoires.",
@@ -279,8 +280,8 @@ export default function WhatsAppNotifications() {
                 <Label htmlFor="template-name">Nom du template</Label>
                 <Input
                   id="template-name"
-                  value={newTemplate.nom}
-                  onChange={(e) => setNewTemplate(prev => ({ ...prev, nom: e.target.value }))}
+                  value={newTemplate.name}
+                  onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Ex: nouvelle_offre_marche"
                 />
               </div>
@@ -306,8 +307,8 @@ export default function WhatsAppNotifications() {
                 <Label htmlFor="message-template">Message template</Label>
                 <Textarea
                   id="message-template"
-                  value={newTemplate.message_template}
-                  onChange={(e) => setNewTemplate(prev => ({ ...prev, message_template: e.target.value }))}
+                  value={newTemplate.content}
+                  onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="Bonjour {{client_nom}}, votre offre de {{prix}}$/T pour {{volume}}T de {{produit}} a été acceptée."
                   rows={4}
                 />
@@ -335,7 +336,7 @@ export default function WhatsAppNotifications() {
                 templates.map((template) => (
                   <div key={template.id} className="p-3 border rounded-lg space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{template.nom}</span>
+                      <span className="font-medium">{template.name}</span>
                       <div className="flex items-center gap-2">
                         <Badge variant={template.active ? 'default' : 'secondary'}>
                           {template.active ? 'Actif' : 'Inactif'}
@@ -348,7 +349,7 @@ export default function WhatsAppNotifications() {
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {template.message_template}
+                      {template.content}
                     </p>
                     <Badge variant="outline" className="text-xs">
                       {template.event_type}
@@ -413,8 +414,8 @@ export default function WhatsAppNotifications() {
                 </SelectTrigger>
                 <SelectContent>
                   {templates.filter(t => t.active).map((template) => (
-                    <SelectItem key={template.id} value={template.nom}>
-                      {template.nom}
+                    <SelectItem key={template.id} value={template.name}>
+                      {template.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -469,7 +470,7 @@ export default function WhatsAppNotifications() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    {notification.phone_number} • {notification.message_type}
+                    {notification.phone_number} • {notification.template_name}
                   </p>
                   <p className="text-sm">{notification.message_content}</p>
                   {notification.error_message && (

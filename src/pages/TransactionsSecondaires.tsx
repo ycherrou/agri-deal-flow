@@ -293,8 +293,8 @@ export default function TransactionsSecondaires() {
   const acceptBid = async (bidId: string) => {
     try {
       const { data, error } = await supabase.rpc('accept_bid_and_create_transaction', {
-        bid_id_param: bidId,
-        seller_client_id: currentUser.id,
+        p_bid_id: bidId,
+        p_commission: 0
       });
 
       if (error) throw error;
