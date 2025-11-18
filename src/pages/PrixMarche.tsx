@@ -11,17 +11,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Trash2, Edit, Plus, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import { Echeance, PrixMarche } from '@/types';
 import { CBOTPriceUpdater } from '@/components/CBOTPriceUpdater';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function PrixMarchePage() {
   const { toast } = useToast();
   
   // État pour les échéances
   const [echeances, setEcheances] = useState<Echeance[]>([]);
-  const [newEcheance, setNewEcheance] = useState('');
   const [editingEcheance, setEditingEcheance] = useState<Echeance | null>(null);
+  const [formEcheance, setFormEcheance] = useState({
+    nom: '',
+    produit: '',
+    date_echeance: undefined as Date | undefined,
+    active: true
+  });
   
   // État pour les prix
   const [prixMarche, setPrixMarche] = useState<PrixMarche[]>([]);
@@ -33,6 +43,7 @@ export default function PrixMarchePage() {
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [echeanceDialogOpen, setEcheanceDialogOpen] = useState(false);
   const [prixDialogOpen, setPrixDialogOpen] = useState(false);
 
   // Récupération des données
@@ -82,14 +93,50 @@ export default function PrixMarchePage() {
     setPrixMarche(data || []);
   };
 
-  // Gestion des échéances - Désactivé car nécessite plus de champs
+  // Gestion des échéances
   const handleAddEcheance = async () => {
-    toast({
-      title: "Fonctionnalité en cours de développement",
-      description: "L'ajout d'échéances nécessite de spécifier le produit et la date d'échéance",
-      variant: "destructive"
-    });
-    return;
+    if (!formEcheance.nom.trim() || !formEcheance.produit || !formEcheance.date_echeance) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('echeances')
+        .insert([{
+          nom: formEcheance.nom.trim(),
+          produit: formEcheance.produit as any,
+          date_echeance: format(formEcheance.date_echeance, 'yyyy-MM-dd'),
+          active: formEcheance.active
+        }]);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Succès",
+        description: "Échéance créée avec succès",
+      });
+      
+      setFormEcheance({
+        nom: '',
+        produit: '',
+        date_echeance: undefined,
+        active: true
+      });
+      setEcheanceDialogOpen(false);
+      fetchEcheances();
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'échéance:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la création de l'échéance",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdateEcheance = async () => {
@@ -281,6 +328,19 @@ export default function PrixMarchePage() {
     return new Date(dateString).toLocaleString('fr-FR');
   };
 
+  const formatDateOnly = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  };
+
+  const productLabels: Record<string, string> = {
+    mais: 'Maïs',
+    tourteau_soja: 'Tourteau de Soja',
+    ble: 'Blé',
+    orge: 'Orge',
+    ddgs: 'DDGS',
+    ferrailles: 'Ferrailles'
+  };
+
   const echeancesActives = echeances.filter(e => e.active);
 
   if (loading) {
@@ -314,24 +374,113 @@ export default function PrixMarchePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2 mb-4">
-                <Input
-                  placeholder="Nouvelle échéance (ex: ZCH24)"
-                  value={newEcheance}
-                  onChange={(e) => setNewEcheance(e.target.value)}
-                />
-                <Button onClick={handleAddEcheance}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter
-                </Button>
+              <div className="mb-4">
+                <Dialog open={echeanceDialogOpen} onOpenChange={setEcheanceDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nouvelle Échéance
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Ajouter une nouvelle échéance</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="nom">Nom de l'échéance *</Label>
+                        <Input
+                          id="nom"
+                          placeholder="ex: ZCU25, ZMH26"
+                          value={formEcheance.nom}
+                          onChange={(e) => setFormEcheance(prev => ({ ...prev, nom: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="produit">Produit *</Label>
+                        <Select
+                          value={formEcheance.produit}
+                          onValueChange={(value) => setFormEcheance(prev => ({ ...prev, produit: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez un produit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mais">Maïs</SelectItem>
+                            <SelectItem value="tourteau_soja">Tourteau de Soja</SelectItem>
+                            <SelectItem value="ble">Blé</SelectItem>
+                            <SelectItem value="orge">Orge</SelectItem>
+                            <SelectItem value="ddgs">DDGS</SelectItem>
+                            <SelectItem value="ferrailles">Ferrailles</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="date_echeance">Date d'échéance *</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formEcheance.date_echeance && "text-muted-foreground"
+                              )}
+                            >
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {formEcheance.date_echeance ? (
+                                format(formEcheance.date_echeance, "PPP", { locale: fr })
+                              ) : (
+                                <span>Choisir une date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={formEcheance.date_echeance}
+                              onSelect={(date) => setFormEcheance(prev => ({ ...prev, date_echeance: date }))}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="active"
+                          checked={formEcheance.active}
+                          onCheckedChange={(checked) => setFormEcheance(prev => ({ ...prev, active: checked }))}
+                        />
+                        <Label htmlFor="active">Active</Label>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleAddEcheance}>
+                          Créer
+                        </Button>
+                        <Button variant="outline" onClick={() => {
+                          setFormEcheance({
+                            nom: '',
+                            produit: '',
+                            date_echeance: undefined,
+                            active: true
+                          });
+                          setEcheanceDialogOpen(false);
+                        }}>
+                          Annuler
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nom</TableHead>
+                    <TableHead>Produit</TableHead>
+                    <TableHead>Date d'échéance</TableHead>
                     <TableHead>Statut</TableHead>
-                    <TableHead>Date de création</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -339,12 +488,13 @@ export default function PrixMarchePage() {
                   {echeances.map((echeance) => (
                     <TableRow key={echeance.id}>
                       <TableCell className="font-medium">{echeance.nom}</TableCell>
+                      <TableCell>{productLabels[echeance.produit] || echeance.produit}</TableCell>
+                      <TableCell>{formatDateOnly(echeance.date_echeance)}</TableCell>
                       <TableCell>
                         <Badge variant={echeance.active ? "default" : "secondary"}>
                           {echeance.active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(echeance.created_at)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Dialog open={dialogOpen && editingEcheance?.id === echeance.id} onOpenChange={setDialogOpen}>
