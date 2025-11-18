@@ -174,16 +174,6 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   const volumeTotalVendu = volumeTotalVenduPrime + volumeTotalVenduFlat;
   const facteurConversion = getConversionFactor(navire.produit);
   
-  let prixVenteMoyenGlobal = 0;
-  let prixAchatAffichage = 0;
-  
-  if (volumeTotalVendu > 0) {
-    // Convertir les primes en $/tonne si nécessaire
-    const primeVenteConvertie = primeVenteMoyenne * facteurConversion;
-    const prixVentePondere = (primeVenteConvertie * volumeTotalVenduPrime + prixFlatVenteMoyen * volumeTotalVenduFlat) / volumeTotalVendu;
-    prixVenteMoyenGlobal = prixVentePondere;
-  }
-  
   // Prix d'achat pour affichage avec formule CFR
   let prixAchatCFR = 0;
   if (isNavireFlat) {
@@ -197,6 +187,22 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
     prixAchatCFR = navire.prime_achat || 0;
     if (navire.terme_commercial === 'FOB' && navire.taux_fret && facteurConversion > 0) {
       prixAchatCFR += navire.taux_fret / facteurConversion;
+    }
+  }
+  
+  // Calculer la moyenne pondérée incluant le volume non vendu
+  const volumeNonVendu = navire.quantite_totale - volumeTotalVendu;
+  let prixVenteMoyenGlobal = 0;
+  
+  if (navire.quantite_totale > 0) {
+    if (isNavireFlat) {
+      // Navire flat : moyenne pondérée en USD/MT
+      const prixPondere = (prixFlatVenteMoyen * volumeTotalVendu + prixAchatCFR * volumeNonVendu) / navire.quantite_totale;
+      prixVenteMoyenGlobal = prixPondere;
+    } else {
+      // Navire à prime : moyenne pondérée en Cts/Bu ou Cts/ST (unité originale)
+      const prixPondere = (primeVenteMoyenne * volumeTotalVendu + prixAchatCFR * volumeNonVendu) / navire.quantite_totale;
+      prixVenteMoyenGlobal = prixPondere;
     }
   }
   
