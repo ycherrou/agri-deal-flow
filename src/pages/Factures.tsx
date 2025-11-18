@@ -108,7 +108,7 @@ export default function Factures() {
     try {
       // Get PRU using the NEW database function for invoices
       const { data: pruData, error: pruError } = await supabase
-        .rpc('calculate_pru_facture', { vente_id_param: venteId });
+        .rpc('calculate_pru_facture', { p_facture_id: venteId });
 
       if (pruError) throw pruError;
 

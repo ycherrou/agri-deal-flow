@@ -308,7 +308,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
     
     if (error) throw error;
 
-    const naviresData = navires as NavireWithPnLData[] || [];
+    const naviresData = (navires as NavireWithPnLData[]) || [];
     
     const pnlNavires = naviresData.map(calculateTotalPnL);
     

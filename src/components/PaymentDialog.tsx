@@ -71,7 +71,7 @@ export default function PaymentDialog({ open, onClose, invoice }: PaymentDialogP
       if (invoice.type_facture === 'commerciale') {
         const { error: processError } = await supabase
           .rpc('traiter_paiement_facture', { 
-            paiement_id_param: payment.id 
+            p_paiement_id: payment.id 
           });
 
         if (processError) throw processError;
