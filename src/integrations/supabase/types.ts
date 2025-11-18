@@ -7,52 +7,43 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
       bids_marche_secondaire: {
         Row: {
-          accepted_at: string | null
-          accepted_by_seller: boolean | null
           client_id: string
-          created_at: string
-          date_bid: string
+          commentaire: string | null
+          created_at: string | null
           id: string
-          prix_bid: number
+          prix_propose: number
           revente_id: string
-          statut: string
-          updated_at: string
-          volume_bid: number
+          statut: string | null
+          updated_at: string | null
         }
         Insert: {
-          accepted_at?: string | null
-          accepted_by_seller?: boolean | null
           client_id: string
-          created_at?: string
-          date_bid?: string
+          commentaire?: string | null
+          created_at?: string | null
           id?: string
-          prix_bid: number
+          prix_propose: number
           revente_id: string
-          statut?: string
-          updated_at?: string
-          volume_bid: number
+          statut?: string | null
+          updated_at?: string | null
         }
         Update: {
-          accepted_at?: string | null
-          accepted_by_seller?: boolean | null
           client_id?: string
-          created_at?: string
-          date_bid?: string
+          commentaire?: string | null
+          created_at?: string | null
           id?: string
-          prix_bid?: number
+          prix_propose?: number
           revente_id?: string
-          statut?: string
-          updated_at?: string
-          volume_bid?: number
+          statut?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -121,30 +112,30 @@ export type Database = {
           created_at: string | null
           date_couverture: string
           id: string
-          nombre_contrats: number
+          nombre_contrats: number | null
           prix_futures: number
           updated_at: string | null
-          vente_id: string | null
+          vente_id: string
           volume_couvert: number
         }
         Insert: {
           created_at?: string | null
           date_couverture?: string
           id?: string
-          nombre_contrats?: number
+          nombre_contrats?: number | null
           prix_futures: number
           updated_at?: string | null
-          vente_id?: string | null
+          vente_id: string
           volume_couvert: number
         }
         Update: {
           created_at?: string | null
           date_couverture?: string
           id?: string
-          nombre_contrats?: number
+          nombre_contrats?: number | null
           prix_futures?: number
           updated_at?: string | null
-          vente_id?: string | null
+          vente_id?: string
           volume_couvert?: number
         }
         Relationships: [
@@ -161,34 +152,44 @@ export type Database = {
         Row: {
           created_at: string | null
           date_couverture: string
+          echeance_id: string | null
           id: string
           navire_id: string
           nombre_contrats: number
           prix_futures: number
           updated_at: string | null
-          volume_couvert: number
+          volume_couvert: number | null
         }
         Insert: {
           created_at?: string | null
           date_couverture?: string
+          echeance_id?: string | null
           id?: string
           navire_id: string
-          nombre_contrats?: number
+          nombre_contrats: number
           prix_futures: number
           updated_at?: string | null
-          volume_couvert: number
+          volume_couvert?: number | null
         }
         Update: {
           created_at?: string | null
           date_couverture?: string
+          echeance_id?: string | null
           id?: string
           navire_id?: string
           nombre_contrats?: number
           prix_futures?: number
           updated_at?: string | null
-          volume_couvert?: number
+          volume_couvert?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "couvertures_achat_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "couvertures_achat_navire_id_fkey"
             columns: ["navire_id"]
@@ -200,25 +201,31 @@ export type Database = {
       }
       echeances: {
         Row: {
-          active: boolean
-          created_at: string
+          actif: boolean | null
+          created_at: string | null
+          date_echeance: string
           id: string
           nom: string
-          updated_at: string
+          produit: Database["public"]["Enums"]["product_type"]
+          updated_at: string | null
         }
         Insert: {
-          active?: boolean
-          created_at?: string
+          actif?: boolean | null
+          created_at?: string | null
+          date_echeance: string
           id?: string
           nom: string
-          updated_at?: string
+          produit: Database["public"]["Enums"]["product_type"]
+          updated_at?: string | null
         }
         Update: {
-          active?: boolean
-          created_at?: string
+          actif?: boolean | null
+          created_at?: string | null
+          date_echeance?: string
           id?: string
           nom?: string
-          updated_at?: string
+          produit?: Database["public"]["Enums"]["product_type"]
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -226,58 +233,72 @@ export type Database = {
         Row: {
           client_id: string
           conditions_paiement: string | null
-          created_at: string
-          date_echeance: string | null
+          created_at: string | null
+          date_echeance: string
           date_facture: string
-          devise: string
+          devise: string | null
           id: string
           montant_total: number
           notes: string | null
           numero_facture: string
-          reference: string | null
-          statut: string
+          statut: string | null
           taux_change: number | null
+          transaction_secondaire_id: string | null
           type_facture: string
-          updated_at: string
+          updated_at: string | null
           vente_id: string | null
         }
         Insert: {
           client_id: string
           conditions_paiement?: string | null
-          created_at?: string
-          date_echeance?: string | null
+          created_at?: string | null
+          date_echeance: string
           date_facture?: string
-          devise?: string
+          devise?: string | null
           id?: string
-          montant_total?: number
+          montant_total: number
           notes?: string | null
           numero_facture: string
-          reference?: string | null
-          statut?: string
+          statut?: string | null
           taux_change?: number | null
+          transaction_secondaire_id?: string | null
           type_facture: string
-          updated_at?: string
+          updated_at?: string | null
           vente_id?: string | null
         }
         Update: {
           client_id?: string
           conditions_paiement?: string | null
-          created_at?: string
-          date_echeance?: string | null
+          created_at?: string | null
+          date_echeance?: string
           date_facture?: string
-          devise?: string
+          devise?: string | null
           id?: string
           montant_total?: number
           notes?: string | null
           numero_facture?: string
-          reference?: string | null
-          statut?: string
+          statut?: string | null
           taux_change?: number | null
+          transaction_secondaire_id?: string | null
           type_facture?: string
-          updated_at?: string
+          updated_at?: string | null
           vente_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "factures_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_transaction_secondaire_id_fkey"
+            columns: ["transaction_secondaire_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_marche_secondaire"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "factures_vente_id_fkey"
             columns: ["vente_id"]
@@ -287,129 +308,84 @@ export type Database = {
           },
         ]
       }
-      financements: {
-        Row: {
-          commentaire: string | null
-          created_at: string
-          date_financement: string
-          id: string
-          ligne_bancaire_id: string | null
-          montant_finance: number
-          statut: string
-          updated_at: string
-          vente_id: string
-        }
-        Insert: {
-          commentaire?: string | null
-          created_at?: string
-          date_financement?: string
-          id?: string
-          ligne_bancaire_id?: string | null
-          montant_finance: number
-          statut?: string
-          updated_at?: string
-          vente_id: string
-        }
-        Update: {
-          commentaire?: string | null
-          created_at?: string
-          date_financement?: string
-          id?: string
-          ligne_bancaire_id?: string | null
-          montant_finance?: number
-          statut?: string
-          updated_at?: string
-          vente_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_financements_ligne_bancaire"
-            columns: ["ligne_bancaire_id"]
-            isOneToOne: false
-            referencedRelation: "lignes_bancaires"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_financements_vente"
-            columns: ["vente_id"]
-            isOneToOne: false
-            referencedRelation: "ventes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lignes_bancaires: {
         Row: {
-          active: boolean
+          actif: boolean | null
           banque: string
-          created_at: string
-          date_echeance: string | null
-          date_ouverture: string | null
+          created_at: string | null
+          date_debut: string
+          date_fin: string | null
           id: string
-          montant_disponible: number | null
-          montant_total: number
-          montant_utilise: number
-          nom: string
+          montant_autorise: number
+          montant_utilise: number | null
+          notes: string | null
           taux_interet: number | null
-          updated_at: string
+          type_ligne: string
+          updated_at: string | null
         }
         Insert: {
-          active?: boolean
+          actif?: boolean | null
           banque: string
-          created_at?: string
-          date_echeance?: string | null
-          date_ouverture?: string | null
+          created_at?: string | null
+          date_debut: string
+          date_fin?: string | null
           id?: string
-          montant_disponible?: number | null
-          montant_total: number
-          montant_utilise?: number
-          nom: string
+          montant_autorise: number
+          montant_utilise?: number | null
+          notes?: string | null
           taux_interet?: number | null
-          updated_at?: string
+          type_ligne: string
+          updated_at?: string | null
         }
         Update: {
-          active?: boolean
+          actif?: boolean | null
           banque?: string
-          created_at?: string
-          date_echeance?: string | null
-          date_ouverture?: string | null
+          created_at?: string | null
+          date_debut?: string
+          date_fin?: string | null
           id?: string
-          montant_disponible?: number | null
-          montant_total?: number
-          montant_utilise?: number
-          nom?: string
+          montant_autorise?: number
+          montant_utilise?: number | null
+          notes?: string | null
           taux_interet?: number | null
-          updated_at?: string
+          type_ligne?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
       lignes_facture: {
         Row: {
-          created_at: string
+          created_at: string | null
           description: string
           facture_id: string
           id: string
           montant_ligne: number
+          ordre: number | null
           prix_unitaire: number
           quantite: number
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           description: string
           facture_id: string
           id?: string
           montant_ligne: number
+          ordre?: number | null
           prix_unitaire: number
           quantite: number
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           description?: string
           facture_id?: string
           id?: string
           montant_ligne?: number
+          ordre?: number | null
           prix_unitaire?: number
           quantite?: number
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -423,54 +399,41 @@ export type Database = {
       }
       mouvements_bancaires: {
         Row: {
-          created_at: string
+          created_at: string | null
           date_mouvement: string
           description: string | null
-          financement_id: string | null
           id: string
           ligne_bancaire_id: string
           montant: number
-          montant_apres: number
-          montant_avant: number
           reference: string | null
           type_mouvement: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           date_mouvement?: string
           description?: string | null
-          financement_id?: string | null
           id?: string
           ligne_bancaire_id: string
           montant: number
-          montant_apres: number
-          montant_avant: number
           reference?: string | null
           type_mouvement: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           date_mouvement?: string
           description?: string | null
-          financement_id?: string | null
           id?: string
           ligne_bancaire_id?: string
           montant?: number
-          montant_apres?: number
-          montant_avant?: number
           reference?: string | null
           type_mouvement?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mouvements_financement"
-            columns: ["financement_id"]
-            isOneToOne: false
-            referencedRelation: "financements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mouvements_ligne_bancaire"
+            foreignKeyName: "mouvements_bancaires_ligne_bancaire_id_fkey"
             columns: ["ligne_bancaire_id"]
             isOneToOne: false
             referencedRelation: "lignes_bancaires"
@@ -480,198 +443,162 @@ export type Database = {
       }
       navires: {
         Row: {
-          connaissement: string | null
           created_at: string | null
           date_arrivee: string
-          date_connaissement: string | null
-          date_debut_planche: string
-          date_fin_planche: string
+          date_debut_planche: string | null
+          date_fin_planche: string | null
+          echeance_id: string | null
+          est_roll: boolean | null
           fournisseur: string
           id: string
+          navire_parent_id: string | null
           nom: string
-          origine: string | null
-          parent_navire_id: string | null
-          port_chargement: string | null
-          port_dechargement: string | null
           prime_achat: number | null
           prix_achat_flat: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
           reference_cbot: string | null
           taux_fret: number | null
-          terme_commercial: string
+          terme_commercial: string | null
           updated_at: string | null
+          volume_dispo_achat: number | null
         }
         Insert: {
-          connaissement?: string | null
           created_at?: string | null
           date_arrivee: string
-          date_connaissement?: string | null
-          date_debut_planche: string
-          date_fin_planche: string
+          date_debut_planche?: string | null
+          date_fin_planche?: string | null
+          echeance_id?: string | null
+          est_roll?: boolean | null
           fournisseur: string
           id?: string
+          navire_parent_id?: string | null
           nom: string
-          origine?: string | null
-          parent_navire_id?: string | null
-          port_chargement?: string | null
-          port_dechargement?: string | null
           prime_achat?: number | null
           prix_achat_flat?: number | null
           produit: Database["public"]["Enums"]["product_type"]
           quantite_totale: number
           reference_cbot?: string | null
           taux_fret?: number | null
-          terme_commercial?: string
+          terme_commercial?: string | null
           updated_at?: string | null
+          volume_dispo_achat?: number | null
         }
         Update: {
-          connaissement?: string | null
           created_at?: string | null
           date_arrivee?: string
-          date_connaissement?: string | null
-          date_debut_planche?: string
-          date_fin_planche?: string
+          date_debut_planche?: string | null
+          date_fin_planche?: string | null
+          echeance_id?: string | null
+          est_roll?: boolean | null
           fournisseur?: string
           id?: string
+          navire_parent_id?: string | null
           nom?: string
-          origine?: string | null
-          parent_navire_id?: string | null
-          port_chargement?: string | null
-          port_dechargement?: string | null
           prime_achat?: number | null
           prix_achat_flat?: number | null
           produit?: Database["public"]["Enums"]["product_type"]
           quantite_totale?: number
           reference_cbot?: string | null
           taux_fret?: number | null
-          terme_commercial?: string
+          terme_commercial?: string | null
           updated_at?: string | null
+          volume_dispo_achat?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "navires_parent_navire_id_fkey"
-            columns: ["parent_navire_id"]
+            foreignKeyName: "navires_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navires_navire_parent_id_fkey"
+            columns: ["navire_parent_id"]
             isOneToOne: false
             referencedRelation: "navires"
             referencedColumns: ["id"]
           },
         ]
       }
-      notification_preferences: {
-        Row: {
-          client_id: string
-          created_at: string
-          enabled: boolean
-          event_type: string
-          id: string
-          produit_filter: string[] | null
-          updated_at: string
-          volume_max: number | null
-          volume_min: number | null
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          enabled?: boolean
-          event_type: string
-          id?: string
-          produit_filter?: string[] | null
-          updated_at?: string
-          volume_max?: number | null
-          volume_min?: number | null
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          enabled?: boolean
-          event_type?: string
-          id?: string
-          produit_filter?: string[] | null
-          updated_at?: string
-          volume_max?: number | null
-          volume_min?: number | null
-        }
-        Relationships: []
-      }
       notifications_history: {
         Row: {
-          client_id: string
-          created_at: string
+          client_id: string | null
+          created_at: string | null
           error_message: string | null
           id: string
           message_content: string
-          message_type: string
           phone_number: string
           sent_at: string | null
           status: string
-          twilio_sid: string | null
-          updated_at: string
+          template_name: string
         }
         Insert: {
-          client_id: string
-          created_at?: string
+          client_id?: string | null
+          created_at?: string | null
           error_message?: string | null
           id?: string
           message_content: string
-          message_type: string
           phone_number: string
           sent_at?: string | null
-          status?: string
-          twilio_sid?: string | null
-          updated_at?: string
+          status: string
+          template_name: string
         }
         Update: {
-          client_id?: string
-          created_at?: string
+          client_id?: string | null
+          created_at?: string | null
           error_message?: string | null
           id?: string
           message_content?: string
-          message_type?: string
           phone_number?: string
           sent_at?: string | null
           status?: string
-          twilio_sid?: string | null
-          updated_at?: string
+          template_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       paiements_factures: {
         Row: {
-          created_at: string
+          created_at: string | null
           date_paiement: string
           facture_id: string
-          finance_update_processed: boolean
           id: string
-          methode_paiement: string
-          montant_paye: number
+          mode_paiement: string | null
+          montant: number
           notes: string | null
           reference_paiement: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
-          date_paiement: string
+          created_at?: string | null
+          date_paiement?: string
           facture_id: string
-          finance_update_processed?: boolean
           id?: string
-          methode_paiement: string
-          montant_paye: number
+          mode_paiement?: string | null
+          montant: number
           notes?: string | null
           reference_paiement?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           date_paiement?: string
           facture_id?: string
-          finance_update_processed?: boolean
           id?: string
-          methode_paiement?: string
-          montant_paye?: number
+          mode_paiement?: string | null
+          montant?: number
           notes?: string | null
           reference_paiement?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -686,28 +613,28 @@ export type Database = {
       prix_marche: {
         Row: {
           created_at: string | null
-          echeance_id: string | null
+          date_maj: string
+          echeance_id: string
           id: string
           prix: number
-          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          echeance_id?: string | null
+          date_maj?: string
+          echeance_id: string
           id?: string
           prix: number
-          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          echeance_id?: string | null
+          date_maj?: string
+          echeance_id?: string
           id?: string
           prix?: number
-          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_prix_marche_echeance"
+            foreignKeyName: "prix_marche_echeance_id_fkey"
             columns: ["echeance_id"]
             isOneToOne: false
             referencedRelation: "echeances"
@@ -715,34 +642,8 @@ export type Database = {
           },
         ]
       }
-      references_factures: {
-        Row: {
-          annee: number
-          created_at: string | null
-          dernier_numero: number | null
-          id: string
-          updated_at: string | null
-        }
-        Insert: {
-          annee: number
-          created_at?: string | null
-          dernier_numero?: number | null
-          id?: string
-          updated_at?: string | null
-        }
-        Update: {
-          annee?: number
-          created_at?: string | null
-          dernier_numero?: number | null
-          id?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       reventes_clients: {
         Row: {
-          admin_id: string | null
-          admin_validation_date: string | null
           commentaire: string | null
           created_at: string | null
           date_expiration_validation: string | null
@@ -750,16 +651,14 @@ export type Database = {
           etat: Database["public"]["Enums"]["revente_status"]
           id: string
           prime_demandee: number | null
-          prix_flat_demande: number | null
-          type_position: string
+          prix_flat_demande: number
+          type_position: string | null
           updated_at: string | null
           validated_by_admin: boolean | null
           vente_id: string
           volume: number
         }
         Insert: {
-          admin_id?: string | null
-          admin_validation_date?: string | null
           commentaire?: string | null
           created_at?: string | null
           date_expiration_validation?: string | null
@@ -767,16 +666,14 @@ export type Database = {
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prime_demandee?: number | null
-          prix_flat_demande?: number | null
-          type_position?: string
+          prix_flat_demande: number
+          type_position?: string | null
           updated_at?: string | null
           validated_by_admin?: boolean | null
           vente_id: string
           volume: number
         }
         Update: {
-          admin_id?: string | null
-          admin_validation_date?: string | null
           commentaire?: string | null
           created_at?: string | null
           date_expiration_validation?: string | null
@@ -784,21 +681,14 @@ export type Database = {
           etat?: Database["public"]["Enums"]["revente_status"]
           id?: string
           prime_demandee?: number | null
-          prix_flat_demande?: number | null
-          type_position?: string
+          prix_flat_demande?: number
+          type_position?: string | null
           updated_at?: string | null
           validated_by_admin?: boolean | null
           vente_id?: string
           volume?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "reventes_clients_admin_id_fkey"
-            columns: ["admin_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "reventes_clients_vente_id_fkey"
             columns: ["vente_id"]
@@ -808,98 +698,92 @@ export type Database = {
           },
         ]
       }
-      sequences_factures: {
-        Row: {
-          annee: number
-          created_at: string
-          dernier_numero: number
-          id: string
-          type_facture: string
-          updated_at: string
-        }
-        Insert: {
-          annee: number
-          created_at?: string
-          dernier_numero?: number
-          id?: string
-          type_facture: string
-          updated_at?: string
-        }
-        Update: {
-          annee?: number
-          created_at?: string
-          dernier_numero?: number
-          id?: string
-          type_facture?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       transactions_marche_secondaire: {
         Row: {
           acheteur_id: string
-          admin_paiement_id: string | null
-          bid_id: string
-          commission_admin: number | null
-          created_at: string
-          date_paiement_pnl: string | null
-          date_transaction: string
-          gain_vendeur: number
+          commission: number | null
+          created_at: string | null
+          date_transaction: string | null
+          gain_vendeur: number | null
           id: string
-          pnl_paye: boolean
-          prix_achat_original: number
-          prix_vente_final: number
+          notes: string | null
+          prix_achat_original: number | null
+          prix_transaction: number
+          prix_vente_final: number | null
           revente_id: string
-          statut: string
-          updated_at: string
+          statut: string | null
+          updated_at: string | null
           vendeur_id: string
-          volume_transige: number
+          volume: number
+          volume_transige: number | null
         }
         Insert: {
           acheteur_id: string
-          admin_paiement_id?: string | null
-          bid_id: string
-          commission_admin?: number | null
-          created_at?: string
-          date_paiement_pnl?: string | null
-          date_transaction?: string
-          gain_vendeur: number
+          commission?: number | null
+          created_at?: string | null
+          date_transaction?: string | null
+          gain_vendeur?: number | null
           id?: string
-          pnl_paye?: boolean
-          prix_achat_original: number
-          prix_vente_final: number
+          notes?: string | null
+          prix_achat_original?: number | null
+          prix_transaction: number
+          prix_vente_final?: number | null
           revente_id: string
-          statut?: string
-          updated_at?: string
+          statut?: string | null
+          updated_at?: string | null
           vendeur_id: string
-          volume_transige: number
+          volume: number
+          volume_transige?: number | null
         }
         Update: {
           acheteur_id?: string
-          admin_paiement_id?: string | null
-          bid_id?: string
-          commission_admin?: number | null
-          created_at?: string
-          date_paiement_pnl?: string | null
-          date_transaction?: string
-          gain_vendeur?: number
+          commission?: number | null
+          created_at?: string | null
+          date_transaction?: string | null
+          gain_vendeur?: number | null
           id?: string
-          pnl_paye?: boolean
-          prix_achat_original?: number
-          prix_vente_final?: number
+          notes?: string | null
+          prix_achat_original?: number | null
+          prix_transaction?: number
+          prix_vente_final?: number | null
           revente_id?: string
-          statut?: string
-          updated_at?: string
+          statut?: string | null
+          updated_at?: string | null
           vendeur_id?: string
-          volume_transige?: number
+          volume?: number
+          volume_transige?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_marche_secondaire_acheteur_id_fkey"
+            columns: ["acheteur_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_marche_secondaire_revente_id_fkey"
+            columns: ["revente_id"]
+            isOneToOne: false
+            referencedRelation: "reventes_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_marche_secondaire_vendeur_id_fkey"
+            columns: ["vendeur_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ventes: {
         Row: {
           client_id: string
           created_at: string | null
           date_deal: string
+          echeance_id: string | null
+          est_roll: boolean | null
           id: string
           navire_id: string
           parent_deal_id: string | null
@@ -908,12 +792,15 @@ export type Database = {
           prix_reference: string | null
           type_deal: Database["public"]["Enums"]["deal_type"]
           updated_at: string | null
+          vente_parent_id: string | null
           volume: number
         }
         Insert: {
           client_id: string
           created_at?: string | null
           date_deal?: string
+          echeance_id?: string | null
+          est_roll?: boolean | null
           id?: string
           navire_id: string
           parent_deal_id?: string | null
@@ -922,12 +809,15 @@ export type Database = {
           prix_reference?: string | null
           type_deal: Database["public"]["Enums"]["deal_type"]
           updated_at?: string | null
+          vente_parent_id?: string | null
           volume: number
         }
         Update: {
           client_id?: string
           created_at?: string | null
           date_deal?: string
+          echeance_id?: string | null
+          est_roll?: boolean | null
           id?: string
           navire_id?: string
           parent_deal_id?: string | null
@@ -936,6 +826,7 @@ export type Database = {
           prix_reference?: string | null
           type_deal?: Database["public"]["Enums"]["deal_type"]
           updated_at?: string | null
+          vente_parent_id?: string | null
           volume?: number
         }
         Relationships: [
@@ -944,6 +835,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventes_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances"
             referencedColumns: ["id"]
           },
           {
@@ -960,35 +858,42 @@ export type Database = {
             referencedRelation: "ventes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ventes_vente_parent_id_fkey"
+            columns: ["vente_parent_id"]
+            isOneToOne: false
+            referencedRelation: "ventes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       whatsapp_templates: {
         Row: {
-          active: boolean
-          created_at: string
-          event_type: string
+          actif: boolean | null
+          content: string
+          created_at: string | null
+          description: string | null
           id: string
-          message_template: string
-          nom: string
-          updated_at: string
+          name: string
+          updated_at: string | null
         }
         Insert: {
-          active?: boolean
-          created_at?: string
-          event_type: string
+          actif?: boolean | null
+          content: string
+          created_at?: string | null
+          description?: string | null
           id?: string
-          message_template: string
-          nom: string
-          updated_at?: string
+          name: string
+          updated_at?: string | null
         }
         Update: {
-          active?: boolean
-          created_at?: string
-          event_type?: string
+          actif?: boolean | null
+          content?: string
+          created_at?: string | null
+          description?: string | null
           id?: string
-          message_template?: string
-          nom?: string
-          updated_at?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -998,101 +903,53 @@ export type Database = {
     }
     Functions: {
       accept_bid_and_create_transaction: {
-        Args: { bid_id_param: string; seller_client_id: string }
-        Returns: string
-      }
-      accept_bid_and_create_transaction_with_notifications: {
-        Args: { bid_id_param: string; seller_client_id: string }
+        Args: { p_bid_id: string; p_commission?: number }
         Returns: string
       }
       allouer_financement: {
         Args: {
-          vente_id_param: string
-          ligne_bancaire_id_param: string
-          montant_param: number
-          commentaire_param?: string
+          p_ligne_bancaire_id: string
+          p_montant: number
+          p_type_financement: string
         }
         Returns: string
       }
-      calculate_pru_facture: {
-        Args: { vente_id_param: string }
-        Returns: number
-      }
-      calculate_pru_vente: {
-        Args: { vente_id_param: string }
-        Returns: number
-      }
-      generer_numero_facture: {
-        Args: { type_facture_param: string }
-        Returns: string
-      }
-      generer_reference_facture: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_contract_size: {
-        Args: { produit_type: string }
-        Returns: number
-      }
-      get_user_role: {
-        Args: { user_uuid?: string }
-        Returns: string
+      calculate_pru_facture: { Args: { p_facture_id: string }; Returns: number }
+      generer_numero_facture: { Args: never; Returns: string }
+      get_current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
       }
       get_validated_secondary_market: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          revente_id: string
-          volume: number
-          prix_flat_demande: number
-          prime_demandee: number
+          bids_marche_secondaire: Json
+          commentaire: string
+          created_at: string
+          date_expiration_validation: string
           date_revente: string
+          etat: Database["public"]["Enums"]["revente_status"]
+          id: string
+          prix_flat_demande: number
+          updated_at: string
           vente_id: string
-          type_position: string
-          navire_nom: string
-          navire_produit: string
-          navire_date_arrivee: string
-          vendeur_nom: string
-          vendeur_id: string
-          vente_volume: number
-          vente_prime_vente: number
-          vente_prix_reference: string
+          volume: number
         }[]
       }
-      is_client_visible_on_market: {
-        Args: { client_id_param: string }
-        Returns: boolean
-      }
-      liberer_financement: {
-        Args: {
-          financement_id_param: string
-          montant_liberation_param?: number
-        }
-        Returns: undefined
-      }
       traiter_paiement_facture: {
-        Args: { paiement_id_param: string }
-        Returns: undefined
-      }
-      update_existing_transactions_pru: {
-        Args: Record<PropertyKey, never>
+        Args: { p_paiement_id: string }
         Returns: undefined
       }
     }
     Enums: {
       deal_type: "prime" | "flat"
-      product_type:
-        | "mais"
-        | "tourteau_soja"
-        | "ble"
-        | "orge"
-        | "ddgs"
-        | "ferrailles"
+      product_type: "mais" | "tourteau_soja" | "ble" | "orge"
       revente_status:
+        | "en_attente_validation"
+        | "valide"
         | "en_attente"
         | "vendu"
         | "retire"
-        | "en_attente_validation"
-        | "annulee"
       user_role: "admin" | "client"
     }
     CompositeTypes: {
@@ -1222,20 +1079,13 @@ export const Constants = {
   public: {
     Enums: {
       deal_type: ["prime", "flat"],
-      product_type: [
-        "mais",
-        "tourteau_soja",
-        "ble",
-        "orge",
-        "ddgs",
-        "ferrailles",
-      ],
+      product_type: ["mais", "tourteau_soja", "ble", "orge"],
       revente_status: [
+        "en_attente_validation",
+        "valide",
         "en_attente",
         "vendu",
         "retire",
-        "en_attente_validation",
-        "annulee",
       ],
       user_role: ["admin", "client"],
     },
