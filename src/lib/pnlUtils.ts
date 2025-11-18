@@ -265,7 +265,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
       prix_achat_flat,
       terme_commercial,
       taux_fret,
-      parent_navire_id,
+      navire_parent_id,
       reference_cbot,
       couvertures_achat (
         volume_couvert,
