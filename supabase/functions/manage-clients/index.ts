@@ -40,11 +40,15 @@ serve(async (req) => {
       throw new Error('Non autorisé')
     }
 
-    // Vérifier que l'utilisateur est admin (depuis les métadonnées JWT)
-    const userRole = user.user_metadata?.role;
+    // Vérifier que l'utilisateur est admin depuis la table clients
+    const { data: clientData, error: clientError } = await supabaseAdmin
+      .from('clients')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
     
-    if (userRole !== 'admin') {
-      console.log('User role:', userRole, 'User metadata:', user.user_metadata);
+    if (clientError || !clientData || clientData.role !== 'admin') {
+      console.log('User role check failed:', { clientError, clientData });
       throw new Error('Seuls les administrateurs peuvent gérer les clients');
     }
 
