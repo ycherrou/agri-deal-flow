@@ -195,11 +195,8 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
   } else {
     // Pour les navires à prime : prime d'achat + (fret / facteur) si FOB
     prixAchatCFR = navire.prime_achat || 0;
-    if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
-      const facteurConversion = getConversionFactor(navire.produit);
-      if (facteurConversion > 0) {
-        prixAchatCFR += navire.taux_fret / facteurConversion;
-      }
+    if (navire.terme_commercial === 'FOB' && navire.taux_fret && facteurConversion > 0) {
+      prixAchatCFR += navire.taux_fret / facteurConversion;
     }
   }
   
