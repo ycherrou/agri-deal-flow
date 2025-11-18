@@ -184,14 +184,23 @@ export const calculateTotalPnL = (navire: NavireWithPnLData): PnLData => {
     prixVenteMoyenGlobal = prixVentePondere;
   }
   
-  // Prix d'achat pour affichage : toujours afficher la prime CFR (sans fret)
+  // Prix d'achat pour affichage avec formule CFR
   let prixAchatCFR = 0;
   if (isNavireFlat) {
-    // Pour les navires flat : afficher le prix flat original (CFR)
+    // Pour les navires flat : prix flat CFR + fret si FOB
     prixAchatCFR = navire.prix_achat_flat || 0;
+    if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+      prixAchatCFR += navire.taux_fret;
+    }
   } else {
-    // Pour les navires à prime : afficher la prime originale (CFR) convertie en $/tonne
-    prixAchatCFR = (navire.prime_achat || 0) * facteurConversion;
+    // Pour les navires à prime : prime d'achat + (fret / facteur) si FOB
+    prixAchatCFR = navire.prime_achat || 0;
+    if (navire.terme_commercial === 'FOB' && navire.taux_fret) {
+      const facteurConversion = getConversionFactor(navire.produit);
+      if (facteurConversion > 0) {
+        prixAchatCFR += navire.taux_fret / facteurConversion;
+      }
+    }
   }
   
   return {
