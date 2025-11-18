@@ -286,7 +286,7 @@ export const calculatePortfolioPnL = async (userRole: 'admin' | 'client' = 'admi
         )
       )
     `)
-    .is('parent_navire_id', null);
+    .is('navire_parent_id', null);
 
     // Si c'est un client, filtrer par ses ventes uniquement
     if (userRole === 'client') {
@@ -433,7 +433,7 @@ export const calculatePnLByClient = async (userRole: 'admin' | 'client' = 'admin
           )
         )
       `)
-      .is('parent_navire_id', null);
+      .is('navire_parent_id', null);
 
     // Si c'est un client, filtrer par ses ventes uniquement
     if (userRole === 'client') {
