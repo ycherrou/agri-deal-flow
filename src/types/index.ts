@@ -67,7 +67,9 @@ export interface ReventeClient {
 export interface Echeance {
   id: string;
   nom: string;
-  active: boolean;
+  produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
+  date_echeance: string;
+  actif: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -152,15 +154,15 @@ export interface PortfolioPnL {
 // Finance module types
 export interface LigneBancaire {
   id: string;
-  nom: string;
-  montant_total: number;
-  montant_utilise: number;
-  montant_disponible: number;
-  taux_interet?: number;
   banque: string;
-  date_ouverture: string;
-  date_echeance?: string;
+  type_ligne: string;
+  montant_autorise: number;
+  montant_utilise: number;
+  taux_interet?: number;
+  date_debut: string;
+  date_fin?: string;
   active: boolean;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -180,15 +182,13 @@ export interface Financement {
 export interface MouvementBancaire {
   id: string;
   ligne_bancaire_id: string;
-  financement_id?: string;
-  type_mouvement: 'allocation' | 'liberation' | 'remboursement';
+  type_mouvement: 'utilisation' | 'remboursement';
   montant: number;
-  montant_avant: number;
-  montant_apres: number;
   date_mouvement: string;
   reference?: string;
   description?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface VenteFinancingData extends VenteWithDetails {

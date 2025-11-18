@@ -201,7 +201,7 @@ export type Database = {
       }
       echeances: {
         Row: {
-          actif: boolean | null
+          active: boolean | null
           created_at: string | null
           date_echeance: string
           id: string
@@ -210,7 +210,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          actif?: boolean | null
+          active?: boolean | null
           created_at?: string | null
           date_echeance: string
           id?: string
@@ -219,7 +219,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          actif?: boolean | null
+          active?: boolean | null
           created_at?: string | null
           date_echeance?: string
           id?: string
@@ -310,7 +310,7 @@ export type Database = {
       }
       lignes_bancaires: {
         Row: {
-          actif: boolean | null
+          active: boolean | null
           banque: string
           created_at: string | null
           date_debut: string
@@ -324,7 +324,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          actif?: boolean | null
+          active?: boolean | null
           banque: string
           created_at?: string | null
           date_debut: string
@@ -338,7 +338,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          actif?: boolean | null
+          active?: boolean | null
           banque?: string
           created_at?: string | null
           date_debut?: string
@@ -869,7 +869,7 @@ export type Database = {
       }
       whatsapp_templates: {
         Row: {
-          actif: boolean | null
+          active: boolean | null
           content: string
           created_at: string | null
           description: string | null
@@ -878,7 +878,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          actif?: boolean | null
+          active?: boolean | null
           content: string
           created_at?: string | null
           description?: string | null
@@ -887,7 +887,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          actif?: boolean | null
+          active?: boolean | null
           content?: string
           created_at?: string | null
           description?: string | null
