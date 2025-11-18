@@ -99,11 +99,14 @@ export default function PnL() {
   };
 
   // Helper function to format price display in table
-  const formatTablePrice = (price: number, product: string, isFlat: boolean = false) => {
-    if (isFlat) {
+  const formatTablePrice = (price: number, product: string, isPrimeAchat: boolean = false) => {
+    if (isPrimeAchat) {
+      // Pour les primes d'achat : afficher dans l'unité originale
+      if (product === 'mais') return `${price.toFixed(2)} Cts/Bu`;
+      if (product === 'tourteau_soja') return `${price.toFixed(2)} Cts/ST`;
       return `${price.toFixed(2)} USD/MT`;
     }
-    // Pour les primes : Cts/Bu pour maïs/tourteau, USD/MT pour blé/orge
+    // Pour les autres colonnes
     const unit = (product === 'mais' || product === 'tourteau_soja') ? 'Cts/Bu' : 'USD/MT';
     return `${price.toFixed(2)} ${unit}`;
   };
