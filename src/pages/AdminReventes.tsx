@@ -129,6 +129,7 @@ export default function AdminReventes() {
 
       if (action === 'approve') {
         updates.validated_by_admin = true;
+        updates.etat = 'valide';
       } else {
         updates.etat = 'retire';
         updates.validated_by_admin = false;
