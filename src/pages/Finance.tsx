@@ -60,7 +60,7 @@ export default function Finance() {
         ventes.map(async (vente) => {
           const pru = await calculatePRU(vente);
           const montantBesoinFinancement = pru * vente.volume;
-          const financement = vente.financements?.[0] as Financement | undefined;
+          const financement = vente.financements?.[0] ? vente.financements[0] as any as Financement : undefined;
           
           return {
             ...vente,
@@ -337,10 +337,10 @@ export default function Finance() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {lignesBancaires
-                                    .filter(l => l.montant_disponible >= parseFloat(montantFinancement))
+                                    .filter(l => (l.montant_autorise - l.montant_utilise) >= parseFloat(montantFinancement))
                                     .map(ligne => (
                                     <SelectItem key={ligne.id} value={ligne.id}>
-                                      {ligne.nom} - {ligne.montant_disponible.toLocaleString()} USD disponible
+                                      {ligne.banque} - {ligne.type_ligne} - {(ligne.montant_autorise - ligne.montant_utilise).toLocaleString()} USD disponible
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

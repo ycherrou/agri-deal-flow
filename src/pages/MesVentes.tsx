@@ -7,13 +7,16 @@ import { DollarSign, TrendingUp, CalendarDays, Package } from 'lucide-react';
 
 interface Transaction {
   id: string;
-  prix_achat_original: number;
-  prix_vente_final: number;
-  volume_transige: number;
-  gain_vendeur: number;
+  prix_achat_original: number | null;
+  prix_vente_final: number | null;
+  volume_transige: number | null;
+  gain_vendeur: number | null;
+  volume: number;
+  prix_transaction: number;
   date_transaction: string;
-  pnl_paye: boolean;
-  date_paiement_pnl: string | null;
+  revente_id: string;
+  acheteur_id: string;
+  vendeur_id: string;
   revente: {
     id: string;
     vente: {
@@ -62,19 +65,10 @@ export default function MesVentes() {
       const { data, error } = await supabase
         .from('transactions_marche_secondaire')
         .select(`
-          id,
-          prix_achat_original,
-          prix_vente_final,
-          volume_transige,
-          gain_vendeur,
-          date_transaction,
-          pnl_paye,
-          date_paiement_pnl,
-          revente_id,
-          acheteur_id
+          *
         `)
         .eq('vendeur_id', clientData.id)
-        .order('date_transaction', { ascending: false });
+        .order('date_transaction', { ascending: false});
 
       if (error) throw error;
 
@@ -99,14 +93,14 @@ export default function MesVentes() {
               )
             `)
             .eq('id', transaction.revente_id)
-            .single();
+            .maybeSingle();
 
           // Récupérer les données de l'acheteur
           const { data: acheteurData } = await supabase
             .from('clients')
             .select('nom')
             .eq('id', transaction.acheteur_id)
-            .single();
+            .maybeSingle();
 
            return {
             ...transaction,
@@ -124,7 +118,7 @@ export default function MesVentes() {
               }
             },
             acheteur: acheteurData || { nom: '' }
-           };
+          } as Transaction;
         })
       );
 
