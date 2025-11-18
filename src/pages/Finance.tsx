@@ -94,10 +94,9 @@ export default function Finance() {
       commentaire?: string;
     }) => {
       const { data, error } = await supabase.rpc('allouer_financement', {
-        vente_id_param: venteId,
-        ligne_bancaire_id_param: ligneBancaireId,
-        montant_param: montant,
-        commentaire_param: commentaire
+        p_ligne_bancaire_id: ligneBancaireId,
+        p_montant: montant,
+        p_type_financement: commentaire || 'Financement vente'
       });
       
       if (error) throw error;
@@ -151,7 +150,7 @@ export default function Finance() {
     .filter(v => v.financement)
     .reduce((sum, v) => sum + (v.financement?.montant_finance || 0), 0);
 
-  const totalLignesDisponibles = lignesBancaires.reduce((sum, l) => sum + l.montant_disponible, 0);
+  const totalLignesDisponibles = lignesBancaires.reduce((sum, l) => sum + (l.montant_autorise - l.montant_utilise), 0);
 
   return (
     <div className="space-y-6">
@@ -254,17 +253,17 @@ export default function Finance() {
             <TableBody>
               {lignesBancaires.map((ligne) => (
                 <TableRow key={ligne.id}>
-                  <TableCell className="font-medium">{ligne.nom}</TableCell>
+                  <TableCell className="font-medium">{ligne.banque} - {ligne.type_ligne}</TableCell>
                   <TableCell>{ligne.banque}</TableCell>
-                  <TableCell>{ligne.montant_total.toLocaleString()} USD</TableCell>
+                  <TableCell>{ligne.montant_autorise.toLocaleString()} USD</TableCell>
                   <TableCell>{ligne.montant_utilise.toLocaleString()} USD</TableCell>
                   <TableCell>
-                    <span className={ligne.montant_disponible < 100000 ? "text-orange-600" : "text-green-600"}>
-                      {ligne.montant_disponible.toLocaleString()} USD
+                    <span className={(ligne.montant_autorise - ligne.montant_utilise) < 100000 ? "text-orange-600" : "text-green-600"}>
+                      {(ligne.montant_autorise - ligne.montant_utilise).toLocaleString()} USD
                     </span>
                   </TableCell>
                   <TableCell>{ligne.taux_interet ? `${ligne.taux_interet}%` : '-'}</TableCell>
-                  <TableCell>{ligne.date_echeance || '-'}</TableCell>
+                  <TableCell>{ligne.date_fin || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -22,7 +22,7 @@ export default function FinancingCharts() {
         .from('lignes_bancaires')
         .select('*')
         .eq('active', true)
-        .order('nom');
+        .order('banque');
       
       if (error) throw error;
       return data as LigneBancaire[];
@@ -37,7 +37,7 @@ export default function FinancingCharts() {
         .from('mouvements_bancaires')
         .select(`
           *,
-          ligne_bancaire:lignes_bancaires(nom, banque)
+          ligne_bancaire:lignes_bancaires(banque, type_ligne)
         `)
         .order('date_mouvement', { ascending: true })
         .limit(50);
@@ -49,16 +49,16 @@ export default function FinancingCharts() {
 
   // Prepare data for charts with comprehensive validation
   const bankLinesChartData = bankLinesData
-    .filter(ligne => ligne && ligne.nom) // Filter out invalid entries
+    .filter(ligne => ligne && ligne.banque) // Filter out invalid entries
     .map(ligne => {
-      const total = safeNumber(ligne.montant_total);
+      const total = safeNumber(ligne.montant_autorise);
       const utilise = safeNumber(ligne.montant_utilise);
-      const disponible = safeNumber(ligne.montant_disponible);
+      const disponible = total - utilise;
       const tauxUtilisation = total > 0 ? (utilise / total) * 100 : 0;
       
       // Debug logging
       console.log('Bank line data:', {
-        nom: ligne.nom,
+        name: `${ligne.banque} - ${ligne.type_ligne}`,
         total,
         utilise,
         disponible,
@@ -66,7 +66,7 @@ export default function FinancingCharts() {
       });
       
       return {
-        name: ligne.nom || 'N/A',
+        name: `${ligne.banque} - ${ligne.type_ligne}`,
         banque: ligne.banque || 'N/A',
         total,
         utilise,
@@ -93,16 +93,16 @@ export default function FinancingCharts() {
       const montant = safeNumber(movement.montant);
       
       if (existing) {
-        if (movement.type_mouvement === 'allocation') {
+        if (movement.type_mouvement === 'utilisation') {
           existing.allocations = safeNumber(existing.allocations) + montant;
-        } else if (movement.type_mouvement === 'liberation') {
+        } else if (movement.type_mouvement === 'remboursement') {
           existing.liberations = safeNumber(existing.liberations) + montant;
         }
       } else {
         acc.push({
           date,
-          allocations: movement.type_mouvement === 'allocation' ? montant : 0,
-          liberations: movement.type_mouvement === 'liberation' ? montant : 0
+          allocations: movement.type_mouvement === 'utilisation' ? montant : 0,
+          liberations: movement.type_mouvement === 'remboursement' ? montant : 0
         });
       }
       

@@ -87,11 +87,36 @@ export default function MarcheSecondaire() {
 
   const fetchReventes = async () => {
     try {
-      console.log('🔍 Fetching reventes using function...');
+      console.log('🔍 Fetching reventes...');
       
-      // Utiliser la fonction PostgreSQL qui contourne les restrictions RLS
+      // Fetch validated reventes with all related data using joins
       const { data: marketData, error: marketError } = await supabase
-        .rpc('get_validated_secondary_market');
+        .from('reventes_clients')
+        .select(`
+          id,
+          volume,
+          prix_flat_demande,
+          prime_demandee,
+          date_revente,
+          vente_id,
+          type_position,
+          ventes!inner (
+            id,
+            volume,
+            prime_vente,
+            prix_reference,
+            client_id,
+            navires!inner (
+              nom,
+              produit,
+              date_arrivee
+            ),
+            clients!inner (
+              nom
+            )
+          )
+        `)
+        .eq('etat', 'valide');
 
       if (marketError) {
         console.error('Erreur lors de la récupération du marché secondaire:', marketError);
@@ -103,7 +128,7 @@ export default function MarcheSecondaire() {
         return;
       }
 
-      console.log('🔍 Market data from function:', marketData);
+      console.log('🔍 Market data:', marketData);
 
       if (!marketData || marketData.length === 0) {
         console.log('✅ No market data found');
@@ -112,7 +137,7 @@ export default function MarcheSecondaire() {
       }
 
       // Récupérer les bids séparément
-      const reventeIds = marketData.map(item => item.revente_id);
+      const reventeIds = marketData.map(item => item.id);
       const { data: bidsData } = await supabase
         .from('bids_marche_secondaire')
         .select(`
@@ -131,10 +156,10 @@ export default function MarcheSecondaire() {
 
       // Transformer les données pour correspondre à l'interface ReventeSecondaire
       const transformedReventes = marketData.map(item => {
-        const reventerBids = bidsData?.filter(b => b.revente_id === item.revente_id) || [];
+        const reventerBids = bidsData?.filter(b => b.revente_id === item.id) || [];
         
         return {
-          id: item.revente_id,
+          id: item.id,
           volume: item.volume,
           prix_flat_demande: item.prix_flat_demande,
           prime_demandee: item.prime_demandee,
@@ -142,18 +167,18 @@ export default function MarcheSecondaire() {
           vente_id: item.vente_id,
           type_position: item.type_position,
           ventes: {
-            navire_id: null, // Pas nécessaire pour l'affichage
-            volume: item.vente_volume,
-            prime_vente: item.vente_prime_vente,
-            prix_reference: item.vente_prix_reference,
-            client_id: item.vendeur_id,
+            navire_id: item.ventes.id,
+            volume: item.ventes.volume,
+            prime_vente: item.ventes.prime_vente,
+            prix_reference: item.ventes.prix_reference,
+            client_id: item.ventes.client_id,
             navires: {
-              nom: item.navire_nom,
-              produit: item.navire_produit,
-              date_arrivee: item.navire_date_arrivee
+              nom: item.ventes.navires.nom,
+              produit: item.ventes.navires.produit,
+              date_arrivee: item.ventes.navires.date_arrivee
             },
             clients: {
-              nom: item.vendeur_nom
+              nom: item.ventes.clients.nom
             }
           },
           bids_marche_secondaire: reventerBids

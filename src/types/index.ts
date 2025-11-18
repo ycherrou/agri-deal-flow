@@ -69,7 +69,7 @@ export interface Echeance {
   nom: string;
   produit: 'mais' | 'tourteau_soja' | 'ble' | 'orge';
   date_echeance: string;
-  actif: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,8 +78,8 @@ export interface PrixMarche {
   id: string;
   echeance_id: string;
   prix: number;
+  date_maj: string;
   created_at: string;
-  updated_at: string;
   echeance?: Echeance;
 }
 

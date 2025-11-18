@@ -39,15 +39,17 @@ export default function LignesBancaires() {
   // Create bank line mutation
   const createLigneBancaire = useMutation({
     mutationFn: async (data: {
-      nom: string;
       banque: string;
-      montant_total: number;
+      type_ligne: string;
+      montant_autorise: number;
     }) => {
       const { data: result, error } = await supabase
         .from('lignes_bancaires')
         .insert([{
-          ...data,
-          date_ouverture: new Date().toISOString().split('T')[0]
+          banque: data.banque,
+          type_ligne: data.type_ligne,
+          montant_autorise: data.montant_autorise,
+          date_debut: new Date().toISOString().split('T')[0]
         }])
         .select()
         .single();
@@ -114,15 +116,15 @@ export default function LignesBancaires() {
     }
 
     createLigneBancaire.mutate({
-      nom: formData.nom,
       banque: formData.banque,
-      montant_total: parseFloat(formData.montant_total)
+      type_ligne: formData.nom,
+      montant_autorise: parseFloat(formData.montant_total)
     });
   };
 
-  const totalLignes = lignesBancaires.reduce((sum, l) => sum + l.montant_total, 0);
+  const totalLignes = lignesBancaires.reduce((sum, l) => sum + l.montant_autorise, 0);
   const totalUtilise = lignesBancaires.reduce((sum, l) => sum + l.montant_utilise, 0);
-  const totalDisponible = lignesBancaires.reduce((sum, l) => sum + l.montant_disponible, 0);
+  const totalDisponible = lignesBancaires.reduce((sum, l) => sum + (l.montant_autorise - l.montant_utilise), 0);
 
   return (
     <div className="space-y-6">
@@ -251,13 +253,13 @@ export default function LignesBancaires() {
             <TableBody>
               {lignesBancaires.map((ligne) => (
                 <TableRow key={ligne.id}>
-                  <TableCell className="font-medium">{ligne.nom}</TableCell>
+                  <TableCell className="font-medium">{ligne.banque} - {ligne.type_ligne}</TableCell>
                   <TableCell>{ligne.banque}</TableCell>
-                  <TableCell>{ligne.montant_total.toLocaleString()} USD</TableCell>
+                  <TableCell>{ligne.montant_autorise.toLocaleString()} USD</TableCell>
                   <TableCell>{ligne.montant_utilise.toLocaleString()} USD</TableCell>
                   <TableCell>
-                    <span className={ligne.montant_disponible < 100000 ? "text-orange-600" : "text-green-600"}>
-                      {ligne.montant_disponible.toLocaleString()} USD
+                    <span className={(ligne.montant_autorise - ligne.montant_utilise) < 100000 ? "text-orange-600" : "text-green-600"}>
+                      {(ligne.montant_autorise - ligne.montant_utilise).toLocaleString()} USD
                     </span>
                   </TableCell>
                 </TableRow>

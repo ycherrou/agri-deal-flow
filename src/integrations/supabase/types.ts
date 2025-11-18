@@ -19,31 +19,37 @@ export type Database = {
           client_id: string
           commentaire: string | null
           created_at: string | null
+          date_bid: string | null
           id: string
-          prix_propose: number
+          prix_bid: number
           revente_id: string
           statut: string | null
           updated_at: string | null
+          volume_bid: number | null
         }
         Insert: {
           client_id: string
           commentaire?: string | null
           created_at?: string | null
+          date_bid?: string | null
           id?: string
-          prix_propose: number
+          prix_bid: number
           revente_id: string
           statut?: string | null
           updated_at?: string | null
+          volume_bid?: number | null
         }
         Update: {
           client_id?: string
           commentaire?: string | null
           created_at?: string | null
+          date_bid?: string | null
           id?: string
-          prix_propose?: number
+          prix_bid?: number
           revente_id?: string
           statut?: string | null
           updated_at?: string | null
+          volume_bid?: number | null
         }
         Relationships: [
           {
@@ -572,8 +578,8 @@ export type Database = {
           date_paiement: string
           facture_id: string
           id: string
-          mode_paiement: string | null
-          montant: number
+          methode_paiement: string | null
+          montant_paye: number
           notes: string | null
           reference_paiement: string | null
           updated_at: string | null
@@ -583,8 +589,8 @@ export type Database = {
           date_paiement?: string
           facture_id: string
           id?: string
-          mode_paiement?: string | null
-          montant: number
+          methode_paiement?: string | null
+          montant_paye: number
           notes?: string | null
           reference_paiement?: string | null
           updated_at?: string | null
@@ -594,8 +600,8 @@ export type Database = {
           date_paiement?: string
           facture_id?: string
           id?: string
-          mode_paiement?: string | null
-          montant?: number
+          methode_paiement?: string | null
+          montant_paye?: number
           notes?: string | null
           reference_paiement?: string | null
           updated_at?: string | null

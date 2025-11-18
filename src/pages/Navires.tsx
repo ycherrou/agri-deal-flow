@@ -205,9 +205,10 @@ export default function Navires() {
           .update(navireData)
           .eq('id', editingNavire.id);
       } else {
-        result = await supabase
+        const { error: insertError } = await supabase
           .from('navires')
           .insert([navireData]);
+        result = { error: insertError };
       }
 
       if (result.error) {
