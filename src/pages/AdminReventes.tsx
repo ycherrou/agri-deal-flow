@@ -125,7 +125,6 @@ export default function AdminReventes() {
     try {
       const updates: any = {
         updated_at: new Date().toISOString(),
-        admin_validation_date: new Date().toISOString(),
       };
 
       if (action === 'approve') {
